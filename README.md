@@ -45,7 +45,7 @@ This project does not support Visual Studio (MSVC). Due to recurring compatibili
 1. Install MSYS2: https://www.msys2.org/
 2. Ensure all of `clang ninja cmake` packages are installed:
 ```
-pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-clang cmake ninja
+pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-cmake mingw-w64-ucrt-ninja
 
 cmake --version
 clang --version
