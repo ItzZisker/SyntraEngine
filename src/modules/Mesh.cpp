@@ -1,15 +1,37 @@
 #include <KEngine/modules/Mesh.hpp>
 
+GLuint defaultWhiteTexture;
+
+void createDefaultWhiteTexture() {
+    unsigned char whitePixel[4] = { 255, 255, 255, 255 };
+
+    glGenTextures(1, &defaultWhiteTexture);
+    glBindTexture(GL_TEXTURE_2D, defaultWhiteTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, whitePixel);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+GLuint getDefaultWhiteTexture() {
+    if (!defaultWhiteTexture) createDefaultWhiteTexture();
+    return defaultWhiteTexture;
+}
+
 Mesh::Mesh(std::vector<Vertex> vertices,
            std::vector<unsigned int> indices,
            std::vector<Texture> textures)
-    : vertices(vertices), indices(indices), textures(textures)
-{
+    : vertices(vertices), indices(indices), textures(textures) {
     setupMesh();
 }
 
-void Mesh::draw(Shader shader)
-{
+Mesh::~Mesh() {
+    vertices.clear();
+    indices.clear();
+    textures.clear();
+}
+
+void Mesh::draw(Shader shader) {
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
     unsigned int normalNr = 1;
@@ -17,12 +39,16 @@ void Mesh::draw(Shader shader)
 
     shader.setFloat("shininess", 32.0f);
 
-    for (unsigned int i = 0; i < textures.size(); i++)
-    {
+    if (textures.empty()) {
+        glBindTexture(GL_TEXTURE_2D, getDefaultWhiteTexture());
+    }
+
+    for (unsigned int i = 0; i < textures.size(); i++) {
         glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
         // retrieve texture number (the N in diffuse_textureN)
         std::string number;
         std::string name = textures[i].type;
+        
         if (name == "texture_diffuse")
             number = std::to_string(diffuseNr++);
         else if (name == "texture_specular")
@@ -46,8 +72,7 @@ void Mesh::draw(Shader shader)
     glActiveTexture(GL_TEXTURE0);
 }
 
-void Mesh::setupMesh()
-{
+void Mesh::setupMesh() {
     // create buffers/arrays
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);

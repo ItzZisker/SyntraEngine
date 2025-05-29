@@ -10,7 +10,7 @@
         "ninja && ./sample_executable.exe"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/out/build/clang"
+        "cwd": "out/build/clang"
       },
       "group": "build",
       "problemMatcher": []

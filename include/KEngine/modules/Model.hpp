@@ -12,36 +12,36 @@
 #include <KEngine/KEngine.hpp>
 #include <KEngine/modules/Mesh.hpp>
 #include <KEngine/modules/Shader.hpp>
+#include <KEngine/world/WorldObject.hpp>
 
 #include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include <map>
 #include <vector>
 
 unsigned int TextureFromFile(const char *path, const std::string &directory);
 
-class Model : public kcomp::WorldObject
+class Model : public CoordinatedObject
 {
 public:
     // model data
     std::vector<Texture> textures_loaded; // stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     std::vector<Mesh> meshes;
     std::string directory;
-    bool gammaCorrection;
-
+    bool loaded, gammaCorrection;
+    
     // constructor, expects a filepath to a 3D model.
-    Model(kcomp::World* world, std::string const &path, bool gamma = false);
+    Model(std::string const &path, bool gamma = false);
+
+    // destructor
+    ~Model();
 
     // Renders Model using BatchShader
-    void render(kwindow::GameWindow *window) override;
+    void render(GameWindow *window) override;
 
     // draws the model, and thus all its meshes
     void draw(Shader &shader);
 
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    void loadModel();
+    void loadModel(bool flipTextures = false);
 
 private:
     std::string path;

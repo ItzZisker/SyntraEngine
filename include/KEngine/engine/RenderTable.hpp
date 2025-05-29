@@ -1,24 +1,28 @@
 #pragma once
 
 #include <unordered_map>
-#include <memory>
 #include <string>
 #include <functional>
 
-namespace kcomp
+class GameWindow;
+
+class Renderable
 {
-    class Renderable;
-}
+public:
+    virtual void render(GameWindow* window) = 0;
+
+    virtual ~Renderable() = default;
+};
 
 class RenderTable {
-    std::unordered_map<std::string, kcomp::Renderable*> objects;
+    std::unordered_map<std::string, Renderable*> objects;
 
 public:
-    void add(const std::string& key, kcomp::Renderable* renderable);
+    void add(const std::string& key, Renderable* renderable);
 
     void remove(const std::string& key);
 
-    kcomp::Renderable* get(const std::string& key) const;
+    Renderable* get(const std::string& key) const;
 
-    void forEach(const std::function<void(const std::string&, kcomp::Renderable*)>& func) const;
+    void forEach(const std::function<void(const std::string&, Renderable*)>& func) const;
 };

@@ -1,21 +1,18 @@
 #include <KEngine/KEngine.hpp>
+
+#include <iostream>
 #include <math.h>
 
-namespace Callbacks
-{
-    void glfw_framebuffer_resize_callback(GLFWwindow *window, int width, int height)
-    {
+namespace Callbacks {
+    void glfw_framebuffer_resize_callback(GLFWwindow *window, int width, int height) {
         glViewport(0, 0, width, height);
     }
 }
 
-kwindow::GameWindow::GameWindow(std::string title, int initialWidth, int initialHeight)
-{
+GameWindow::GameWindow(std::string title, int initialWidth, int initialHeight) {
     this->title = title;
     this->width = initialWidth;
     this->height = initialHeight;
-    this->renderTable = new RenderTable();
-    this->batchShader = Shader("shaders/batch.vs", "shaders/batch.fs");
 
     withHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     withHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -25,11 +22,11 @@ kwindow::GameWindow::GameWindow(std::string title, int initialWidth, int initial
     withHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    addInitTask([](kwindow::GameWindow *window)
+    addInitTask([](GameWindow *window)
     {
         window->batchShader.init();
     });
-    addRenderTask([](kwindow::GameWindow *window)
+    addRenderTask([](GameWindow *window)
     {
         static double previousTime = glfwGetTime();
         double currentTime = glfwGetTime();
@@ -37,59 +34,49 @@ kwindow::GameWindow::GameWindow(std::string title, int initialWidth, int initial
         window->lastFrameTime = currentTime - previousTime;
         previousTime = currentTime;
     });
-    addRenderTask([](kwindow::GameWindow *window)
+    addRenderTask([](GameWindow *window)
     {
         glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     });
-    addRenderTask([](kwindow::GameWindow *window)
+    addRenderTask([](GameWindow *window)
     {
-        window->renderTable->forEach([window](const std::string& name, kcomp::Renderable* renderable)
+        window->renderTable->forEach([window](const std::string& name, Renderable* renderable)
         {
             renderable->render(window);
         });
     });
 }
 
-bool kwindow::GameWindow::isInitialized()
-{
+bool GameWindow::isInitialized() {
     return initialized;
 }
 
-void kwindow::GameWindow::withHint(int hint, int value)
-{
+void GameWindow::withHint(int hint, int value) {
     if (initialized)
-    {
         glfwWindowHint(hint, value);
-    }
     else
-    {
         window_hints.insert({hint, value});
-    }
 }
 
-int kwindow::GameWindow::initWindow()
-{
+int GameWindow::initWindow() {
     glfwInit();
 
-    for (auto entry : window_hints)
-    {
+    for (auto entry : window_hints) {
         glfwWindowHint(entry.first, entry.second);
     }
 
     GLFWwindow *glfwWindow = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
     glfwWindowPtr = glfwWindow;
 
-    if (glfwWindow == NULL)
-    {
+    if (glfwWindow == NULL) {
         std::cerr << "KEngine: Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
     glfwMakeContextCurrent(glfwWindow);
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "KEngine: Failed to initialize GLAD" << std::endl;
         return -1;
     }
@@ -101,15 +88,12 @@ int kwindow::GameWindow::initWindow()
 
     initialized = true;
 
-    for (auto &task : initTasks)
-    {
+    for (auto &task : initTasks) {
         task(this);
     }
 
-    while (!glfwWindowShouldClose(glfwWindow) && initialized)
-    {
-        for (auto &task : renderTasks)
-        {
+    while (!glfwWindowShouldClose(glfwWindow) && initialized) {
+        for (auto &task : renderTasks) {
             task(this);
         }
         glfwSwapBuffers(glfwWindow);
@@ -121,52 +105,46 @@ int kwindow::GameWindow::initWindow()
     return 0;
 }
 
-void kwindow::GameWindow::addRenderTask(std::function<void(kwindow::GameWindow *)> task)
-{
+void GameWindow::addRenderTask(std::function<void(GameWindow *)> task) {
     this->renderTasks.push_back(task);
 }
 
-void kwindow::GameWindow::addInitTask(std::function<void(kwindow::GameWindow *)> task)
-{
+void GameWindow::addInitTask(std::function<void(GameWindow *)> task) {
     this->initTasks.push_back(task);
 }
 
-void kwindow::GameWindow::closeWindow()
-{
+void GameWindow::closeWindow() {
     initialized = false;
 }
 
-int kwindow::GameWindow::getGLADLoadStatus()
-{
+int GameWindow::getGLADLoadStatus() {
     return this->gladLoadStatus;
 }
 
-int kwindow::GameWindow::getGLFWWindowStatus()
-{
+int GameWindow::getGLFWWindowStatus() {
     return this->glfwWindowStatus;
 }
 
-double kwindow::GameWindow::getLastFrameTime()
-{
+double GameWindow::getLastFrameTime() {
     return this->lastFrameTime;
 }
 
-RenderTable* kwindow::GameWindow::getRenderTable()
-{
+GLFWwindow *GameWindow::getGLFWWindowPtr() {
+    return glfwWindowPtr;
+}
+
+RenderTable* GameWindow::getRenderTable() {
     return this->renderTable;
 }
 
-Shader kwindow::GameWindow::getBatchShader()
-{
+Shader GameWindow::getBatchShader() {
     return this->batchShader;
 }
 
-kwindow::WindowSize kwindow::GameWindow::getWindowSize()
-{
-    return WindowSize(width, height);
+int GameWindow::getWindowHeight() {
+    return this->height;
 }
 
-GLFWwindow *kwindow::GameWindow::getGLFWWindowPtr()
-{
-    return glfwWindowPtr;
+int GameWindow::getWindowWidth() {
+    return this->width;
 }

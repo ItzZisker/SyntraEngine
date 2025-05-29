@@ -12,6 +12,8 @@
 
 #define MAX_BONE_INFLUENCE 4
 
+GLuint getDefaultWhiteTexture();
+
 struct Vertex {
     // position
     glm::vec3 Position;
@@ -47,6 +49,9 @@ public:
 
     // constructor
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
+
+    // destructor
+    ~Mesh();
 
     // render the mesh
     void draw(Shader shader);

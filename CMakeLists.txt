@@ -3,6 +3,8 @@ project(KEngine VERSION 0.1.0 LANGUAGES C CXX)
 
 find_package(OpenGL REQUIRED COMPONENTS OpenGL)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # === GLFW Config ===
 set(GLFW_ROOT "${CMAKE_SOURCE_DIR}/libs/glfw-3.4")
 include_directories(${GLFW_ROOT}/include)
@@ -12,6 +14,24 @@ link_directories(${GLFW_ROOT}/static)
 set(ASSIMP_ROOT "${CMAKE_SOURCE_DIR}/libs/assimp-5.4.3")
 include_directories(${ASSIMP_ROOT}/include)
 link_directories(${ASSIMP_ROOT}/static)
+
+# === Bullet3 Config ===
+set(BULLET3_ROOT "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25")
+include_directories(${BULLET3_ROOT}/include)
+link_directories(${BULLET3_ROOT}/static)
+
+# === ImGui Config ===
+set(IMGUI_ROOT "${CMAKE_SOURCE_DIR}/libs/imgui-1.91.9b")
+set(IMGUI_SRC
+    ${IMGUI_ROOT}/imgui.cpp
+    ${IMGUI_ROOT}/imgui_draw.cpp
+    ${IMGUI_ROOT}/imgui_widgets.cpp
+    ${IMGUI_ROOT}/imgui_tables.cpp
+    ${IMGUI_ROOT}/backends/imgui_impl_glfw.cpp
+    ${IMGUI_ROOT}/backends/imgui_impl_opengl3.cpp
+)
+include_directories(${IMGUI_ROOT})
+include_directories(${IMGUI_ROOT}/backends)
 
 # Include headers
 include_directories(include)
@@ -31,20 +51,36 @@ add_library(KEngine SHARED
     src/modules/Mesh.cpp
     src/modules/Model.cpp
 
-    src/utils/3DUtils.cpp
+    src/world/entity/EntityConvexHull.cpp
+    src/world/entity/EntityTriangleMesh.cpp
+
+    src/utils/GameUtils.cpp
     src/utils/stb_image.c
     src/utils/glad.c
+
+    ${IMGUI_SRC}
 )
 
 if (UNIX AND NOT APPLE) # Linux
     target_link_libraries(${PROJECT_NAME} glfw3 OpenGL::OpenGL assimp Xrandr Xi dl)
 elseif (WIN32)
-    target_link_libraries(${PROJECT_NAME} glfw3dll opengl32 assimp)
+    target_link_libraries(${PROJECT_NAME} glfw3dll opengl32 assimp
+        libBullet2FileLoader
+        libBullet3Collision
+        libBullet3Common
+        libBullet3Dynamics
+        libBullet3Geometry
+        libBullet3OpenCL_clew
+        libBulletCollision
+        libBulletDynamics
+        libBulletInverseDynamics
+        libBulletSoftBody
+        libLinearMath
+    )
 elseif (APPLE)
     target_link_libraries(${PROJECT_NAME} glfw3 "-framework OpenGL" "-framework Cocoa" "-framework IOKit" "-framework CoreVideo")
 endif()
 
-# Sample test application
 add_executable(sample_executable src/sample/sample.cpp)
 target_link_libraries(sample_executable KEngine)
 
@@ -70,7 +106,22 @@ function(copy_resource target src_path)
   endif()
 endfunction()
 
-copy_resource(sample_executable "${PROJECT_SOURCE_DIR}/libs/glfw-3.4/bin/glfw3.dll")
-copy_resource(sample_executable "${PROJECT_SOURCE_DIR}/libs/assimp-5.4.3/bin/libassimp-5.dll")
+function(copy_resource_files target src_dir)
+  file(GLOB files_to_copy "${src_dir}/*")
+
+  foreach(file_path IN LISTS files_to_copy)
+    get_filename_component(file_name "${file_path}" NAME)
+    add_custom_command(TARGET ${target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${file_path}"
+        "$<TARGET_FILE_DIR:${target}>/${file_name}"
+      COMMENT "Copying ${file_name} to output directory"
+    )
+  endforeach()
+endfunction()
+
+copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/glfw-3.4/bin")
+copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/assimp-5.4.3/bin")
+copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/bullet3-3.25/bin")
 copy_resource(sample_executable "${PROJECT_SOURCE_DIR}/shaders")
 copy_resource(sample_executable "${PROJECT_SOURCE_DIR}/models")

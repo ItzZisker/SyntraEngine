@@ -1,12 +1,15 @@
 {
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "clangd.arguments": ["--compile-commands-dir=out/build/clang"],
+  "clangd.path": "C:/msys64/mingw64/bin/clangd.exe",
   "cmake.generator": "Ninja",
-  "cmake.cmakePath": "cmake",
   "cmake.configureSettings": {
     "CMAKE_C_COMPILER": "clang",
-    "CMAKE_CXX_COMPILER": "clang++"
+    "CMAKE_CXX_COMPILER": "clang++",
+    "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
   },
-  "cmake.buildDirectory": "${workspaceFolder}/out/build/clang",
-  "cmake.installPrefix": "${workspaceFolder}/out/install/clang",
+  "cmake.buildDirectory": "out/build/clang",
+  "cmake.installPrefix": "out/install/clang",
   "cmake.buildBeforeRun": true,
   "cmake.configureOnOpen": true,
   "files.associations": {
@@ -80,6 +83,9 @@
     "text_encoding": "cpp",
     "thread": "cpp",
     "typeinfo": "cpp",
-    "variant": "cpp"
+    "variant": "cpp",
+    "xutility": "cpp",
+    "xstring": "cpp",
+    "ranges": "cpp"
   }
 }

@@ -1,24 +1,26 @@
 #pragma once
 
 #include <KEngine/KEngine.hpp>
+#include <KEngine/world/World.hpp>
+#include <KEngine/world/WorldObject.hpp>
 #include <KEngine/modules/Shader.hpp>
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-class Camera : public kcomp::WorldObject
+class Camera : public WorldObject
 {
 public:
-    Camera(kcomp::World* world, glm::vec3 position, glm::vec3 target, glm::vec3 up);
+    Camera(World* world, glm::vec3 position, glm::vec3 target, glm::vec3 up);
 
-    Camera(kcomp::World* world, glm::vec3 position, float yaw, float pitch, glm::vec3 up);
+    Camera(World* world, glm::vec3 position, float yaw, float pitch, glm::vec3 up);
 
-    Camera(kcomp::World* world, glm::vec3 position, glm::vec3 target);
+    Camera(World* world, glm::vec3 position, glm::vec3 target);
 
-    Camera(kcomp::World* world, glm::vec3 position, float yaw, float pitch);
+    Camera(World* world, glm::vec3 position, float yaw, float pitch);
 
-    void render(kwindow::GameWindow *window) override;
+    void render(GameWindow *window) override;
 
     void setDirection(glm::vec3 direction) override;
 
