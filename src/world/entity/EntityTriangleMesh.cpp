@@ -36,8 +36,10 @@ void EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
 
     shape = new btBvhTriangleMeshShape(triangleMesh, useQuantizedAabbCompression);
 
-    btVector3 pos = GameUtils::toBulletVector(model->getPosition());
-    btDefaultMotionState* motionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), pos));
+    btDefaultMotionState* motionState = new btDefaultMotionState(btTransform(
+        GameUtils::getBulletRotationFromTransform(model->getTransform()),
+        GameUtils::toBulletVector(model->getPosition())
+    ));
 
     body = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(mass, motionState, shape, btVector3(0, 0, 0)));
     world->getDynamics()->addRigidBody(body);
@@ -47,17 +49,6 @@ void EntityTriangleMesh::render(GameWindow* window) {
     model->render(window);
 
     btTransform transform;
-    
     body->getMotionState()->getWorldTransform(transform);
-
-    btVector3 pos = transform.getOrigin();
-    model->setPosition(glm::vec3(pos.x(), pos.y(), pos.z()));
-    
-    float yaw, pitch, roll;
-    transform.getRotation().getEulerZYX(yaw, pitch, roll);
-    model->setEuler(
-        glm::degrees(yaw),
-        glm::degrees(pitch),
-        glm::degrees(roll)
-    );
+    model->setTransform(GameUtils::fromBulletTransform(transform));
 }

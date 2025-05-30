@@ -1,5 +1,6 @@
 #pragma once
 
+#include "glm/trigonometric.hpp"
 #include <KEngine/engine/RenderTable.hpp>
 #include <KEngine/world/World.hpp>
 #include <KEngine/utils/GameUtils.hpp>
@@ -8,52 +9,50 @@
 
 class CoordinatedObject : public Renderable {
 protected:
-    glm::vec3 position, direction;
-    float roll;
+    glm::mat4 transform = glm::mat4(1.0f);
 public:
-    virtual float getYaw() {
-        return direction.x == 0 ? (direction.z >= 0 ? 90.0f : 270.0f) : glm::atan(direction.z / direction.x);
+    virtual const glm::mat4& getTransform() {
+        return transform;
     }
 
-    virtual float getPitch() { 
-        return glm::asin(direction.y);
+    virtual glm::vec3 getPosition() const {
+        return glm::vec3(transform[3]);
     }
 
-    virtual float getRoll() {
-        return roll;
+    virtual glm::vec3 getDirection() const {
+        return glm::normalize(glm::vec3(-transform[2]));
     }
 
-    virtual glm::vec3 getPosition() { 
-        return glm::vec3(position);
+    virtual float getYaw() const {
+        glm::vec3 dir = getDirection();
+        return glm::degrees(atan2(dir.x, -dir.z));
     }
 
-    virtual glm::vec3 getDirection() {
-        return glm::vec3(direction);
+    virtual float getPitch() const {
+        return glm::degrees(asin(getDirection().y));
     }
 
-    virtual void setYaw(float yaw) {
-        setDirection(GameUtils::directionOf(yaw, getPitch()));
+    virtual void setTransform(const glm::mat4& transform) {
+        this->transform = transform;
     }
 
-    virtual void setPitch(float pitch) {
-        setDirection(GameUtils::directionOf(getYaw(), pitch));
+    virtual void setPosition(const glm::vec3& pos) {
+        transform[3] = glm::vec4(pos, 1.0f);
     }
 
-    virtual void setRoll(float roll) {
-        this->roll = roll;
-    }
+    virtual void setDirection(const glm::vec3& dir) {
+        glm::vec3 forward = glm::normalize(dir);
+        glm::vec3 worldUp = glm::vec3(0, 1, 0);
+        glm::vec3 right = glm::normalize(glm::cross(worldUp, forward));
+        glm::vec3 up = glm::normalize(glm::cross(forward, right));
 
-    virtual void setEuler(float yaw, float pitch, float roll) {
-        setDirection(GameUtils::directionOf(yaw, pitch));
-        this->roll = roll;
-    }
+        glm::mat4 rotation(1.0f);
+        rotation[0] = glm::vec4(right, 0.0f);
+        rotation[1] = glm::vec4(up, 0.0f);
+        rotation[2] = glm::vec4(-forward, 0.0f);
+        rotation[3] = transform[3];
 
-    virtual void setDirection(glm::vec3 direction) {
-        this->direction = direction;
-    }
-
-    virtual void setPosition(glm::vec3 position) {
-        this->position = position;
+        transform = rotation;
     }
 };
 
@@ -62,8 +61,6 @@ protected:
     World *world;
 public:
     WorldObject(World *initialWorld) : world(initialWorld) {}
-
-    virtual void render(GameWindow *window) = 0;
 
     void setWorld(World *world) {
         this->world = world; 

@@ -1,5 +1,6 @@
 #include "KEngine/modules/Mesh.hpp"
 #include <KEngine/modules/Model.hpp>
+#include <KEngine/utils/GameUtils.hpp>
 
 #include <iostream>
 
@@ -35,13 +36,7 @@ void Model::loadModel(bool flipTextures) {
 }
 
 void Model::render(GameWindow* window) {
-    glm::mat4 transform = glm::mat4(1.0f);
-
-    transform = glm::translate(transform, position);
-
-    transform = glm::rotate(transform, glm::radians(getYaw()), glm::vec3(0, 1, 0)); // Yaw
-    transform = glm::rotate(transform, glm::radians(getPitch()), glm::vec3(1, 0, 0)); // Pitch
-    transform = glm::rotate(transform, glm::radians(getRoll()), glm::vec3(0, 0, 1)); // Roll
+    if (!loaded) return;
 
     Shader batchShader = window->getBatchShader();
 
@@ -51,6 +46,7 @@ void Model::render(GameWindow* window) {
 }
 
 void Model::draw(Shader &shader) {
+    if (!loaded) return;
     for (unsigned int i = 0; i < meshes.size(); i++)
         meshes[i].draw(shader);
 }

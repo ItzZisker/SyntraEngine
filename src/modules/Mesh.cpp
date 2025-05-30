@@ -32,12 +32,12 @@ Mesh::~Mesh() {
 }
 
 void Mesh::draw(Shader shader) {
+    if (!loaded) return;
+
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
     unsigned int normalNr = 1;
     unsigned int heightNr = 1;
-
-    shader.setFloat("shininess", 32.0f);
 
     if (textures.empty()) {
         glBindTexture(GL_TEXTURE_2D, getDefaultWhiteTexture());
@@ -66,9 +66,9 @@ void Mesh::draw(Shader shader) {
     // draw mesh
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-
+        
     // always good practice to set everything back to defaults once configured.
+    glBindVertexArray(0);
     glActiveTexture(GL_TEXTURE0);
 }
 
@@ -113,4 +113,6 @@ void Mesh::setupMesh() {
     glEnableVertexAttribArray(6);
     glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, m_Weights));
     glBindVertexArray(0);
+
+    loaded = true;
 }

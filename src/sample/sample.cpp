@@ -5,7 +5,6 @@
 #include <KEngine/world/entity/EntityConvexHull.hpp>
 #include <KEngine/world/entity/EntityTriangleMesh.hpp>
 
-#include <iostream>
 #include <stb/stb_image.h>
 
 #include <glm/glm.hpp>
@@ -38,12 +37,10 @@ EntityTriangleMesh* sceneEntity;
 
 Camera* camera;
 
-bool hasRollingFriction = true;
-float mass = 0.2f, friction = 1.0f, rollingFriction = 0.3f, linearDamping = 0.8f, angularDamping = 0.2f;
-
 void applyVelocity(glm::vec3 targetVelocity) {
     btRigidBody* body = appleEntity->getBody();
 
+    body->activate();
     if (body->getLinearVelocity().length2() <= 3) {
         targetVelocity *= (3 / targetVelocity.length());
     }
@@ -81,7 +78,7 @@ void glfw_process_mouse(GLFWwindow *glfwWindow, double xpos, double ypos) {
     yaw = fmod(yaw, 360.0f);
     pitch = glm::clamp(pitch, -89.0f, 89.0f);
 
-    camera->setEuler(yaw, pitch, camera->getRoll());
+    camera->setDirection(GameUtils::directionOf(yaw, pitch));
 }
 
 void glfw_process_keys(GLFWwindow *glfwWindow) {
@@ -187,26 +184,27 @@ void init(GameWindow *window) {
     overWorld = new World(0, "overworld");
     camera = new Camera(overWorld, glm::vec3(5.0f, 0.0f, 5.0f), yaw, pitch);
 
-    appleModel = new Model("models/apple/kossher.obj");
+    appleModel = new Model("models/apple/apple.obj");
     appleModel->loadModel();
 
     sceneModel = new Model("models/scene/test.obj");
     sceneModel->loadModel();
 
-    appleEntity = new EntityConvexHull(overWorld, mass, appleModel);
+    appleEntity = new EntityConvexHull(overWorld, 0.2f, appleModel);
     sceneEntity = new EntityTriangleMesh(overWorld, 0.0f, sceneModel);
 
-    appleEntity->load();
+    appleEntity->load(false);    
     sceneEntity->load();
 
     glEnable(GL_DEPTH_TEST);
+    glFrontFace(GL_CCW); // or GL_CW depending on your asset
 
     int height = window->getWindowHeight();
     int width = window->getWindowWidth();
 
     projection = glm::perspective(glm::radians(65.0f), (float)width / (float)height, 0.1f, 100.0f);
 
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
     glfwSetFramebufferSizeCallback(window->getGLFWWindowPtr(), glfw_framebuffer_resize_callback);
     glfwSetInputMode(window->getGLFWWindowPtr(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -218,6 +216,8 @@ void init(GameWindow *window) {
     Shader batchShader = window->getBatchShader();
 
     batchShader.use();
+    batchShader.setFloat("shininess", 32.0f);
+
     batchShader.setMatrix4("projection", projection, 1, GL_FALSE);
 
     batchShader.setVec3f("dirLight.direction", -0.2f, -1.0f, -0.3f);
@@ -249,36 +249,16 @@ void render_ImGui() {
 
     ImGui::Begin("Debug");
 
-    ImGui::Checkbox("hasRollingFriction", &hasRollingFriction);
-    ImGui::SliderFloat("mass", &mass, 0.0f, 10.0f);
-    ImGui::SliderFloat("friction", &friction, 0.0f, 1.0f);
-    ImGui::SliderFloat("rollingFriction", &rollingFriction, 0.0f, 1.0f);
-    ImGui::SliderFloat("linearDamping", &linearDamping, 0.0f, 1.0f);
-    ImGui::SliderFloat("angularDamping", &angularDamping, 0.0f, 1.0f);
-
     if (ImGui::Button("Reset")) {
-        std::cout << 1 << std::endl;
         if (appleEntity) {
-            std::cout << 2 << std::endl;
             window.getRenderTable()->remove("apple");
-            std::cout << 3 << std::endl;
             delete appleEntity;
-            std::cout << 4 << std::endl;
         }
 
-        std::cout << 5 << std::endl;
-        appleEntity = new EntityConvexHull(overWorld, mass, appleModel);
-        appleEntity->hasRollingFriction = hasRollingFriction;
-        appleEntity->friction = friction;
-        appleEntity->rollingFriction = rollingFriction;
-        appleEntity->linearDamping = linearDamping;
-        appleEntity->angularDamping = angularDamping;
-        std::cout << 6 << std::endl;
+        appleEntity = new EntityConvexHull(overWorld, 0.2f, appleModel);
         appleEntity->load();
-        std::cout << 7 << std::endl;
 
         window.getRenderTable()->add("apple", appleEntity);
-        std::cout << 8 << std::endl;
     }
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
     ImGui::End();
@@ -288,6 +268,7 @@ void render_ImGui() {
 }
 
 int main() {
+    window.withHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
     window.addInitTask([](GameWindow *window){ init(window); });
     window.addRenderTask([](GameWindow *window){ 
         render_Inputs(window);

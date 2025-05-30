@@ -12,7 +12,7 @@ class EntityConvexHull : public WorldObject
 private:
     Model* model;
     btRigidBody* body;
-    btConvexHullShape* shape = new btConvexHullShape();
+    btConvexHullShape* shape;
     float mass;
 public:
     bool hasRollingFriction = true;

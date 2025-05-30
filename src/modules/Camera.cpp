@@ -1,10 +1,13 @@
+#include "glm/fwd.hpp"
 #include <KEngine/modules/Camera.hpp>
 
 Camera::Camera(World* world, glm::vec3 position, glm::vec3 target, glm::vec3 up)
-    : WorldObject(world), up(up) {
-    this->position = position;
-    this->direction = glm::normalize(target - position);
-    this->viewMatrix = glm::lookAt(position, target, up);
+    : WorldObject(world) {
+    glm::vec3 dir = glm::normalize(target - position);
+    setUp(up);
+    setDirection(dir);
+    setPosition(position);
+    updateViewMatrix();
 }
 
 Camera::Camera(World* world, glm::vec3 position, float yaw, float pitch, glm::vec3 up)
@@ -16,45 +19,56 @@ Camera::Camera(World* world, glm::vec3 position, float yaw, float pitch, glm::ve
              up) {}
 
 Camera::Camera(World* world, glm::vec3 position, glm::vec3 target)
-    : Camera(world, position, target, glm::vec3(0.0f, 1.0f, 0.0f)) {}
+    : Camera(world, position, target, glm::vec3(0, 1, 0)) {}
 
 Camera::Camera(World* world, glm::vec3 position, float yaw, float pitch)
-    : Camera(world, position, yaw, pitch, glm::vec3(0.0f, 1.0f, 0.0f)) {}
+    : Camera(world, position, yaw, pitch, glm::vec3(0, 1, 0)) {}
 
-void Camera::render(GameWindow *window) {
+void Camera::render(GameWindow* window) {
     updateViewMatrix();
 
     Shader batchShader = window->getBatchShader();
     batchShader.use();
     batchShader.setMatrix4("view", viewMatrix, 1, GL_FALSE);
-    batchShader.setVec3f("viewPos", position);
-    batchShader.setVec3f("spotLight.position", position);
-    batchShader.setVec3f("spotLight.direction", direction);
+    batchShader.setVec3f("viewPos", getPosition());
+    batchShader.setVec3f("spotLight.position", getPosition());
+    batchShader.setVec3f("spotLight.direction", getDirection());
 }
 
 void Camera::updateViewMatrix() {
-    this->viewMatrix = glm::lookAt(position, position + direction, up);
+    glm::vec3 pos = getPosition();
+    glm::vec3 dir = getDirection();
+    viewMatrix = glm::lookAt(pos, pos + dir, up);
 }
 
 glm::mat4 Camera::getViewMatrix() {
-    return this->viewMatrix;
+    return viewMatrix;
 }
 
 glm::vec3 Camera::getUp() {
-    return this->up;
+    return glm::normalize(glm::vec3(transform[1])); // Up vector
 }
 
-void Camera::setUp(glm::vec3 up) {
-    this->up = up;
+void Camera::setUp(glm::vec3 newUp) {
+    glm::vec3 forward = getDirection();
+    glm::vec3 right = glm::normalize(glm::cross(newUp, forward));
+    glm::vec3 up = glm::normalize(glm::cross(forward, right));
+
+    glm::mat4 rotation = glm::mat4(1.0f);
+    rotation[0] = glm::vec4(right, 0.0f);
+    rotation[1] = glm::vec4(up, 0.0f);
+    rotation[2] = glm::vec4(-forward, 0.0f);
+    rotation[3] = transform[3];
+
+    transform = rotation;
     updateViewMatrix();
 }
-
-void Camera::setPosition(glm::vec3 position) {
+void Camera::setPosition(const glm::vec3& position) {
     WorldObject::setPosition(position);
     updateViewMatrix();
 }
 
-void Camera::setDirection(glm::vec3 direction) {
+void Camera::setDirection(const glm::vec3& direction) {
     WorldObject::setDirection(direction);
     updateViewMatrix();
 }

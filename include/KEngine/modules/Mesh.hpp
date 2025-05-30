@@ -46,6 +46,8 @@ public:
     unsigned int VAO;
     // render data 
     unsigned int VBO, EBO;
+    // loaded or not
+    bool loaded;
 
     // constructor
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
