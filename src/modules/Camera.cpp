@@ -4,8 +4,8 @@
 Camera::Camera(World* world, glm::vec3 position, glm::vec3 target, glm::vec3 up)
     : WorldObject(world) {
     glm::vec3 dir = glm::normalize(target - position);
-    setUp(up);
     setDirection(dir);
+    setUp(up);
     setPosition(position);
     updateViewMatrix();
 }
