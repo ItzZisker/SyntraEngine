@@ -85,50 +85,44 @@ endif()
 add_executable(sample_executable src/sample/sample.cpp)
 target_link_libraries(sample_executable KEngine)
 
-# function(copy_resource target src_path)
-#   get_filename_component(dir_name "${src_path}" NAME)
-#   set(dst_path "$<TARGET_FILE_DIR:${target}>/${dir_name}")
+function(copy_resource target src_path)
+  if(IS_DIRECTORY "${src_path}")
+    get_filename_component(dir_name "${src_path}" NAME)
+    add_custom_command(TARGET ${target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${src_path}"
+        "$<TARGET_FILE_DIR:${target}>/${dir_name}"
+      COMMENT "Copying directory ${dir_name} to output directory"
+    )
+  elseif(EXISTS "${src_path}")
+    get_filename_component(file_name "${src_path}" NAME)
+    add_custom_command(TARGET ${target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${src_path}"
+        "$<TARGET_FILE_DIR:${target}>/${file_name}"
+      COMMENT "Copying file ${file_name} to output directory"
+    )
+  else()
+    message(WARNING "Path '${src_path}' does not exist.")
+  endif()
+endfunction()
 
-#   # Only copy if the target folder does not already exist
-#   if(IS_DIRECTORY "${src_path}")
-#     add_custom_command(TARGET ${target} POST_BUILD
-#       COMMAND ${CMAKE_COMMAND} -E echo_append "Checking if ${dst_path} exists... "
-#       COMMAND ${CMAKE_COMMAND} -E make_directory "${dst_path}"
-#       COMMAND ${CMAKE_COMMAND} -E copy_directory_if_not_exists "${src_path}" "${dst_path}"
-#       COMMENT "Conditionally copying directory ${dir_name} to output directory"
-#     )
-#   elseif(EXISTS "${src_path}")
-#     get_filename_component(file_name "${src_path}" NAME)
-#     add_custom_command(TARGET ${target} POST_BUILD
-#       COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#         "${src_path}"
-#         "$<TARGET_FILE_DIR:${target}>/${file_name}"
-#       COMMENT "Copying file ${file_name} to output directory"
-#     )
-#   else()
-#     message(WARNING "Path '${src_path}' does not exist.")
-#   endif()
-# endfunction()
+function(copy_resource_files target src_dir)
+  file(GLOB files_to_copy "${src_dir}/*")
 
-# function(copy_resource_files target src_dir)
-#   file(GLOB_RECURSE files_to_copy "${src_dir}/*")
+  foreach(file_path IN LISTS files_to_copy)
+    get_filename_component(file_name "${file_path}" NAME)
+    add_custom_command(TARGET ${target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${file_path}"
+        "$<TARGET_FILE_DIR:${target}>/${file_name}"
+      COMMENT "Copying ${file_name} to output directory"
+    )
+  endforeach()
+endfunction()
 
-#   foreach(file_path IN LISTS files_to_copy)
-#     file(RELATIVE_PATH rel_path "${src_dir}" "${file_path}")
-#     get_filename_component(dir_path "${rel_path}" DIRECTORY)
-#     set(dst_dir "$<TARGET_FILE_DIR:${target}>/${dir_path}")
-#     set(dst_file "$<TARGET_FILE_DIR:${target}>/${rel_path}")
-
-#     add_custom_command(TARGET ${target} POST_BUILD
-#       COMMAND ${CMAKE_COMMAND} -E make_directory "${dst_dir}"
-#       COMMAND ${CMAKE_COMMAND} -E copy_if_different "${file_path}" "${dst_file}"
-#       COMMENT "Copying ${rel_path} to output directory"
-#     )
-#   endforeach()
-# endfunction()
-
-# copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/glfw-3.4/bin")
-# copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/assimp-5.4.3/bin")
-# copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/bullet3-3.25/bin")
-# copy_resource(sample_executable "${PROJECT_SOURCE_DIR}/shaders")
-# copy_resource(sample_executable "${PROJECT_SOURCE_DIR}/models")
+copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/glfw-3.4/bin")
+copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/assimp-5.4.3/bin")
+copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/bullet3-3.25/bin")
+copy_resource(sample_executable "${PROJECT_SOURCE_DIR}/shaders")
+copy_resource(sample_executable "${PROJECT_SOURCE_DIR}/models")
