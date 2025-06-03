@@ -52,6 +52,7 @@ add_library(KEngine SHARED
     src/modules/Mesh.cpp
     src/modules/Model.cpp
 
+    src/world/World.cpp
     src/world/entity/EntityConvexHull.cpp
     src/world/entity/EntityTriangleMesh.cpp
 

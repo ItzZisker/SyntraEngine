@@ -1,4 +1,5 @@
 #include <KEngine/modules/Mesh.hpp>
+#include <KEngine/utils/GameUtils.hpp>
 
 GLuint defaultWhiteTexture;
 
@@ -68,7 +69,7 @@ void Mesh::draw(Shader shader) {
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
-        
+
     glBindVertexArray(0);
     glActiveTexture(GL_TEXTURE0);
 }

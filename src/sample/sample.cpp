@@ -28,7 +28,9 @@ double lastX, lastY;
 bool firstMouse, mouseCaptured = true;
 
 World* overWorld;
-Model* appleModel, *sceneModel;
+
+Model* appleModel;
+Model* sceneModel;
 
 EntityConvexHull* appleEntity;
 EntityTriangleMesh* sceneEntity;

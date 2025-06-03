@@ -1,3 +1,4 @@
+#include "KEngine/world/WorldObject.hpp"
 #include "LinearMath/btTransform.h"
 #include "glm/fwd.hpp"
 #include "glm/gtc/quaternion.hpp"
@@ -14,9 +15,16 @@ long GameUtils::currentTime() {
 }
 
 void GameUtils::debugGLError() {
+    debugGLError("");
+}
+
+void GameUtils::debugGLError(const std::string& comment) {
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR) {
-        std::cerr << "GL Error: " << err << std::endl;
+        if (comment.empty())
+            std::cerr << "GL Error: " << err << std::endl;
+        else
+            std::cerr << "GL Error: " << err << " (" << comment << ")" << std::endl;
     }
 }
 

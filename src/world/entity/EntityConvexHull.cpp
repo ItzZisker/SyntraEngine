@@ -19,16 +19,16 @@ void EntityConvexHull::load(bool enablePolyhedral) {
     }
 
     int numPoints = 0;
-    for (const Mesh& mesh : model->meshes) {
-        numPoints += mesh.vertices.size();
+    for (const Mesh* mesh : model->meshes) {
+        numPoints += mesh->vertices.size();
     }
 
     float* points = new float[3 * numPoints];
 
     long captured = GameUtils::currentTime();
     int i = 0;
-    for (const Mesh& mesh : model->meshes) {
-        for (const Vertex& vertex : mesh.vertices) {
+    for (const Mesh* mesh : model->meshes) {
+        for (const Vertex& vertex : mesh->vertices) {
             glm::vec3 vec = vertex.position;
             points[i++] = vec[0];
             points[i++] = vec[1];

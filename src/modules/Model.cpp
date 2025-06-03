@@ -10,6 +10,7 @@ Model::Model(std::string const &path, bool gamma) : gammaCorrection(gamma), path
 
 Model::~Model() {
     textures_loaded.clear();
+    for (const Mesh* mesh : meshes) delete mesh;
     meshes.clear();
     loaded = false;
 }
@@ -43,7 +44,7 @@ void Model::render(GameWindow* window) {
 void Model::draw(Shader &shader) {
     if (!loaded) return;
     for (unsigned int i = 0; i < meshes.size(); i++)
-        meshes[i].draw(shader);
+        meshes[i]->draw(shader);
 }
 
 void Model::processNode(aiNode *node, const aiScene *scene) {
@@ -56,14 +57,14 @@ void Model::processNode(aiNode *node, const aiScene *scene) {
     }
 }
 
-Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene) {
+Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene) {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;
 
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
         Vertex vertex;
-        glm::vec3 vector;
+        glm::vec3 vector(0.0f);
 
         vector.x = mesh->mVertices[i].x;
         vector.y = mesh->mVertices[i].y;
@@ -78,7 +79,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene) {
         }
 
         if (mesh->mTextureCoords[0]) {
-            glm::vec2 vec;
+            glm::vec2 vec(0.0f);
 
             vec.x = mesh->mTextureCoords[0][i].x;
             vec.y = mesh->mTextureCoords[0][i].y;
@@ -121,7 +122,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene) {
     std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
-    return Mesh(vertices, indices, textures);
+    return new Mesh(vertices, indices, textures);
 }
 
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName) {
