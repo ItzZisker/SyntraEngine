@@ -29,7 +29,7 @@ void EntityConvexHull::load(bool enablePolyhedral) {
     int i = 0;
     for (const Mesh& mesh : model->meshes) {
         for (const Vertex& vertex : mesh.vertices) {
-            glm::vec3 vec = vertex.Position;
+            glm::vec3 vec = vertex.position;
             points[i++] = vec[0];
             points[i++] = vec[1];
             points[i++] = vec[2];

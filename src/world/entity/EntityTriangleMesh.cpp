@@ -27,9 +27,9 @@ void EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
             Vertex v2 = mesh.vertices[mesh.indices[i + 2]];
 
             triangleMesh->addTriangle(
-                GameUtils::toBulletVector(v0.Position),
-                GameUtils::toBulletVector(v1.Position),
-                GameUtils::toBulletVector(v2.Position)
+                GameUtils::toBulletVector(v0.position),
+                GameUtils::toBulletVector(v1.position),
+                GameUtils::toBulletVector(v2.position)
             );
         }
     }

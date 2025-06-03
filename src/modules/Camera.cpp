@@ -46,7 +46,7 @@ glm::mat4 Camera::getViewMatrix() {
 }
 
 glm::vec3 Camera::getUp() {
-    return glm::normalize(glm::vec3(transform[1])); // Up vector
+    return glm::normalize(glm::vec3(transform[1]));
 }
 
 void Camera::setUp(glm::vec3 newUp) {

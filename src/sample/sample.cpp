@@ -28,9 +28,7 @@ double lastX, lastY;
 bool firstMouse, mouseCaptured = true;
 
 World* overWorld;
-
-Model* appleModel;
-Model* sceneModel;
+Model* appleModel, *sceneModel;
 
 EntityConvexHull* appleEntity;
 EntityTriangleMesh* sceneEntity;
@@ -45,10 +43,6 @@ void applyVelocity(glm::vec3 targetVelocity) {
         targetVelocity *= (3 / targetVelocity.length());
     }
     body->applyCentralImpulse(GameUtils::toBulletVector(targetVelocity));
-}
-
-void applyTorque(glm::vec3 targetVelocity) {
-    appleEntity->getBody()->applyTorque(GameUtils::toBulletVector(targetVelocity));
 }
 
 void glfw_process_mouse(GLFWwindow *glfwWindow, double xpos, double ypos) {
@@ -197,7 +191,7 @@ void init(GameWindow *window) {
     sceneEntity->load();
 
     glEnable(GL_DEPTH_TEST);
-    glFrontFace(GL_CCW); // or GL_CW depending on your asset
+    glFrontFace(GL_CCW);
 
     int height = window->getWindowHeight();
     int width = window->getWindowWidth();
