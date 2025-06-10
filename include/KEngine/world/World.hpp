@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 #include <string>
 
-class World : public Renderable {
+class World : public WindowRenderable {
 private:
     btDynamicsWorld* dynamicsWorld;
 public:
@@ -19,7 +19,7 @@ public:
 
     World(unsigned int id, std::string name, glm::vec3 gravity = glm::vec3(0.0f, -9.81f, 0.0f));
 
-    void render(GameWindow* window) override;
+    void render(GameWindow* window, int parentFBO) override;
 
     btDynamicsWorld* getDynamics() {
         return this->dynamicsWorld;

@@ -1,7 +1,7 @@
-# Blender 4.3.0 MTL File: 'None'
+# Blender 4.4.3 MTL File: 'apple.blend'
 # www.blender.org
 
-newmtl Apple_skin
+newmtl Apple_skin.001
 Ns 96.078453
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000

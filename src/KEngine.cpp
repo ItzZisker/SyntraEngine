@@ -1,3 +1,4 @@
+#include "KEngine/engine/RenderTable.hpp"
 #include <KEngine/KEngine.hpp>
 
 #include <iostream>
@@ -22,10 +23,6 @@ GameWindow::GameWindow(std::string title, int initialWidth, int initialHeight) {
     withHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    addInitTask([](GameWindow *window)
-    {
-        window->batchShader.init();
-    });
     addRenderTask([](GameWindow *window)
     {
         static double previousTime = glfwGetTime();
@@ -36,14 +33,14 @@ GameWindow::GameWindow(std::string title, int initialWidth, int initialHeight) {
     });
     addRenderTask([](GameWindow *window)
     {
-        glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     });
     addRenderTask([](GameWindow *window)
     {
-        window->renderTable->forEach([window](const std::string& name, Renderable* renderable)
+        window->windowRenderTable->forEach([window](const std::string& name, WindowRenderable* renderable)
         {
-            renderable->render(window);
+            renderable->render(window, 0);
         });
     });
 }
@@ -59,7 +56,7 @@ void GameWindow::withHint(int hint, int value) {
         window_hints.insert({hint, value});
 }
 
-int GameWindow::initWindow() {
+int GameWindow::initLoop() {
     glfwInit();
 
     for (auto entry : window_hints) {
@@ -133,12 +130,8 @@ GLFWwindow *GameWindow::getGLFWWindowPtr() {
     return glfwWindowPtr;
 }
 
-RenderTable* GameWindow::getRenderTable() {
-    return this->renderTable;
-}
-
-Shader GameWindow::getBatchShader() {
-    return this->batchShader;
+RenderTable<WindowRenderable>* GameWindow::getWindowRenderTable() {
+    return this->windowRenderTable;
 }
 
 int GameWindow::getWindowHeight() {

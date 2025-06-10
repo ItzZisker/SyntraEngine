@@ -19,14 +19,12 @@ public:
 
     Camera(World* world, glm::vec3 position, float yaw, float pitch);
 
-    void render(GameWindow* window) override;
-
     void setDirection(const glm::vec3& direction) override;
     
     void setPosition(const glm::vec3& position) override;
 
     glm::mat4 getViewMatrix();
-    
+
     glm::vec3 getUp();
 
     void setUp(glm::vec3 up);

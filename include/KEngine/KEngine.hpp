@@ -16,16 +16,12 @@
 class GameWindow {
 private:
     GLFWwindow *glfwWindowPtr;
-
-    Shader batchShader = Shader("shaders/batchVertex.glsl", "shaders/batchFrag.glsl");
-    RenderTable *renderTable = new RenderTable();
+    RenderTable<WindowRenderable> *windowRenderTable = new RenderTable<WindowRenderable>(); // Objects that being rendered by window
 
     double lastFrameTime;
 
     std::unordered_map<int, int> window_hints;
-
-    std::vector<std::function<void(GameWindow *)>> initTasks;
-    std::vector<std::function<void(GameWindow *)>> renderTasks;
+    std::vector<std::function<void(GameWindow *)>> initTasks, renderTasks;
 
     std::string title;
     int width, height;
@@ -40,7 +36,7 @@ public:
 
     void withHint(int hint, int value);
 
-    int initWindow();
+    int initLoop();
 
     void addRenderTask(std::function<void(GameWindow *)> task);
 
@@ -54,11 +50,9 @@ public:
 
     double getLastFrameTime();
 
-    RenderTable *getRenderTable();
+    RenderTable<WindowRenderable> *getWindowRenderTable();
 
     GLFWwindow *getGLFWWindowPtr();
-
-    Shader getBatchShader();
 
     int getWindowHeight();
 

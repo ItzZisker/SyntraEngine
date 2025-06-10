@@ -23,7 +23,7 @@ World::World(unsigned int id, std::string name, glm::vec3 gravity) : id(id), nam
     dynamicsWorld->setGravity(GameUtils::toBulletVector(gravity));
 }
 
-void World::render(GameWindow* window) {
+void World::render(GameWindow* window, int FBO) {
     if (!paused) {
         dynamicsWorld->stepSimulation(window->getLastFrameTime());
     }

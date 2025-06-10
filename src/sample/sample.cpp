@@ -3,25 +3,36 @@
 #include <KEngine/modules/Model.hpp>
 
 #include <KEngine/world/entity/EntityConvexHull.hpp>
-#include <KEngine/world/entity/EntityTriangleMesh.hpp>
+#include <KEngine/world/entity/EntityTriangleMeshCompound.hpp>
 
+#include <cstdlib>
 #include <stb/stb_image.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <string>
+#include <vector>
 
 #include "GLFW/glfw3.h"
+#include "KEngine/modules/CubemapFramebuffer.hpp"
+#include "KEngine/modules/Framebuffer.hpp"
+#include "KEngine/modules/Scene.hpp"
+#include "KEngine/modules/Shader.hpp"
+#include "KEngine/modules/Skybox.hpp"
+#include "glm/fwd.hpp"
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
 float moveAccel = 2.0f;
 
-GameWindow window("Sample", 800, 600);
+GameWindow *window;
+Scene *scene;
 
-glm::mat4 projection = glm::mat4(1.0f);
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+Framebuffer *framebuffer;
+CubemapFramebuffer *cubemapFramebuffer;
+Skybox *skybox;
 
 float yaw = 0, pitch;
 double lastX, lastY;
@@ -33,19 +44,9 @@ Model* appleModel;
 Model* sceneModel;
 
 EntityConvexHull* appleEntity;
-EntityTriangleMesh* sceneEntity;
+EntityTriangleMeshCompound* sceneEntity;
 
 Camera* camera;
-
-void applyVelocity(glm::vec3 targetVelocity) {
-    btRigidBody* body = appleEntity->getBody();
-
-    body->activate();
-    if (body->getLinearVelocity().length2() <= 3) {
-        targetVelocity *= (3 / targetVelocity.length());
-    }
-    body->applyCentralImpulse(GameUtils::toBulletVector(targetVelocity));
-}
 
 void glfw_process_mouse(GLFWwindow *glfwWindow, double xpos, double ypos) {
     if (!mouseCaptured) {
@@ -78,7 +79,7 @@ void glfw_process_mouse(GLFWwindow *glfwWindow, double xpos, double ypos) {
 }
 
 void glfw_process_keys(GLFWwindow *glfwWindow) {
-    const float cameraSpeed = 1.5f * window.getLastFrameTime(); // adjust accordingly
+    const float cameraSpeed = 1.5f * window->getLastFrameTime(); // adjust accordingly
     glm::vec3 horizontalDirection = glm::vec3(0.0f);
 
     horizontalDirection.x = cos(glm::radians(yaw));
@@ -92,29 +93,35 @@ void glfw_process_keys(GLFWwindow *glfwWindow) {
     if (glfwGetKey(glfwWindow, GLFW_KEY_UP) == GLFW_PRESS) {
         glm::vec3 dir(1.0f, 0.0f, 0.0f);
         dir.y = 0;
-        dir *= (window.getLastFrameTime() * moveAccel);
+        dir *= (window->getLastFrameTime() * moveAccel);
         moving += dir;
     }
     if (glfwGetKey(glfwWindow, GLFW_KEY_DOWN) == GLFW_PRESS) {
         glm::vec3 dir(-1.0f, 0.0f, 0.0f);
         dir.y = 0;
-        dir *= (window.getLastFrameTime() * moveAccel);
+        dir *= (window->getLastFrameTime() * moveAccel);
         moving += dir;
     }
     if (glfwGetKey(glfwWindow, GLFW_KEY_LEFT) == GLFW_PRESS) {
         glm::vec3 dir(0.0f, 0.0f, -1.0f);
         dir.y = 0;
-        dir *= (window.getLastFrameTime() * moveAccel);
+        dir *= (window->getLastFrameTime() * moveAccel);
         moving += dir;
     }
     if (glfwGetKey(glfwWindow, GLFW_KEY_RIGHT) == GLFW_PRESS) {
         glm::vec3 dir(0.0f, 0.0f, 1.0f);
         dir.y = 0;
-        dir *= (window.getLastFrameTime() * moveAccel);
+        dir *= (window->getLastFrameTime() * moveAccel);
         moving += dir;
     }
+    
+    btRigidBody* body = appleEntity->getBody();
 
-    applyVelocity(moving);
+    body->activate();
+    if (body->getLinearVelocity().length2() <= 3) {
+        moving *= (3 / moving.length());
+    }
+    body->applyCentralImpulse(GameUtils::toBulletVector(moving));
 
     if (glfwGetKey(glfwWindow, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraSpeed * horizontalDirection;
@@ -130,15 +137,6 @@ void glfw_process_keys(GLFWwindow *glfwWindow) {
         cameraPos -= cameraSpeed * cameraUp;
 
     camera->setPosition(cameraPos);
-
-    if (glfwGetKey(glfwWindow, GLFW_KEY_UP) == GLFW_PRESS)
-        lightPos += glm::vec3(1.0f, 0.0f, 0.0f) * cameraSpeed;
-    if (glfwGetKey(glfwWindow, GLFW_KEY_DOWN) == GLFW_PRESS)
-        lightPos -= glm::vec3(1.0f, 0.0f, 0.0f) * cameraSpeed;
-    if (glfwGetKey(glfwWindow, GLFW_KEY_LEFT) == GLFW_PRESS)
-        lightPos -= glm::vec3(0.0f, 0.0f, 1.0f) * cameraSpeed;
-    if (glfwGetKey(glfwWindow, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        lightPos += glm::vec3(0.0f, 0.0f, 1.0f) * cameraSpeed;
 
     if (glfwGetKey(glfwWindow, GLFW_KEY_P) == GLFW_PRESS)
         overWorld->paused = false;
@@ -158,77 +156,72 @@ void glfw_process_keys(GLFWwindow *glfwWindow) {
     }
 }
 
-void glfw_framebuffer_resize_callback(GLFWwindow *glfwWindow, int width, int height) {
-    glViewport(0, 0, width, height);
-    projection = glm::perspective(glm::radians(65.0f), (float)width / (float)height, 0.1f, 100.0f);
-
-    Shader batchShader = window.getBatchShader();
-    batchShader.use();
-    batchShader.setMatrix4("projection", projection, 1, GL_FALSE);
-}
-
-void init(GameWindow *window) {
+void init_ImGUI() {
     IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
 
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
     ImGui::StyleColorsDark();
 
     ImGui_ImplGlfw_InitForOpenGL(window->getGLFWWindowPtr(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
+}
 
+void init(GameWindow *window) {
     overWorld = new World(0, "overworld");
     camera = new Camera(overWorld, glm::vec3(5.0f, 0.0f, 5.0f), yaw, pitch);
 
-    appleModel = new Model("models/apple/apple.obj");
+    appleModel = new Model("models/apple2/apple.obj");
     appleModel->loadModel();
+    appleModel->renderable_meshes.insert("Apple");
 
-    sceneModel = new Model("models/scene/test.obj");
+    Mesh* appleMesh = appleModel->meshes.find("Apple")->second;
+    auto appleMotionState = [appleMesh](const glm::mat4& m) {
+        appleMesh->setTransform(m);
+    };
+    appleEntity = new EntityConvexHull(overWorld, 0.2f, appleModel->meshes["Hitbox"]);
+    appleEntity->setPosition(glm::vec3(0, 2, 0));
+    appleEntity->addMotionState("Apple", appleMotionState);
+    appleEntity->load(false);
+
+    sceneModel = new Model("models/wall/wall.obj");
     sceneModel->loadModel();
 
-    appleEntity = new EntityConvexHull(overWorld, 0.2f, appleModel);
-    sceneEntity = new EntityTriangleMesh(overWorld, 0.0f, sceneModel);
-
-    appleEntity->load(false);    
+    sceneEntity = new EntityTriangleMeshCompound(overWorld, sceneModel);
     sceneEntity->load();
 
-    glEnable(GL_DEPTH_TEST);
-    glFrontFace(GL_CCW);
+    scene = new Scene(camera, window);
+    scene->installCallbacks(window);
+    scene->getBatchRenderTable()->add("sceneModel", sceneModel);
+    //scene->getBatchRenderTable()->add("appleModel", appleModel);
 
-    int height = window->getWindowHeight();
-    int width = window->getWindowWidth();
+    skybox = new Skybox(scene, std::vector<std::string> {
+        "models/skybox/lightblue/right.png",
+        "models/skybox/lightblue/left.png",
+        "models/skybox/lightblue/top.png",
+        "models/skybox/lightblue/bot.png",
+        "models/skybox/lightblue/front.png",
+        "models/skybox/lightblue/back.png"
+    });
+    skybox->load();
+    scene->getBatchRenderTable()->add("skybox", skybox);
 
-    projection = glm::perspective(glm::radians(65.0f), (float)width / (float)height, 0.1f, 100.0f);
+    cubemapFramebuffer = new CubemapFramebuffer(scene);
+    cubemapFramebuffer->getReflectionRenderTable()->add("appleModel", appleModel);
+    cubemapFramebuffer->create(true);
+
+    framebuffer = new Framebuffer(scene);
+    framebuffer->getRenderTable()->add("scene", scene);
+    framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
+    framebuffer->create(window, true);
 
     glfwSwapInterval(1);
-    glfwSetFramebufferSizeCallback(window->getGLFWWindowPtr(), glfw_framebuffer_resize_callback);
     glfwSetInputMode(window->getGLFWWindowPtr(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    window->getRenderTable()->add("overWorld", overWorld);
-    window->getRenderTable()->add("camera", camera);
-    window->getRenderTable()->add("apple", appleEntity);
-    window->getRenderTable()->add("scene", sceneEntity);
-
-    Shader batchShader = window->getBatchShader();
-
-    batchShader.use();
-    batchShader.setFloat("shininess", 32.0f);
-
-    batchShader.setMatrix4("projection", projection, 1, GL_FALSE);
-
-    batchShader.setVec3f("dirLight.direction", -0.2f, -1.0f, -0.3f);
-    batchShader.setVec3f("dirLight.ambient", 0.05f, 0.05f, 0.05f);
-    batchShader.setVec3f("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
-    batchShader.setVec3f("dirLight.specular", 0.5f, 0.5f, 0.5f);
-
-    batchShader.setVec3f("spotLight.ambient", 0.0f, 0.0f, 0.0f);
-    batchShader.setVec3f("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
-    batchShader.setVec3f("spotLight.specular", 1.0f, 1.0f, 1.0f);
-    batchShader.setFloat("spotLight.constant", 1.0f);
-    batchShader.setFloat("spotLight.linear", 0.09f);
-    batchShader.setFloat("spotLight.quadratic", 0.032f);
-    batchShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
-    batchShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+    window->getWindowRenderTable()->add("overWorld", overWorld);
+    window->getWindowRenderTable()->add("appleEntity", appleEntity);
+    window->getWindowRenderTable()->add("sceneEntity", sceneEntity);
+    window->getWindowRenderTable()->add("framebuffer", framebuffer);
 }
 
 void render_Inputs(GameWindow *window) {
@@ -242,19 +235,24 @@ void render_ImGui() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-
     ImGui::Begin("Debug");
+
+    float fps = (window->getLastFrameTime() == 0) ? 999.0f : 1.0f / window->getLastFrameTime();
+    ImGui::Text("FPS: %.0f", fps);
+    ImGui::SliderFloat("fieldOfView", &cubemapFramebuffer->fieldOfView, 1.0f, 120.0f);
+    ImGui::SliderFloat("aspectRatio", &cubemapFramebuffer->aspectRatio, 0.1f, 6.0f);
+    ImGui::SliderFloat("zNear", &cubemapFramebuffer->zNear, 0.1f, 100.0f);
+    ImGui::SliderFloat("zFar", &cubemapFramebuffer->zFar, 0.1f, 100.0f);
 
     if (ImGui::Button("Reset")) {
         if (appleEntity) {
-            window.getRenderTable()->remove("apple");
+            window->getWindowRenderTable()->remove("appleEntity");
             delete appleEntity;
         }
-
-        appleEntity = new EntityConvexHull(overWorld, 0.2f, appleModel);
+        appleEntity = new EntityConvexHull(overWorld, 0.2f, appleModel->meshes["Hitbox"]);
         appleEntity->load();
 
-        window.getRenderTable()->add("apple", appleEntity);
+        window->getWindowRenderTable()->add("appleEntity", appleEntity);
     }
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
     ImGui::End();
@@ -263,19 +261,25 @@ void render_ImGui() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+void onExit() {
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+}
+
 int main() {
-    window.withHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-    window.addInitTask([](GameWindow *window){ init(window); });
-    window.addRenderTask([](GameWindow *window){ 
+    window = new GameWindow("Sample", 800, 600);
+    window->withHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+    window->addInitTask([](GameWindow *window){ 
+        init_ImGUI();
+        init(window);
+    });
+    window->addRenderTask([](GameWindow *window){ 
         render_Inputs(window);
         render_ImGui();
     });
 
-    int exitCode = window.initWindow();
-
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
+    int exitCode = window->initLoop();
+    onExit();
     return exitCode;
 }

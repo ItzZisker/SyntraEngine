@@ -24,17 +24,6 @@ Camera::Camera(World* world, glm::vec3 position, glm::vec3 target)
 Camera::Camera(World* world, glm::vec3 position, float yaw, float pitch)
     : Camera(world, position, yaw, pitch, glm::vec3(0, 1, 0)) {}
 
-void Camera::render(GameWindow* window) {
-    updateViewMatrix();
-
-    Shader batchShader = window->getBatchShader();
-    batchShader.use();
-    batchShader.setMatrix4("view", viewMatrix, 1, GL_FALSE);
-    batchShader.setVec3f("viewPos", getPosition());
-    batchShader.setVec3f("spotLight.position", getPosition());
-    batchShader.setVec3f("spotLight.direction", getDirection());
-}
-
 void Camera::updateViewMatrix() {
     glm::vec3 pos = getPosition();
     glm::vec3 dir = getDirection();

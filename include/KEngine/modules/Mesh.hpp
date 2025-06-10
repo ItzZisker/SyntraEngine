@@ -1,5 +1,7 @@
 #pragma once
 
+#include "KEngine/engine/RenderTable.hpp"
+#include "KEngine/world/WorldObject.hpp"
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
@@ -30,7 +32,7 @@ struct Texture {
     std::string path;
 };
 
-class Mesh {
+class Mesh : public CoordinatedObject, public ShaderRenderable {
 public:
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
@@ -45,7 +47,7 @@ public:
 
     ~Mesh();
 
-    void draw(Shader shader);
+    void render(Shader shader, int FBO) override;
 
-    void setupMesh();
+    void init();
 };

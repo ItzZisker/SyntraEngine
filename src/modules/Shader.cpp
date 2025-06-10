@@ -1,5 +1,6 @@
 #include <KEngine/modules/Shader.hpp>
 
+#include <cstdlib>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -82,6 +83,10 @@ void Shader::init() {
     glDeleteShader(fragment);
 }
 
+void Shader::disposeProgram() {
+    glDeleteProgram(ID);
+}
+
 void Shader::use() {
     glUseProgram(ID);
 }
@@ -98,12 +103,20 @@ void Shader::setFloat(const std::string &name, float value) const {
     glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
 }
 
+void Shader::setVec2f(const std::string &name, float x, float y) {
+    glUniform2f(glGetUniformLocation(ID, name.c_str()), x, y);
+}
+
 void Shader::setVec3f(const std::string &name, float x, float y, float z) {
     glUniform3f(glGetUniformLocation(ID, name.c_str()), x, y, z);
 }
 
 void Shader::setVec4f(const std::string &name, float x, float y, float z, float w) {
     glUniform4f(glGetUniformLocation(ID, name.c_str()), x, y, z, w);
+}
+
+void Shader::setVec2f(const std::string &name, glm::vec2 vec) {
+    glUniform2f(glGetUniformLocation(ID, name.c_str()), vec[0], vec[1]);
 }
 
 void Shader::setVec3f(const std::string &name, glm::vec3 vec) {

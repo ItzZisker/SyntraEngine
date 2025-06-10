@@ -1,8 +1,12 @@
 #include "KEngine/modules/Mesh.hpp"
+#include "KEngine/modules/Shader.hpp"
+#include "assimp/matrix4x4.h"
 #include <KEngine/modules/Model.hpp>
 #include <KEngine/utils/GameUtils.hpp>
 
 #include <iostream>
+#include <set>
+#include <string>
 
 unsigned int TextureFromFile(const char *path, const std::string &directory);
 
@@ -10,12 +14,17 @@ Model::Model(std::string const &path, bool gamma) : gammaCorrection(gamma), path
 
 Model::~Model() {
     textures_loaded.clear();
-    for (const Mesh* mesh : meshes) delete mesh;
+    for (auto& mesh : meshes) delete mesh.second;
     meshes.clear();
     loaded = false;
 }
 
 void Model::loadModel(bool flipTextures) {
+    std::set<std::string> empty;
+    loadModel(empty, flipTextures);
+}
+
+void Model::loadModel(const std::set<std::string>& meshNames, bool flipTextures) {
     stbi_set_flip_vertically_on_load(flipTextures);
 
     Assimp::Importer importer;
@@ -27,37 +36,58 @@ void Model::loadModel(bool flipTextures) {
     }
     directory = path.substr(0, path.find_last_of('/'));
 
-    processNode(scene->mRootNode, scene);
+    processNode(meshNames, scene->mRootNode, scene, aiMatrix4x4());
     loaded = true;
 }
 
-void Model::render(GameWindow* window) {
-    if (!loaded) return;
+void Model::render(Shader shader, int parentFBO) {
+    if (!loaded) {
+        return;
+    }
 
-    Shader batchShader = window->getBatchShader();
+    if (renderable_meshes.empty()) {
+        for (auto& mesh : meshes) {
+            mesh.second->render(shader,parentFBO);
+        }
+        return;
+    }
+    for (const std::string& meshName : renderable_meshes) {
+        auto found = meshes.find(meshName);
 
-    batchShader.use();
-    batchShader.setMatrix4("model", transform, 1, GL_FALSE);
-    draw(batchShader);
+        if (found != meshes.end()) {
+            found->second->render(shader, parentFBO);
+        }
+    }
 }
 
-void Model::draw(Shader &shader) {
-    if (!loaded) return;
-    for (unsigned int i = 0; i < meshes.size(); i++)
-        meshes[i]->draw(shader);
+glm::mat4 convertToGLMMatrix(const aiMatrix4x4& aiMat) {
+    glm::mat4 mat;
+    mat[0][0] = aiMat.a1; mat[1][0] = aiMat.a2; mat[2][0] = aiMat.a3; mat[3][0] = aiMat.a4;
+    mat[0][1] = aiMat.b1; mat[1][1] = aiMat.b2; mat[2][1] = aiMat.b3; mat[3][1] = aiMat.b4;
+    mat[0][2] = aiMat.c1; mat[1][2] = aiMat.c2; mat[2][2] = aiMat.c3; mat[3][2] = aiMat.c4;
+    mat[0][3] = aiMat.d1; mat[1][3] = aiMat.d2; mat[2][3] = aiMat.d3; mat[3][3] = aiMat.d4;
+    return mat;
 }
 
-void Model::processNode(aiNode *node, const aiScene *scene) {
+void Model::processNode(const std::set<std::string>& meshNames, aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform) {
+    aiMatrix4x4 currentTransform = parentTransform * node->mTransformation;
+
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
-        meshes.push_back(processMesh(mesh, scene));
+        glm::mat4 glmTransform = convertToGLMMatrix(currentTransform);
+        std::string meshName(mesh->mName.C_Str());
+
+        if (meshNames.empty() || meshNames.find(meshName) != meshNames.end()) {
+            meshes.insert({meshName, processMesh(mesh, scene, glmTransform)});
+        }
     }
+
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        processNode(node->mChildren[i], scene);
+        processNode(meshNames, node->mChildren[i], scene, currentTransform);
     }
 }
 
-Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene) {
+Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& transform) {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;
@@ -122,7 +152,11 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene) {
     std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
-    return new Mesh(vertices, indices, textures);
+    Mesh *result = new Mesh(vertices, indices, textures);       
+    result->init(); 
+    result->setTransform(transform);
+
+    return result;
 }
 
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName) {

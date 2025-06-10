@@ -51,7 +51,7 @@ in vec2 texCoord;
 
 out vec4 FragColor;
 
-uniform vec3 viewPos;
+uniform vec3 cameraPos;
 
 float specularStrength = 1.0f;
 
@@ -62,7 +62,7 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir);
 void main()
 {
     vec3 norm = normalize(normal);
-    vec3 viewDir = normalize(viewPos - fragPos);
+    vec3 viewDir = normalize(cameraPos - fragPos);
     vec3 result = calculateDirectionalLight(dirLight, norm, viewDir);
 
     // for(int i = 0; i < NR_POINT_LIGHTS; i++)

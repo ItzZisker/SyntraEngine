@@ -1,10 +1,15 @@
 #include "KEngine/world/WorldObject.hpp"
-#include <KEngine/modules/Mesh.hpp>
+
 #include <LinearMath/btVector3.h>
+
+#include <KEngine/modules/Mesh.hpp>
 #include <KEngine/world/entity/EntityConvexHull.hpp>
+
+#include <cmath>
 #include <iostream>
 
-EntityConvexHull::EntityConvexHull(World* world, float mass, Model* model) : WorldObject(world), mass(mass), model(model) {}
+EntityConvexHull::EntityConvexHull(World* world, float mass, Mesh* mesh) 
+    : Entity(world), mass(mass), mesh(mesh) {}
 
 EntityConvexHull::~EntityConvexHull() {
     world->getDynamics()->removeRigidBody(body);
@@ -12,42 +17,39 @@ EntityConvexHull::~EntityConvexHull() {
     delete shape;
 }
 
+const glm::mat4 EntityConvexHull::onMotionState() {
+    btTransform transform;
+    body->getMotionState()->getWorldTransform(transform);
+    return GameUtils::fromBulletTransform(transform);
+}
+
 void EntityConvexHull::load(bool enablePolyhedral) {
-    if (!model->loaded) {
-        std::cerr << "ERROR::Entity::<UNLOADED_MODEL>" << std::endl;
+    if (!mesh->loaded) {
+        std::cerr << "ERROR::Entity::<UNLOADED_MESH>" << std::endl;
         return;
     }
 
-    int numPoints = 0;
-    for (const Mesh* mesh : model->meshes) {
-        numPoints += mesh->vertices.size();
-    }
-
+    int numPoints = mesh->vertices.size();
     float* points = new float[3 * numPoints];
 
-    long captured = GameUtils::currentTime();
     int i = 0;
-    for (const Mesh* mesh : model->meshes) {
-        for (const Vertex& vertex : mesh->vertices) {
-            glm::vec3 vec = vertex.position;
-            points[i++] = vec[0];
-            points[i++] = vec[1];
-            points[i++] = vec[2];
-        }
+    for (const Vertex& vertex : mesh->vertices) {
+        glm::vec3 vec = vertex.position;
+        points[i++] = vec[0];
+        points[i++] = vec[1];
+        points[i++] = vec[2];
     }
     shape = new btConvexHullShape(points, numPoints, 3 * sizeof(float));   
+    shape->setMargin(0.05f);
 
     if (enablePolyhedral){
         shape->initializePolyhedralFeatures();
     }
 
-    glm::vec3 modelPos = model->getPosition();
-    btDefaultMotionState* motionState = new btDefaultMotionState(
-        btTransform(
-            GameUtils::getBulletRotationFromTransform(model->getTransform()),
-            btVector3(modelPos.x, modelPos.y, modelPos.z)
-        )
-    );
+    btDefaultMotionState* motionState = new btDefaultMotionState( btTransform(
+        GameUtils::getBulletRotationFromTransform(mesh->getTransform()),
+        GameUtils::toBulletVector(mesh->getPosition())
+    ));
 
     btVector3 inertia(0,0,0);
     shape->calculateLocalInertia(mass, inertia);
@@ -58,12 +60,9 @@ void EntityConvexHull::load(bool enablePolyhedral) {
     body->setDamping(0.8f, 0.2f);
 
     world->getDynamics()->addRigidBody(body);
-}
 
-void EntityConvexHull::render(GameWindow* window) {
-    model->render(window);
-
-    btTransform transform;
-    body->getMotionState()->getWorldTransform(transform);
-    model->setTransform(GameUtils::fromBulletTransform(transform));
+    Mesh* meshCopy = mesh;
+    addMotionState("DEFAULT", [meshCopy](const glm::mat4& transform) {
+        meshCopy->setTransform(transform);
+    });
 }

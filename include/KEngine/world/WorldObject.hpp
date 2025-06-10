@@ -1,16 +1,19 @@
 #pragma once
 
-#include "glm/trigonometric.hpp"
 #include <KEngine/engine/RenderTable.hpp>
 #include <KEngine/world/World.hpp>
 #include <KEngine/utils/GameUtils.hpp>
 
 #include <glm/glm.hpp>
 
-class CoordinatedObject : public Renderable {
+class CoordinatedObject {
 protected:
-    glm::mat4 transform = glm::mat4(1.0f);
+    glm::mat4 transform;
 public:
+    CoordinatedObject(glm::mat4 transform = glm::mat4(1.0f)) {
+        this->transform = transform;
+    }
+
     virtual const glm::mat4& getTransform() {
         return transform;
     }

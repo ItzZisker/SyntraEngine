@@ -47,14 +47,20 @@ add_library(KEngine SHARED
     
     src/engine/RenderTable.cpp
 
+    src/modules/CubemapFramebuffer.cpp
+    src/modules/Framebuffer.cpp
+    src/modules/Scene.cpp
     src/modules/Camera.cpp
     src/modules/Shader.cpp
     src/modules/Mesh.cpp
     src/modules/Model.cpp
+    src/modules/Skybox.cpp
 
     src/world/World.cpp
     src/world/entity/EntityConvexHull.cpp
+    src/world/entity/EntityConvexHullCompound.cpp
     src/world/entity/EntityTriangleMesh.cpp
+    src/world/entity/EntityTriangleMeshCompound.cpp
 
     src/utils/GameUtils.cpp
     src/utils/stb_image.c
