@@ -3,8 +3,8 @@
 #define _USE_MATH_DEFINES
 #define _GNU_SOURCE
 
-#include <KEngine/engine/RenderTable.hpp>
-#include <KEngine/modules/Shader.hpp>
+#include <Syngine/engine/RenderTable.hpp>
+#include <Syngine/modules/Shader.hpp>
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>

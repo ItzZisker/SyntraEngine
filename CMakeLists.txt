@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10.0)
-project(KEngine VERSION 0.1.0 LANGUAGES C CXX)
+project(Syngine VERSION 0.1.0 LANGUAGES C CXX)
 
 find_package(OpenGL REQUIRED COMPONENTS OpenGL)
 
@@ -42,8 +42,8 @@ include(CTest)
 enable_testing()
 
 # Define library files
-add_library(KEngine SHARED
-    src/KEngine.cpp
+add_library(Syngine SHARED
+    src/Syngine.cpp
     
     src/engine/RenderTable.cpp
 
@@ -90,7 +90,7 @@ elseif (APPLE)
 endif()
 
 add_executable(sample_executable src/sample/sample.cpp)
-target_link_libraries(sample_executable KEngine)
+target_link_libraries(sample_executable Syngine)
 
 function(copy_resource target src_path)
   if(IS_DIRECTORY "${src_path}")

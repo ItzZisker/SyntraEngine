@@ -1,5 +1,5 @@
-#include <KEngine/world/World.hpp>
-#include <KEngine/utils/GameUtils.hpp>
+#include <Syngine/world/World.hpp>
+#include <Syngine/utils/GameUtils.hpp>
 
 #include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
 #include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>

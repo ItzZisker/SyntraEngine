@@ -1,14 +1,15 @@
 #pragma once
 
-#include <KEngine/engine/RenderTable.hpp>
-#include <KEngine/world/World.hpp>
-#include <KEngine/utils/GameUtils.hpp>
+#include "glm/fwd.hpp"
+#include <Syngine/engine/RenderTable.hpp>
+#include <Syngine/world/World.hpp>
+#include <Syngine/utils/GameUtils.hpp>
 
 #include <glm/glm.hpp>
 
 class CoordinatedObject {
 protected:
-    glm::mat4 transform;
+    glm::mat4 transform = glm::mat4(1.0f);
 public:
     CoordinatedObject(glm::mat4 transform = glm::mat4(1.0f)) {
         this->transform = transform;

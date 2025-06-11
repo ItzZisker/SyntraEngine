@@ -1,8 +1,8 @@
 #include "BulletCollision/CollisionShapes/btTriangleInfoMap.h"
 #include "BulletCollision/CollisionShapes/btTriangleMesh.h"
-#include <KEngine/modules/Mesh.hpp>
+#include <Syngine/modules/Mesh.hpp>
 #include <LinearMath/btVector3.h>
-#include <KEngine/world/entity/EntityTriangleMeshCompound.hpp>
+#include <Syngine/world/entity/EntityTriangleMeshCompound.hpp>
 #include <BulletCollision/CollisionDispatch/btInternalEdgeUtility.h>
 
 #include <iostream>

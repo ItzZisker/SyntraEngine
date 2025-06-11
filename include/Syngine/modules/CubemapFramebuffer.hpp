@@ -1,6 +1,6 @@
 #pragma once
 
-#include "KEngine/engine/RenderTable.hpp"
+#include "Syngine/engine/RenderTable.hpp"
 #include "Scene.hpp"
 #include "Shader.hpp"
 #include <glad/glad.h>
@@ -8,8 +8,8 @@
 #include <vector>
 #include <functional>
 
-#define KG_CUBEMAP_SCENE_SIZE 512
-#define KG_CUBEMAP_SIDES 6
+#define SG_CUBEMAP_SCENE_SIZE 512
+#define SG_CUBEMAP_SIDES 6
 
 /*
     Notes:
@@ -62,8 +62,8 @@ private:
 
     Scene* scene;
 
-    unsigned int FBO[KG_CUBEMAP_SIDES] = {0, 0, 0, 0, 0, 0};
-    unsigned int RBO[KG_CUBEMAP_SIDES] = {0, 0, 0, 0, 0, 0};
+    unsigned int FBO[SG_CUBEMAP_SIDES] = {0, 0, 0, 0, 0, 0};
+    unsigned int RBO[SG_CUBEMAP_SIDES] = {0, 0, 0, 0, 0, 0};
     unsigned int cubemapTexture = 0;
 
     RenderTable<ShaderRenderable> *reflectionRendertable = new RenderTable<ShaderRenderable>();

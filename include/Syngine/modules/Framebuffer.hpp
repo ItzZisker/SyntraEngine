@@ -1,8 +1,8 @@
 #pragma once
 
-#include "KEngine/KEngine.hpp"
-#include "KEngine/engine/RenderTable.hpp"
-#include "KEngine/modules/Scene.hpp"
+#include "Syngine/Syngine.hpp"
+#include "Syngine/engine/RenderTable.hpp"
+#include "Syngine/modules/Scene.hpp"
 
 /*
     Notes:

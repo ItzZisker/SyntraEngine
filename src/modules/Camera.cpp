@@ -1,5 +1,5 @@
 #include "glm/fwd.hpp"
-#include <KEngine/modules/Camera.hpp>
+#include <Syngine/modules/Camera.hpp>
 
 Camera::Camera(World* world, glm::vec3 position, glm::vec3 target, glm::vec3 up)
     : WorldObject(world) {

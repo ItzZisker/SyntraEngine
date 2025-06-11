@@ -1,6 +1,6 @@
 #pragma once
 
-#include "KEngine/modules/Shader.hpp"
+#include "Syngine/modules/Shader.hpp"
 #include <unordered_map>
 #include <string>
 #include <functional>

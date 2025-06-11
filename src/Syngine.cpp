@@ -1,5 +1,5 @@
-#include "KEngine/engine/RenderTable.hpp"
-#include <KEngine/KEngine.hpp>
+#include "Syngine/engine/RenderTable.hpp"
+#include <Syngine/Syngine.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -67,15 +67,15 @@ int GameWindow::initLoop() {
     glfwWindowPtr = glfwWindow;
 
     if (glfwWindow == NULL) {
-        std::cerr << "KEngine: Failed to create GLFW window" << std::endl;
+        std::cerr << "Syngine: Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
     glfwMakeContextCurrent(glfwWindow);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cerr << "KEngine: Failed to initialize GLAD" << std::endl;
-        return -1;
+        std::cerr << "Syngine: Failed to initialize GLAD" << std::endl;
+        return -2;
     }
 
     glfwSetFramebufferSizeCallback(glfwWindow, Callbacks::glfw_framebuffer_resize_callback);

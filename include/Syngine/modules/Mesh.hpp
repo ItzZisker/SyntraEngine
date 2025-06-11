@@ -1,13 +1,13 @@
 #pragma once
 
-#include "KEngine/engine/RenderTable.hpp"
-#include "KEngine/world/WorldObject.hpp"
+#include "Syngine/engine/RenderTable.hpp"
+#include "Syngine/world/WorldObject.hpp"
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <KEngine/modules/Shader.hpp>
+#include <Syngine/modules/Shader.hpp>
 
 #include <string>
 #include <vector>
@@ -15,6 +15,11 @@
 #define MAX_BONE_INFLUENCE 4
 
 GLuint getDefaultWhiteTexture();
+
+enum VRAM_Approach {
+    Sequential,
+    Interleaved
+};
 
 struct Vertex {
     glm::vec3 position;
@@ -49,5 +54,5 @@ public:
 
     void render(Shader shader, int FBO) override;
 
-    void init();
+    void init(VRAM_Approach = Sequential);
 };

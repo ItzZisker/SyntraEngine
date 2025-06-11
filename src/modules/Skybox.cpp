@@ -1,5 +1,5 @@
-#include "KEngine/modules/Shader.hpp"
-#include <KEngine/modules/Skybox.hpp>
+#include "Syngine/modules/Shader.hpp"
+#include <Syngine/modules/Skybox.hpp>
 
 #include <iostream>
 #include <stb/stb_image.h>

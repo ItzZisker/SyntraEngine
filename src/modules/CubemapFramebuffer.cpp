@@ -1,8 +1,8 @@
-#include "KEngine/modules/CubemapFramebuffer.hpp"
-#include "KEngine/engine/RenderTable.hpp"
-#include "KEngine/modules/Model.hpp"
-#include "KEngine/modules/Scene.hpp"
-#include "KEngine/modules/Shader.hpp"
+#include "Syngine/modules/CubemapFramebuffer.hpp"
+#include "Syngine/engine/RenderTable.hpp"
+#include "Syngine/modules/Model.hpp"
+#include "Syngine/modules/Scene.hpp"
+#include "Syngine/modules/Shader.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/fwd.hpp"
 #include <cerrno>
@@ -36,7 +36,7 @@ void CubemapFramebuffer::createFramebuffer(int index) {
 
     for (unsigned int i = 0; i < 6; ++i) {
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB,
-                    KG_CUBEMAP_SCENE_SIZE, KG_CUBEMAP_SCENE_SIZE,
+                    SG_CUBEMAP_SCENE_SIZE, SG_CUBEMAP_SCENE_SIZE,
                     0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
     }
 
@@ -49,7 +49,7 @@ void CubemapFramebuffer::createFramebuffer(int index) {
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, cubemapTexture, 0);
 
     glBindRenderbuffer(GL_RENDERBUFFER, RBO[index]);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, KG_CUBEMAP_SCENE_SIZE, KG_CUBEMAP_SCENE_SIZE);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, SG_CUBEMAP_SCENE_SIZE, SG_CUBEMAP_SCENE_SIZE);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RBO[index]);
 }
 
@@ -108,9 +108,9 @@ void CubemapFramebuffer::render(int parentFBO) {
         glm::lookAt(position, position + glm::vec3(0, 0, -1), glm::vec3(0, -1, 0))
     };
 
-    for (unsigned int i = 0; i < 6; i++) {
+    for (unsigned int i = 0; i < SG_CUBEMAP_SIDES; i++) {
         glBindFramebuffer(GL_FRAMEBUFFER, FBO[i]);
-        glViewport(0, 0, KG_CUBEMAP_SCENE_SIZE, KG_CUBEMAP_SCENE_SIZE);
+        glViewport(0, 0, SG_CUBEMAP_SCENE_SIZE, SG_CUBEMAP_SCENE_SIZE);
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

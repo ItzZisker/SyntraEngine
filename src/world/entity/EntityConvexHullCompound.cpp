@@ -1,7 +1,7 @@
 #include <LinearMath/btVector3.h>
 
-#include <KEngine/modules/Mesh.hpp>
-#include <KEngine/world/entity/EntityConvexHullCompound.hpp>
+#include <Syngine/modules/Mesh.hpp>
+#include <Syngine/world/entity/EntityConvexHullCompound.hpp>
 
 #include <cmath>
 #include <iostream>

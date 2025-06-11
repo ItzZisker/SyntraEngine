@@ -1,7 +1,7 @@
 #pragma once
 
-#include "KEngine/engine/RenderTable.hpp"
-#include "KEngine/modules/Shader.hpp"
+#include "Syngine/engine/RenderTable.hpp"
+#include "Syngine/modules/Shader.hpp"
 #include "Scene.hpp"
 #include <vector>
 #include <string>

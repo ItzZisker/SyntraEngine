@@ -1,8 +1,8 @@
 #pragma once
 
-#include "KEngine/KEngine.hpp"
-#include "KEngine/engine/RenderTable.hpp"
-#include "KEngine/modules/Camera.hpp"
+#include "Syngine/Syngine.hpp"
+#include "Syngine/engine/RenderTable.hpp"
+#include "Syngine/modules/Camera.hpp"
 #include "Shader.hpp"
 #include <glm/glm.hpp>
 

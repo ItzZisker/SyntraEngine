@@ -1,9 +1,9 @@
-#include "KEngine/world/WorldObject.hpp"
+#include "Syngine/world/WorldObject.hpp"
 
 #include <LinearMath/btVector3.h>
 
-#include <KEngine/modules/Mesh.hpp>
-#include <KEngine/world/entity/EntityConvexHull.hpp>
+#include <Syngine/modules/Mesh.hpp>
+#include <Syngine/world/entity/EntityConvexHull.hpp>
 
 #include <cmath>
 #include <iostream>

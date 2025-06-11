@@ -1,8 +1,7 @@
-#include "KEngine/KEngine.hpp"
-#include "KEngine/engine/RenderTable.hpp"
-#include "KEngine/modules/CubemapFramebuffer.hpp"
-#include "KEngine/modules/Shader.hpp"
-#include <KEngine/modules/Framebuffer.hpp>
+#include "Syngine/Syngine.hpp"
+#include "Syngine/engine/RenderTable.hpp"
+#include "Syngine/modules/Shader.hpp"
+#include <Syngine/modules/Framebuffer.hpp>
 #include <iostream>
 
 Framebuffer::Framebuffer(Scene* scene) : scene(scene) {}

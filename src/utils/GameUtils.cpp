@@ -1,9 +1,9 @@
-#include "KEngine/world/WorldObject.hpp"
+#include "Syngine/world/WorldObject.hpp"
 #include "LinearMath/btTransform.h"
 #include "glm/fwd.hpp"
 #include "glm/gtc/quaternion.hpp"
 #include <glad/glad.h>
-#include <KEngine/utils/GameUtils.hpp>
+#include <Syngine/utils/GameUtils.hpp>
 #include <iostream>
 #include <chrono>
 

@@ -1,12 +1,12 @@
 #pragma once
 
 #include "BulletDynamics/Dynamics/btRigidBody.h"
-#include "KEngine/engine/RenderTable.hpp"
-#include "KEngine/modules/Shader.hpp"
-#include "KEngine/world/WorldObject.hpp"
-#include "glm/fwd.hpp"
+#include "Syngine/engine/RenderTable.hpp"
+#include "Syngine/modules/Mesh.hpp"
+#include "Syngine/world/WorldObject.hpp"
 
 #include <functional>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 
@@ -19,6 +19,16 @@ public:
 
     btRigidBody* getBody() {
         return this->body;
+    }
+
+    void bind(std::string motionKey, Mesh* mesh) {
+        if (hasMotionState(motionKey)) {
+            std::cerr << "Already has MotionState: " << motionKey << std::endl;
+        } else {
+            addMotionState(motionKey, [mesh](const glm::mat4& m) {
+                mesh->setTransform(m);
+            });
+        }
     }
 
     void addMotionState(const std::string& key, std::function<void(const glm::mat4&)> func) {

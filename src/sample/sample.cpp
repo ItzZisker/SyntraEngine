@@ -1,11 +1,12 @@
-#include <KEngine/KEngine.hpp>
-#include <KEngine/modules/Camera.hpp>
-#include <KEngine/modules/Model.hpp>
+#include <Syngine/Syngine.hpp>
+#include <Syngine/modules/Camera.hpp>
+#include <Syngine/modules/Model.hpp>
 
-#include <KEngine/world/entity/EntityConvexHull.hpp>
-#include <KEngine/world/entity/EntityTriangleMeshCompound.hpp>
+#include <Syngine/world/entity/EntityConvexHull.hpp>
+#include <Syngine/world/entity/EntityTriangleMeshCompound.hpp>
 
 #include <cstdlib>
+#include <iostream>
 #include <stb/stb_image.h>
 
 #include <glm/glm.hpp>
@@ -15,11 +16,12 @@
 #include <vector>
 
 #include "GLFW/glfw3.h"
-#include "KEngine/modules/CubemapFramebuffer.hpp"
-#include "KEngine/modules/Framebuffer.hpp"
-#include "KEngine/modules/Scene.hpp"
-#include "KEngine/modules/Shader.hpp"
-#include "KEngine/modules/Skybox.hpp"
+#include "Syngine/modules/CubemapFramebuffer.hpp"
+#include "Syngine/modules/Framebuffer.hpp"
+#include "Syngine/modules/Mesh.hpp"
+#include "Syngine/modules/Scene.hpp"
+#include "Syngine/modules/Shader.hpp"
+#include "Syngine/modules/Skybox.hpp"
 #include "glm/fwd.hpp"
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
@@ -172,20 +174,16 @@ void init(GameWindow *window) {
     camera = new Camera(overWorld, glm::vec3(5.0f, 0.0f, 5.0f), yaw, pitch);
 
     appleModel = new Model("models/apple2/apple.obj");
-    appleModel->loadModel();
-    appleModel->renderable_meshes.insert("Apple");
+    appleModel->filterMesh("Apple");
+    appleModel->loadModel(Interleaved);
 
-    Mesh* appleMesh = appleModel->meshes.find("Apple")->second;
-    auto appleMotionState = [appleMesh](const glm::mat4& m) {
-        appleMesh->setTransform(m);
-    };
     appleEntity = new EntityConvexHull(overWorld, 0.2f, appleModel->meshes["Hitbox"]);
     appleEntity->setPosition(glm::vec3(0, 2, 0));
-    appleEntity->addMotionState("Apple", appleMotionState);
+    appleEntity->bind("Apple", appleModel->meshes["Apple"]);
     appleEntity->load(false);
 
     sceneModel = new Model("models/wall/wall.obj");
-    sceneModel->loadModel();
+    sceneModel->loadModel(Sequential);
 
     sceneEntity = new EntityTriangleMeshCompound(overWorld, sceneModel);
     sceneEntity->load();
@@ -239,10 +237,6 @@ void render_ImGui() {
 
     float fps = (window->getLastFrameTime() == 0) ? 999.0f : 1.0f / window->getLastFrameTime();
     ImGui::Text("FPS: %.0f", fps);
-    ImGui::SliderFloat("fieldOfView", &cubemapFramebuffer->fieldOfView, 1.0f, 120.0f);
-    ImGui::SliderFloat("aspectRatio", &cubemapFramebuffer->aspectRatio, 0.1f, 6.0f);
-    ImGui::SliderFloat("zNear", &cubemapFramebuffer->zNear, 0.1f, 100.0f);
-    ImGui::SliderFloat("zFar", &cubemapFramebuffer->zFar, 0.1f, 100.0f);
 
     if (ImGui::Button("Reset")) {
         if (appleEntity) {

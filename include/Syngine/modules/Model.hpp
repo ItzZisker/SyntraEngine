@@ -1,6 +1,6 @@
 #pragma once
 
-#include "KEngine/engine/RenderTable.hpp"
+#include "Syngine/engine/RenderTable.hpp"
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
@@ -11,10 +11,10 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <KEngine/KEngine.hpp>
-#include <KEngine/modules/Mesh.hpp>
-#include <KEngine/modules/Shader.hpp>
-#include <KEngine/world/WorldObject.hpp>
+#include <Syngine/Syngine.hpp>
+#include <Syngine/modules/Mesh.hpp>
+#include <Syngine/modules/Shader.hpp>
+#include <Syngine/world/WorldObject.hpp>
 
 #include <string>
 #include <unordered_map>
@@ -37,11 +37,19 @@ public:
 
     void render(Shader shader, int FBO) override;
 
+    void filterMesh(std::string meshName);
+
     void draw(Shader &shader);
 
-    void loadModel(const std::set<std::string>& meshes, bool flipTextures = false);
+    void read(const std::set<std::string>& meshes = {}, bool flipTextures = false);
 
-    void loadModel(bool flipTextures = false);
+    void readAll(bool flipTextures = false) {
+        read({}, flipTextures);
+    }
+
+    void load(VRAM_Approach approach = Sequential);
+
+    void loadModel(VRAM_Approach approach = Sequential, const std::set<std::string>& meshes = {}, bool flip = false);
 private:
     std::string path;
 

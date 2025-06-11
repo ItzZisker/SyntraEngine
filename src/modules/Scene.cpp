@@ -1,10 +1,9 @@
-#include "KEngine/modules/Scene.hpp"
+#include "Syngine/modules/Scene.hpp"
 #include "GLFW/glfw3.h"
-#include "KEngine/KEngine.hpp"
-#include "KEngine/engine/RenderTable.hpp"
-#include "KEngine/modules/Shader.hpp"
+#include "Syngine/Syngine.hpp"
+#include "Syngine/engine/RenderTable.hpp"
+#include "Syngine/modules/Shader.hpp"
 #include <glm/gtc/matrix_transform.hpp>
-#include <iostream>
 
 Scene::Scene(Camera* camera, GameWindow* window)
     : camera(camera),

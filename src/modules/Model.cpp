@@ -1,8 +1,8 @@
-#include "KEngine/modules/Mesh.hpp"
-#include "KEngine/modules/Shader.hpp"
+#include "Syngine/modules/Mesh.hpp"
+#include "Syngine/modules/Shader.hpp"
 #include "assimp/matrix4x4.h"
-#include <KEngine/modules/Model.hpp>
-#include <KEngine/utils/GameUtils.hpp>
+#include <Syngine/modules/Model.hpp>
+#include <Syngine/utils/GameUtils.hpp>
 
 #include <iostream>
 #include <set>
@@ -19,12 +19,22 @@ Model::~Model() {
     loaded = false;
 }
 
-void Model::loadModel(bool flipTextures) {
-    std::set<std::string> empty;
-    loadModel(empty, flipTextures);
+void Model::filterMesh(std::string meshName) {
+    renderable_meshes.insert(meshName);
 }
 
-void Model::loadModel(const std::set<std::string>& meshNames, bool flipTextures) {
+void Model::loadModel(VRAM_Approach approach, const std::set<std::string>& meshNames, bool flipTextures) {
+    read(meshNames, flipTextures);
+    load(approach);
+}
+
+void Model::load(VRAM_Approach approach) {
+    for (const auto& pair : meshes) {
+        pair.second->init(approach);
+    }
+}
+
+void Model::read(const std::set<std::string>& meshNames, bool flipTextures) {
     stbi_set_flip_vertically_on_load(flipTextures);
 
     Assimp::Importer importer;
@@ -44,7 +54,6 @@ void Model::render(Shader shader, int parentFBO) {
     if (!loaded) {
         return;
     }
-
     if (renderable_meshes.empty()) {
         for (auto& mesh : meshes) {
             mesh.second->render(shader,parentFBO);
@@ -153,7 +162,6 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& tr
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
     Mesh *result = new Mesh(vertices, indices, textures);       
-    result->init(); 
     result->setTransform(transform);
 
     return result;

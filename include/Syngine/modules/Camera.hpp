@@ -1,9 +1,9 @@
 #pragma once
 
-#include <KEngine/KEngine.hpp>
-#include <KEngine/world/World.hpp>
-#include <KEngine/world/WorldObject.hpp>
-#include <KEngine/modules/Shader.hpp>
+#include <Syngine/Syngine.hpp>
+#include <Syngine/world/World.hpp>
+#include <Syngine/world/WorldObject.hpp>
+#include <Syngine/modules/Shader.hpp>
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
