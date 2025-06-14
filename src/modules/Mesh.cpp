@@ -1,7 +1,8 @@
 #include "Syngine/modules/Shader.hpp"
+#include "Syngine/world/WorldObject.hpp"
+#include "glm/fwd.hpp"
 #include <Syngine/modules/Mesh.hpp>
 #include <Syngine/utils/GameUtils.hpp>
-#include <iostream>
 
 GLuint defaultWhiteTexture;
 
@@ -24,7 +25,16 @@ GLuint getDefaultWhiteTexture() {
 Mesh::Mesh(std::vector<Vertex> vertices,
            std::vector<unsigned int> indices,
            std::vector<Texture> textures)
-    : vertices(vertices), indices(indices), textures(textures) {}
+    : vertices(vertices), indices(indices), textures(textures), DiscardableObject() {
+    glm::vec3 min = vertices[0].position;
+    glm::vec3 max = vertices[0].position;
+
+    for (const auto& vertex : vertices) {
+        min = glm::min(min, vertex.position);
+        max = glm::max(max, vertex.position);
+    }
+    AABB = BoundingBox(min, max);
+}
 
 Mesh::~Mesh() {
     vertices.clear();
@@ -36,7 +46,7 @@ Mesh::~Mesh() {
     glDeleteVertexArrays(1, &VAO);
 }
 
-void Mesh::render(Shader shader, int FBO) {
+void Mesh::render(Shader shader, int FBO, glm::mat4 transform) {
     if (!loaded) return;
 
     shader.use();

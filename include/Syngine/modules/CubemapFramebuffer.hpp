@@ -8,7 +8,6 @@
 #include <vector>
 #include <functional>
 
-#define SG_CUBEMAP_SCENE_SIZE 512
 #define SG_CUBEMAP_SIDES 6
 
 /*
@@ -22,6 +21,7 @@
  */
 class CubemapFramebuffer : public DuplexRenderable {
 public:
+    int sceneSize = 512;
     float fieldOfView = 89.46666f, aspectRatio = 1.0f;
     float zNear = 0.1f, zFar = 100.0f;
 
@@ -29,7 +29,7 @@ public:
 
     ~CubemapFramebuffer();
 
-    void create(bool outputToBatchShader = true);
+    void create(bool renderToParent = true);
 
     void render(int parentFBO);
 
@@ -55,7 +55,7 @@ public:
 
     const unsigned int* getRBOs() const;
 private:
-    bool outputToReflectiveShaders;
+    bool renderToParent;
 
     Shader reflectionShader = Shader("shaders/reflectionVertex.glsl", "shaders/reflectionFrag.glsl");
     Shader refractionShader = Shader("shaders/refractionVertex.glsl", "shaders/refractionFrag.glsl");
@@ -71,6 +71,8 @@ private:
 
     std::vector<std::function<void(CubemapFramebuffer*)>> initTasks;
     std::vector<std::function<void(unsigned int, const glm::mat4& view)>> renderTasks;
+
+    void renderCubemap(ShaderRenderable* renderable, int parentFBO);
 
     void createFramebuffer(int index);
 };

@@ -53,7 +53,9 @@ add_library(Syngine SHARED
     src/modules/Camera.cpp
     src/modules/Shader.cpp
     src/modules/Mesh.cpp
+    src/modules/MeshInstance.cpp
     src/modules/Model.cpp
+    src/modules/ModelInstance.cpp
     src/modules/Skybox.cpp
 
     src/world/World.cpp
@@ -62,6 +64,7 @@ add_library(Syngine SHARED
     src/world/entity/EntityTriangleMesh.cpp
     src/world/entity/EntityTriangleMeshCompound.cpp
 
+    src/utils/FastMath.cpp
     src/utils/GameUtils.cpp
     src/utils/stb_image.c
     src/utils/glad.c

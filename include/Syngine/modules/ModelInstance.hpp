@@ -9,7 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-class ModelInstance : public CoordinatedObject, public ShaderRenderable {
+class ModelInstance : public DiscardableObject, public CoordinatedObject, public ShaderRenderable {
 public:
     Model* model;
     std::unordered_map<std::string, MeshInstance> meshInstances;

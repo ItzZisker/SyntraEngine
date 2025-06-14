@@ -35,7 +35,7 @@ public:
 
     ~Model();
 
-    void render(Shader shader, int FBO) override;
+    void render(Shader shader, int FBO);
 
     void filterMesh(std::string meshName);
 

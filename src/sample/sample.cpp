@@ -19,6 +19,7 @@
 #include "Syngine/modules/CubemapFramebuffer.hpp"
 #include "Syngine/modules/Framebuffer.hpp"
 #include "Syngine/modules/Mesh.hpp"
+#include "Syngine/modules/ModelInstance.hpp"
 #include "Syngine/modules/Scene.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "Syngine/modules/Skybox.hpp"
@@ -44,6 +45,9 @@ World* overWorld;
 
 Model* appleModel;
 Model* sceneModel;
+
+ModelInstance* sceneModelInstance;
+MeshInstance* appleMeshInstance;
 
 EntityConvexHull* appleEntity;
 EntityTriangleMeshCompound* sceneEntity;
@@ -169,6 +173,7 @@ void init_ImGUI() {
     ImGui_ImplOpenGL3_Init("#version 330");
 }
 
+// TODO: debug crash
 void init(GameWindow *window) {
     overWorld = new World(0, "overworld");
     camera = new Camera(overWorld, glm::vec3(5.0f, 0.0f, 5.0f), yaw, pitch);
@@ -176,14 +181,16 @@ void init(GameWindow *window) {
     appleModel = new Model("models/apple2/apple.obj");
     appleModel->filterMesh("Apple");
     appleModel->loadModel(Interleaved);
+    appleMeshInstance = new MeshInstance(appleModel->meshes["Apple"]);
 
     appleEntity = new EntityConvexHull(overWorld, 0.2f, appleModel->meshes["Hitbox"]);
     appleEntity->setPosition(glm::vec3(0, 2, 0));
-    appleEntity->bind("Apple", appleModel->meshes["Apple"]);
+    appleEntity->bind("Apple", *appleMeshInstance);
     appleEntity->load(false);
 
     sceneModel = new Model("models/wall/wall.obj");
     sceneModel->loadModel(Sequential);
+    sceneModelInstance = new ModelInstance(sceneModel);
 
     sceneEntity = new EntityTriangleMeshCompound(overWorld, sceneModel);
     sceneEntity->load();
@@ -205,7 +212,7 @@ void init(GameWindow *window) {
     scene->getBatchRenderTable()->add("skybox", skybox);
 
     cubemapFramebuffer = new CubemapFramebuffer(scene);
-    cubemapFramebuffer->getReflectionRenderTable()->add("appleModel", appleModel);
+    cubemapFramebuffer->getReflectionRenderTable()->add("apple", appleMeshInstance);
     cubemapFramebuffer->create(true);
 
     framebuffer = new Framebuffer(scene);
@@ -213,7 +220,7 @@ void init(GameWindow *window) {
     framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
     framebuffer->create(window, true);
 
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     glfwSetInputMode(window->getGLFWWindowPtr(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     window->getWindowRenderTable()->add("overWorld", overWorld);

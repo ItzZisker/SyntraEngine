@@ -69,3 +69,10 @@ glm::vec3 GameUtils::directionOf(float yaw, float pitch) {
         sin(glm::radians(yaw)) * cos(glm::radians(pitch))
     );
 }
+
+bool GameUtils::shouldDiscard(ShaderRenderable* renderable, const glm::mat4 projection) {
+    DiscardableObject* discardable = dynamic_cast<DiscardableObject*>(renderable);
+    CoordinatedObject* coords = dynamic_cast<CoordinatedObject*>(renderable);
+
+    return discardable && coords && discardable->shouldDiscard(projection, coords->getTransform());
+}

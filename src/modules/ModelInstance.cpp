@@ -2,14 +2,32 @@
 
 #include "Syngine/modules/Model.hpp"
 #include "Syngine/modules/Shader.hpp"
+#include "Syngine/world/WorldObject.hpp"
+#include "glm/fwd.hpp"
 #include <Syngine/modules/Mesh.hpp>
 #include <Syngine/utils/GameUtils.hpp>
 
 ModelInstance::ModelInstance(Model* model, CoordinatedObject coords) : model(model) {
     setTransform(coords.getTransform());
-    for (auto& mesh : model->meshes) {
-        meshInstances[mesh.first] = MeshInstance(mesh.second);
+
+    bool init = true;
+    glm::vec3 min, max;
+
+    for (auto& pair : model->meshes) {
+        Mesh* mesh = pair.second;
+
+        if (init) {
+            min = mesh->vertices[0].position;
+            max = mesh->vertices[0].position;
+            init = false;
+        }
+        for (const auto& vertex : mesh->vertices) {
+            min = glm::min(min, vertex.position);
+            max = glm::max(max, vertex.position);
+        }
+        meshInstances.emplace(pair.first, MeshInstance(mesh));
     }
+    AABB = BoundingBox(min, max);
 }
 
 void ModelInstance::render(Shader shader, int FBO) {

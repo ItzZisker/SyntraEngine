@@ -37,7 +37,7 @@ struct Texture {
     std::string path;
 };
 
-class Mesh : public CoordinatedObject, public ShaderRenderable {
+class Mesh : public DiscardableObject, public CoordinatedObject, public ShaderRenderable {
 public:
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
@@ -52,7 +52,11 @@ public:
 
     ~Mesh();
 
-    void render(Shader shader, int FBO) override;
+    void render(Shader shader, int FBO, glm::mat4 transform);
+
+    void render(Shader shader, int FBO) override {
+        render(shader, FBO, transform);
+    }
 
     void init(VRAM_Approach = Sequential);
 };

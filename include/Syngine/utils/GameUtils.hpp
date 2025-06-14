@@ -1,6 +1,7 @@
 #include "LinearMath/btQuaternion.h"
 #include "LinearMath/btTransform.h"
 #include "LinearMath/btVector3.h"
+#include "Syngine/engine/RenderTable.hpp"
 
 #include <glm/glm.hpp>
 
@@ -21,4 +22,6 @@ namespace GameUtils
     glm::mat4 fromBulletTransform(const btTransform& transform);
 
     glm::vec3 directionOf(float yaw, float pitch);
+
+    bool shouldDiscard(ShaderRenderable* renderable, const glm::mat4 projection);
 }

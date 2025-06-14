@@ -8,11 +8,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-class MeshInstance : public CoordinatedObject, public ShaderRenderable {
+class MeshInstance : public DiscardableObject, public CoordinatedObject, public ShaderRenderable {
 public:
     Mesh* mesh;
 
-    MeshInstance(Mesh* mesh, CoordinatedObject coords = CoordinatedObject());
+    MeshInstance(Mesh* mesh);
+
+    MeshInstance(Mesh* mesh, CoordinatedObject coords);
 
     void render(Shader shader, int FBO) override;
 };
