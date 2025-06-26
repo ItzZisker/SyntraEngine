@@ -3,6 +3,7 @@
 #include "Syngine/modules/Scene.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "Syngine/world/WorldObject.hpp"
+#include "Syngine/utils/GameUtils.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/fwd.hpp"
 #include <iostream>
@@ -86,8 +87,8 @@ void CubemapFramebuffer::create(bool renderToParent) {
         batchShader.setVec3f("spotLight.position", cameraPos);
         batchShader.setVec3f("spotLight.direction", cameraDir);
 
-        scene->getBatchRenderTable()->forEach([&projection, &batchShader, &FBO](const std::string& key, ShaderRenderable* renderable) {
-            if (!GameUtils::shouldDiscard(renderable, projection)) {
+        scene->getBatchRenderTable()->forEach([&](const std::string& key, ShaderRenderable* renderable) {
+            if (!GameUtils::shouldDiscard(renderable, scene)) {
                 renderable->render(batchShader, FBO);
             }
         });
@@ -97,7 +98,7 @@ void CubemapFramebuffer::create(bool renderToParent) {
 void CubemapFramebuffer::renderCubemap(ShaderRenderable* renderable, int parentFBO) {
     glm::vec3 position = scene->getCamera()->getPosition();
 
-    if (CoordinatedObject* coords = dynamic_cast<CoordinatedObject*>(renderable)) {
+    if (Coordination* coords = dynamic_cast<Coordination*>(renderable)) {
         position = coords->getPosition();
     }
 
@@ -125,7 +126,7 @@ void CubemapFramebuffer::renderCubemap(ShaderRenderable* renderable, int parentF
 
 void CubemapFramebuffer::render(int parentFBO) {
     reflectionRendertable->forEach([&](const std::string& key, ShaderRenderable* renderable){
-        if (renderToParent && GameUtils::shouldDiscard(renderable, scene->getProjection())) {
+        if (renderToParent && GameUtils::shouldDiscard(renderable, scene)) {
             return;
         }
         renderCubemap(renderable, parentFBO);
@@ -147,7 +148,7 @@ void CubemapFramebuffer::render(int parentFBO) {
         }
     });
     refractionRendertable->forEach([&](const std::string& key, ShaderRenderable* renderable){
-        if (renderToParent && GameUtils::shouldDiscard(renderable, scene->getProjection())) {
+        if (renderToParent && GameUtils::shouldDiscard(renderable, scene)) {
             return;
         }
         renderCubemap(renderable, parentFBO);

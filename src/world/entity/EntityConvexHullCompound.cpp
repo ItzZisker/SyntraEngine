@@ -2,6 +2,7 @@
 
 #include <Syngine/modules/Mesh.hpp>
 #include <Syngine/world/entity/EntityConvexHullCompound.hpp>
+#include "Syngine/utils/GameUtils.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -42,7 +43,7 @@ void EntityConvexHullCompound::load(bool enablePolyhedral) {
 
         std::vector<btVector3> points;
         for (const Vertex& vertex : mesh->vertices) {
-            glm::vec3 transformed = glm::vec3(mesh->getTransform() * glm::vec4(vertex.position, 1.0f));
+            glm::vec3 transformed = glm::vec3(mesh->getParentToNodeTransform() * glm::vec4(vertex.position, 1.0f));
             points.emplace_back(transformed.x, transformed.y, transformed.z);
         }
 
@@ -55,7 +56,7 @@ void EntityConvexHullCompound::load(bool enablePolyhedral) {
         btTransform meshTransform;
         
         meshTransform.setIdentity();
-        meshTransform.setFromOpenGLMatrix(glm::value_ptr(mesh->getTransform()));
+        meshTransform.setFromOpenGLMatrix(glm::value_ptr(mesh->getParentToNodeTransform()));
 
         shape->addChildShape(meshTransform, subShape);
     }
@@ -69,12 +70,4 @@ void EntityConvexHullCompound::load(bool enablePolyhedral) {
 
     btDefaultMotionState* motionState = new btDefaultMotionState(startTransform);
     body = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(mass, motionState, shape, inertia));
-
-    std::unordered_map<std::string, Mesh*> meshesCopy = meshes;
-    addMotionState("DEFAULT", [meshesCopy](const glm::mat4& transform) {        
-        for (const auto& it : meshesCopy) {
-            Mesh* mesh = it.second;
-            mesh->setTransform(transform * mesh->getTransform());
-        }
-    });
 }

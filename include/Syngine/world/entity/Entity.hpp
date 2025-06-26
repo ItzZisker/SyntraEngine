@@ -4,6 +4,7 @@
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/MeshInstance.hpp"
 #include "Syngine/world/WorldObject.hpp"
+#include "glm/fwd.hpp"
 
 #include <functional>
 #include <iostream>
@@ -21,12 +22,12 @@ public:
         return this->body;
     }
 
-    void bind(std::string motionKey, MeshInstance meshInstance) {
+    void bind(std::string motionKey, MeshInstance* meshInstance) {
         if (hasMotionState(motionKey)) {
             std::cerr << "Already has MotionState: " << motionKey << std::endl;
         } else {
-            addMotionState(motionKey, [&meshInstance](const glm::mat4& m) {
-                meshInstance.setTransform(m);
+            addMotionState(motionKey, [meshInstance](const glm::mat4& m) {
+                meshInstance->setTransform(m);
             });
         }
     }

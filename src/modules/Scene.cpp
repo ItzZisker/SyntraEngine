@@ -4,6 +4,7 @@
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "Syngine/world/WorldObject.hpp"
+#include "Syngine/utils/GameUtils.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
 Scene::Scene(Camera* camera, GameWindow* window)
@@ -40,11 +41,10 @@ Scene::~Scene() {
 
 void Scene::setupShaders() {
     screenShader.init();
-    batchShader.init();
-
     screenShader.use();
     screenShader.setVec2f("resolution", screenWidth, screenHeight);
 
+    batchShader.init();
     batchShader.use();
     batchShader.setFloat("shininess", 32.0f);
     batchShader.setVec3f("dirLight.direction", -0.2f, -1.0f, -0.3f);
@@ -72,7 +72,7 @@ void Scene::render(int FBO) {
     batchShader.setVec3f("spotLight.position", cameraPos);
     batchShader.setVec3f("spotLight.direction", camera->getDirection());
     batchRenderTable->forEach([&](const std::string& key, ShaderRenderable* renderable) {
-        if (!GameUtils::shouldDiscard(renderable, projection)) {
+        if (!GameUtils::shouldDiscard(renderable, this)) {
             renderable->render(batchShader, FBO);
         }
     });

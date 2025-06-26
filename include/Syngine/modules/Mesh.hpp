@@ -37,7 +37,9 @@ struct Texture {
     std::string path;
 };
 
-class Mesh : public DiscardableObject, public CoordinatedObject, public ShaderRenderable {
+class Mesh {
+private:
+    glm::mat4 parentToNodeTransform;
 public:
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
@@ -48,15 +50,13 @@ public:
 
     bool loaded;
 
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures, glm::mat4 parentToNodeTransform);
 
     ~Mesh();
 
-    void render(Shader shader, int FBO, glm::mat4 transform);
+    glm::mat4 getParentToNodeTransform();
 
-    void render(Shader shader, int FBO) override {
-        render(shader, FBO, transform);
-    }
+    void render(Shader shader, int FBO, glm::mat4 transform);
 
     void init(VRAM_Approach = Sequential);
 };

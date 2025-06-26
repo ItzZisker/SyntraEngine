@@ -1,6 +1,8 @@
 #include "Syngine/Syngine.hpp"
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/Shader.hpp"
+#include "Syngine/world/WorldObject.hpp"
+#include "Syngine/utils/GameUtils.hpp"
 #include <Syngine/modules/Framebuffer.hpp>
 #include <iostream>
 
@@ -79,9 +81,10 @@ void Framebuffer::create(GameWindow* window, bool outputToScreenShader) {
     RenderTable<ShaderRenderable>* renderTableCopy = renderTable;
     Scene *scene = this->scene;
     addRenderTask([scene, renderTableCopy](Framebuffer* framebuffer){
-        Shader batchShader = scene->getBatchShader();
-        renderTableCopy->forEach([batchShader, framebuffer](const std::string& key, ShaderRenderable* renderable){
-            renderable->render(batchShader, framebuffer->getFBO());
+        renderTableCopy->forEach([&](const std::string& key, ShaderRenderable* renderable){
+            if (!GameUtils::shouldDiscard(renderable, scene)) {
+                renderable->render(scene->getBatchShader(), framebuffer->getFBO());
+            }
         });
     });
 }

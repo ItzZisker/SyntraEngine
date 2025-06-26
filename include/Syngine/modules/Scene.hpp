@@ -88,5 +88,5 @@ public:
 
 struct WindowUserData {
     Scene* scene = nullptr;
-    void* otherData = nullptr;
+    void* suffix = nullptr;
 };

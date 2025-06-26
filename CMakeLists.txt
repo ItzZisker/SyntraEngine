@@ -59,6 +59,7 @@ add_library(Syngine SHARED
     src/modules/Skybox.cpp
 
     src/world/World.cpp
+    src/world/WorldObject.cpp
     src/world/entity/EntityConvexHull.cpp
     src/world/entity/EntityConvexHullCompound.cpp
     src/world/entity/EntityTriangleMesh.cpp

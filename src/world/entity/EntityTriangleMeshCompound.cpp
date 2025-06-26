@@ -4,6 +4,7 @@
 #include <LinearMath/btVector3.h>
 #include <Syngine/world/entity/EntityTriangleMeshCompound.hpp>
 #include <BulletCollision/CollisionDispatch/btInternalEdgeUtility.h>
+#include "Syngine/utils/GameUtils.hpp"
 
 #include <iostream>
 
@@ -37,7 +38,7 @@ void EntityTriangleMeshCompound::load(bool useQuantizedAabbCompression) {
 
     for (const auto& it : meshes) {
         Mesh* mesh = it.second;
-        glm::mat4 transform = mesh->getTransform();
+        glm::mat4 transform = mesh->getParentToNodeTransform();
 
         const auto& vertices = mesh->vertices;
         const auto& indices = mesh->indices;
@@ -70,12 +71,4 @@ void EntityTriangleMeshCompound::load(bool useQuantizedAabbCompression) {
     body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
 
     world->getDynamics()->addRigidBody(body);
-
-    std::unordered_map<std::string, Mesh*> meshesCopy = meshes;
-    addMotionState("DEFAULT", [meshesCopy](const glm::mat4& transform) {        
-        for (const auto& it : meshesCopy) {
-            Mesh* mesh = it.second;
-            mesh->setTransform(transform * mesh->getTransform());
-        }
-    });
 }

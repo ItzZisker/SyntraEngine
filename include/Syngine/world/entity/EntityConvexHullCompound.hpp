@@ -18,7 +18,7 @@ private:
     std::unordered_map<std::string, Mesh*> meshes;
     btCompoundShape* shape;
 public:
-    CoordinatedObject coords;
+    Coordination coords;
     bool hasRollingFriction = true;
     float mass;
     float friction = 1.0f, rollingFriction = 0.3f, linearDamping = 0.8f, angularDamping = 0.2f;

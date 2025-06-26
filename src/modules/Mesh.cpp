@@ -1,5 +1,4 @@
 #include "Syngine/modules/Shader.hpp"
-#include "Syngine/world/WorldObject.hpp"
 #include "glm/fwd.hpp"
 #include <Syngine/modules/Mesh.hpp>
 #include <Syngine/utils/GameUtils.hpp>
@@ -24,16 +23,9 @@ GLuint getDefaultWhiteTexture() {
 
 Mesh::Mesh(std::vector<Vertex> vertices,
            std::vector<unsigned int> indices,
-           std::vector<Texture> textures)
-    : vertices(vertices), indices(indices), textures(textures), DiscardableObject() {
-    glm::vec3 min = vertices[0].position;
-    glm::vec3 max = vertices[0].position;
-
-    for (const auto& vertex : vertices) {
-        min = glm::min(min, vertex.position);
-        max = glm::max(max, vertex.position);
-    }
-    AABB = BoundingBox(min, max);
+           std::vector<Texture> textures,
+           glm::mat4 parenToNodeTransform)
+    : vertices(vertices), indices(indices), textures(textures), parentToNodeTransform(parenToNodeTransform) {
 }
 
 Mesh::~Mesh() {
@@ -44,6 +36,10 @@ Mesh::~Mesh() {
     glDeleteBuffers(1, &EBO);
     glDeleteBuffers(1, &VBO);
     glDeleteVertexArrays(1, &VAO);
+}
+
+glm::mat4 Mesh::getParentToNodeTransform() {
+    return parentToNodeTransform;
 }
 
 void Mesh::render(Shader shader, int FBO, glm::mat4 transform) {

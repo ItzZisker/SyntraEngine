@@ -2,6 +2,7 @@
 #include "LinearMath/btTransform.h"
 #include "LinearMath/btVector3.h"
 #include "Syngine/engine/RenderTable.hpp"
+#include "Syngine/modules/Scene.hpp"
 
 #include <glm/glm.hpp>
 
@@ -23,5 +24,5 @@ namespace GameUtils
 
     glm::vec3 directionOf(float yaw, float pitch);
 
-    bool shouldDiscard(ShaderRenderable* renderable, const glm::mat4 projection);
+    bool shouldDiscard(ShaderRenderable* renderable, Scene* scene);
 }

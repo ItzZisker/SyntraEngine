@@ -23,14 +23,11 @@ public:
     
     void setPosition(const glm::vec3& position) override;
 
+    void setUp(const glm::vec3& up) override;
+
     glm::mat4 getViewMatrix();
-
-    glm::vec3 getUp();
-
-    void setUp(glm::vec3 up);
 
     void updateViewMatrix();
 private:
     glm::mat4 viewMatrix;
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 };

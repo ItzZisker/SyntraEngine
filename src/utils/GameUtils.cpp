@@ -70,9 +70,9 @@ glm::vec3 GameUtils::directionOf(float yaw, float pitch) {
     );
 }
 
-bool GameUtils::shouldDiscard(ShaderRenderable* renderable, const glm::mat4 projection) {
-    DiscardableObject* discardable = dynamic_cast<DiscardableObject*>(renderable);
-    CoordinatedObject* coords = dynamic_cast<CoordinatedObject*>(renderable);
+bool GameUtils::shouldDiscard(ShaderRenderable* renderable, Scene* scene) {
+    Discardable* discardable = dynamic_cast<Discardable*>(renderable);
+    Coordination* coords = dynamic_cast<Coordination*>(renderable);
 
-    return discardable && coords && discardable->shouldDiscard(projection, coords->getTransform());
+    return discardable && coords && discardable->shouldDiscard(scene, coords->getTransform());
 }

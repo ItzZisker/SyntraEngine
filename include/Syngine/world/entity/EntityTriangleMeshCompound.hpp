@@ -21,7 +21,7 @@ private:
     btTriangleInfoMap* triangleInfoMap;
     btBvhTriangleMeshShape* shape;
 public:
-    CoordinatedObject coords;
+    Coordination coords;
 
     EntityTriangleMeshCompound(World* world, Model* model);
 

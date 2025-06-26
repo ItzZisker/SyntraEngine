@@ -3,128 +3,80 @@
 #include "glm/fwd.hpp"
 #include <Syngine/engine/RenderTable.hpp>
 #include <Syngine/world/World.hpp>
-#include <Syngine/utils/GameUtils.hpp>
 #include <Syngine/utils/FastMath.hpp>
 
 #include <glm/glm.hpp>
 #include <vector>
 
+class Scene;
+
 struct FrustumPlane {
     glm::vec3 normal;
     float distance;
+
+    FrustumPlane();
+
+    FrustumPlane(const glm::vec3& point, const glm::vec3& normalVec);
+
+    float getSignedDistanceToPlane(const glm::vec3& point) const;
 };
 
-class BoundingBox {
+struct Frustum {
+    FrustumPlane topFace, bottomFace, rightFace, leftFace, farFace, nearFace;
+};
+
+class AABB {
 public:
-    glm::vec3 min;
-    glm::vec3 max;
+    glm::vec3 center {0.0f, 0.0f, 0.0f};
+    glm::vec3 extents {0.0f, 0.0f, 0.0f};
 
-    BoundingBox(std::vector<glm::vec3> positions) {        
-        this->min = positions[0];
-        this->max = positions[0];
+    AABB(std::vector<glm::vec3> positions);
 
-        for (const auto& pos : positions) {
-            this->min = glm::min(min, pos);
-            this->max = glm::max(max, pos);
-        }
-    }
+    AABB(const glm::vec3& min, const glm::vec3& max);
 
-    BoundingBox(glm::vec3 min, glm::vec3 max) {
-        this->min = min;
-        this->max = max;
-    }
+    AABB(const glm::vec3& inCenter, float iI, float iJ, float iK);
+
+    bool isOnOrForwardPlane(const FrustumPlane& plane) const;
 };
 
-class DiscardableObject {
+class Discardable {
+public:
+    virtual bool shouldDiscard(Scene* scene, const glm::mat4& transform) = 0;
+};
+
+class FrustumDiscardable : public Discardable {
 protected:
-    BoundingBox AABB;
+    AABB bounding;
 public:
-    DiscardableObject(BoundingBox AABB) : AABB(AABB) {}
+    FrustumDiscardable(AABB bounding);
 
-    DiscardableObject() : AABB(BoundingBox(glm::vec3(1.0f), glm::vec3(1.0f))) {}
+    FrustumDiscardable();
 
-    ~DiscardableObject() = default;
+    ~FrustumDiscardable();
 
-    std::vector<FrustumPlane> extractFrustumPlanes(const glm::mat4& viewProj) {            
-        std::vector<FrustumPlane> planes(6);
+    Frustum createFrustum(Scene* scene);
 
-        glm::vec4 rowX = viewProj[0];
-        glm::vec4 rowY = viewProj[1];
-        glm::vec4 rowZ = viewProj[2];
-        glm::vec4 rowW = viewProj[3];
+    bool isInFrustum(const Frustum& frustum, const glm::mat4& transform);
 
-        planes[0] = { glm::vec3(rowW + rowX), (rowW + rowX).w };
-        planes[1] = { glm::vec3(rowW - rowX), (rowW - rowX).w };
-        planes[2] = { glm::vec3(rowW + rowY), (rowW + rowY).w };
-        planes[3] = { glm::vec3(rowW - rowY), (rowW - rowY).w };
-        planes[4] = { glm::vec3(rowW + rowZ), (rowW + rowZ).w };
-        planes[5] = { glm::vec3(rowW - rowZ), (rowW - rowZ).w };
+    bool isInView(Scene* scene, const glm::mat4& transform);
 
-        for (auto& plane : planes) { // normalize
-            float divisor = FastMath::inv_sqrt(FastMath::glmLen2(plane.normal));
-            plane.normal *= divisor;
-            plane.distance *= divisor;
-        }
-        return planes;
+    bool shouldDiscard(Scene* scene, const glm::mat4& transform) override {
+        return !isInView(scene, transform);
     }
 
-    bool isInFrustum(const std::vector<FrustumPlane>& planes, const glm::mat4& transform) {        
-        for (const auto& plane : planes) {
-            glm::vec3 corners[8];
-
-            corners[0] = glm::vec3(transform * glm::vec4(AABB.min.x, AABB.min.y, AABB.min.z, 1.0));
-            corners[1] = glm::vec3(transform * glm::vec4(AABB.max.x, AABB.min.y, AABB.min.z, 1.0));
-            corners[2] = glm::vec3(transform * glm::vec4(AABB.min.x, AABB.max.y, AABB.min.z, 1.0));
-            corners[3] = glm::vec3(transform * glm::vec4(AABB.min.x, AABB.min.y, AABB.max.z, 1.0));
-            corners[4] = glm::vec3(transform * glm::vec4(AABB.max.x, AABB.max.y, AABB.min.z, 1.0));
-            corners[5] = glm::vec3(transform * glm::vec4(AABB.max.x, AABB.min.y, AABB.max.z, 1.0));
-            corners[6] = glm::vec3(transform * glm::vec4(AABB.min.x, AABB.max.y, AABB.max.z, 1.0));
-            corners[7] = glm::vec3(transform * glm::vec4(AABB.max.x, AABB.max.y, AABB.max.z, 1.0));
-
-            bool allOutside = true;
-
-            for (int i = 0; i < 8; ++i) {
-                if (glm::dot(plane.normal, corners[i]) + plane.distance >= 0) {
-                    allOutside = false;
-                    break;
-                }
-            }
-            return allOutside;
-        }
-        return true;
-    }
-
-    bool isInView(const glm::mat4 projection, const glm::mat4& transform) {        
-        return isInFrustum(extractFrustumPlanes(projection), transform);
-    }
-
-    bool shouldDiscard(const glm::mat4 projection, const glm::mat4& transform) {
-        return !isInView(projection, transform);
-    }
-
-    BoundingBox getAABB() {
-        return AABB;
-    }
+    AABB getBounding();
 };
 
-class CoordinatedObject {
+class Coordination {
 protected:
     glm::mat4 transform = glm::mat4(1.0f);
 public:
-    CoordinatedObject(glm::mat4 transform = glm::mat4(1.0f)) {
+    Coordination(glm::mat4 transform = glm::mat4(1.0f)) {
         this->transform = transform;
     }
 
     virtual const glm::mat4& getTransform() {
         return transform;
-    }
-
-    virtual glm::vec3 getPosition() const {
-        return glm::vec3(transform[3]);
-    }
-
-    virtual glm::vec3 getDirection() const {
-        return glm::normalize(glm::vec3(-transform[2]));
     }
 
     virtual float getYaw() const {
@@ -136,12 +88,42 @@ public:
         return glm::degrees(asin(getDirection().y));
     }
 
+    virtual glm::vec3 getUp() const {
+        return glm::normalize(glm::vec3(transform[1]));
+    }
+
+    virtual glm::vec3 getRight() const {
+        return glm::normalize(glm::cross(getDirection(), getUp()));
+    }
+
+    virtual glm::vec3 getPosition() const {
+        return glm::vec3(transform[3]);
+    }
+
+    virtual glm::vec3 getDirection() const {
+        return glm::normalize(glm::vec3(-transform[2]));
+    }
+
     virtual void setTransform(const glm::mat4& transform) {
         this->transform = transform;
     }
 
     virtual void setPosition(const glm::vec3& pos) {
         transform[3] = glm::vec4(pos, 1.0f);
+    }
+
+    virtual void setUp(const glm::vec3& newUp) {
+        glm::vec3 forward = getDirection();
+        glm::vec3 right = glm::normalize(glm::cross(newUp, forward));
+        glm::vec3 up = glm::normalize(glm::cross(forward, right));
+
+        glm::mat4 rotation = glm::mat4(1.0f);
+        rotation[0] = glm::vec4(right, 0.0f);
+        rotation[1] = glm::vec4(up, 0.0f);
+        rotation[2] = glm::vec4(-forward, 0.0f);
+        rotation[3] = transform[3];
+
+        transform = rotation;
     }
 
     virtual void setDirection(const glm::vec3& dir) {
@@ -160,17 +142,13 @@ public:
     }
 };
 
-class WorldObject : public CoordinatedObject {
+class WorldObject : public Coordination {
 protected:
     World *world;
 public:
-    WorldObject(World *initialWorld) : world(initialWorld) {}
+    WorldObject(World *initialWorld);
 
-    void setWorld(World *world) {
-        this->world = world; 
-    }
+    void setWorld(World *world);
 
-    World *getWorld() const { 
-        return world;
-    }
+    World *getWorld() const;
 };

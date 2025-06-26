@@ -1,6 +1,6 @@
 #pragma once
 
-#include "glm/glm.hpp"
+#include "glm/fwd.hpp"
 
 namespace FastMath {
     float glmLen2(glm::vec2 vec);

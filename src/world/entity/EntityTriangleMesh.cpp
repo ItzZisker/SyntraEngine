@@ -3,6 +3,7 @@
 #include <Syngine/modules/Mesh.hpp>
 #include <LinearMath/btVector3.h>
 #include <Syngine/world/entity/EntityTriangleMesh.hpp>
+#include "Syngine/utils/GameUtils.hpp"
 
 #include <iostream>
 
@@ -45,15 +46,10 @@ void EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
     shape = new btBvhTriangleMeshShape(triangleMesh, useQuantizedAabbCompression);
 
     btDefaultMotionState* motionState = new btDefaultMotionState(btTransform(
-        GameUtils::getBulletRotationFromTransform(mesh->getTransform()),
-        GameUtils::toBulletVector(mesh->getPosition())
+        GameUtils::getBulletRotationFromTransform(coords.getTransform()),
+        GameUtils::toBulletVector(coords.getPosition())
     ));
 
     body = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(mass, motionState, shape, btVector3(0, 0, 0)));
     world->getDynamics()->addRigidBody(body);
-
-    Mesh* meshCopy = mesh;
-    addMotionState("DEFAULT", [meshCopy](const glm::mat4& transform) {
-        meshCopy->setTransform(transform);
-    });
 }

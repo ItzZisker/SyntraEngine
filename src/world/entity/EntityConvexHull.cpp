@@ -4,8 +4,8 @@
 
 #include <Syngine/modules/Mesh.hpp>
 #include <Syngine/world/entity/EntityConvexHull.hpp>
+#include "Syngine/utils/GameUtils.hpp"
 
-#include <cmath>
 #include <iostream>
 
 EntityConvexHull::EntityConvexHull(World* world, float mass, Mesh* mesh) 
@@ -47,8 +47,8 @@ void EntityConvexHull::load(bool enablePolyhedral) {
     }
 
     btDefaultMotionState* motionState = new btDefaultMotionState( btTransform(
-        GameUtils::getBulletRotationFromTransform(mesh->getTransform()),
-        GameUtils::toBulletVector(mesh->getPosition())
+        GameUtils::getBulletRotationFromTransform(coords.getTransform()),
+        GameUtils::toBulletVector(coords.getPosition())
     ));
 
     btVector3 inertia(0,0,0);
@@ -60,9 +60,4 @@ void EntityConvexHull::load(bool enablePolyhedral) {
     body->setDamping(0.8f, 0.2f);
 
     world->getDynamics()->addRigidBody(body);
-
-    Mesh* meshCopy = mesh;
-    addMotionState("DEFAULT", [meshCopy](const glm::mat4& transform) {
-        meshCopy->setTransform(transform);
-    });
 }

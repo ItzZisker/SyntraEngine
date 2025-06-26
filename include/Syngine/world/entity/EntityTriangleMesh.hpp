@@ -16,6 +16,7 @@ private:
     btTriangleMesh* triangleMesh;
     btBvhTriangleMeshShape* shape;
 public:
+    Coordination coords;
     float mass;
 
     EntityTriangleMesh(World* world, float mass, Mesh* mesh);

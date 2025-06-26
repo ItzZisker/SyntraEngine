@@ -22,7 +22,7 @@
 
 unsigned int TextureFromFile(const char *path, const std::string &directory);
 
-class Model : public ShaderRenderable
+class Model
 {
 public:
     std::set<std::string> renderable_meshes;
@@ -34,8 +34,6 @@ public:
     Model(std::string const &path, bool gamma = false);
 
     ~Model();
-
-    void render(Shader shader, int FBO);
 
     void filterMesh(std::string meshName);
 

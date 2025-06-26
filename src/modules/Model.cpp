@@ -50,25 +50,6 @@ void Model::read(const std::set<std::string>& meshNames, bool flipTextures) {
     loaded = true;
 }
 
-void Model::render(Shader shader, int parentFBO) {
-    if (!loaded) {
-        return;
-    }
-    if (renderable_meshes.empty()) {
-        for (auto& mesh : meshes) {
-            mesh.second->render(shader,parentFBO);
-        }
-        return;
-    }
-    for (const std::string& meshName : renderable_meshes) {
-        auto found = meshes.find(meshName);
-
-        if (found != meshes.end()) {
-            found->second->render(shader, parentFBO);
-        }
-    }
-}
-
 glm::mat4 convertToGLMMatrix(const aiMatrix4x4& aiMat) {
     glm::mat4 mat;
     mat[0][0] = aiMat.a1; mat[1][0] = aiMat.a2; mat[2][0] = aiMat.a3; mat[3][0] = aiMat.a4;
@@ -161,10 +142,7 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& tr
     std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
-    Mesh *result = new Mesh(vertices, indices, textures);       
-    result->setTransform(transform);
-
-    return result;
+    return new Mesh(vertices, indices, textures, transform);
 }
 
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName) {

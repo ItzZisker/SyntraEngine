@@ -5,8 +5,6 @@
 #include <Syngine/world/entity/EntityConvexHull.hpp>
 #include <Syngine/world/entity/EntityTriangleMeshCompound.hpp>
 
-#include <cstdlib>
-#include <iostream>
 #include <stb/stb_image.h>
 
 #include <glm/glm.hpp>
@@ -23,6 +21,7 @@
 #include "Syngine/modules/Scene.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "Syngine/modules/Skybox.hpp"
+#include "Syngine/utils/GameUtils.hpp"
 #include "glm/fwd.hpp"
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
@@ -185,7 +184,7 @@ void init(GameWindow *window) {
 
     appleEntity = new EntityConvexHull(overWorld, 0.2f, appleModel->meshes["Hitbox"]);
     appleEntity->setPosition(glm::vec3(0, 2, 0));
-    appleEntity->bind("Apple", *appleMeshInstance);
+    appleEntity->bind("Apple", appleMeshInstance);
     appleEntity->load(false);
 
     sceneModel = new Model("models/wall/wall.obj");
@@ -197,8 +196,8 @@ void init(GameWindow *window) {
 
     scene = new Scene(camera, window);
     scene->installCallbacks(window);
-    scene->getBatchRenderTable()->add("sceneModel", sceneModel);
-    //scene->getBatchRenderTable()->add("appleModel", appleModel);
+    scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
+    // scene->getBatchRenderTable()->add("appleModel", appleMeshInstance);
 
     skybox = new Skybox(scene, std::vector<std::string> {
         "models/skybox/lightblue/right.png",
