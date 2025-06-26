@@ -1,16 +1,16 @@
-# K-Engine
+# Syntra Engine
 
-Very Basic, lightweight OpenGL 3D Game-Engine. Look sample.cpp.
+Very Basic, lightweight OpenGL 3D Game-Engine.
 
-TODO:
+Goals:
 - ~~Cross-Platform~~
 - ~~Lightweight,~~ Optimized
+- ~~Bullet Support~~ (IN PROGRESS)
 - Simple & Easy to Use in Code
 - Normal Mapping (as well as other chapters https://www.learnopengl.com)
 - Audio Support (OpenAL)
 - GLTF Support
 - Bones & Animation Support
-- Bullet Support
 - PhysX Support
 
 ## Manual Build
@@ -64,6 +64,6 @@ C:\msys64\usr\bin
 3. then just:
 
 ```
-cd KEngine\
+cd Syngine\
 cmake .
 ```
