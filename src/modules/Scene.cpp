@@ -72,9 +72,7 @@ void Scene::render(int FBO) {
     batchShader.setVec3f("spotLight.position", cameraPos);
     batchShader.setVec3f("spotLight.direction", camera->getDirection());
     batchRenderTable->forEach([&](const std::string& key, ShaderRenderable* renderable) {
-        if (!GameUtils::shouldDiscard(renderable, this)) {
-            renderable->render(batchShader, FBO);
-        }
+        GameUtils::renderDV(renderable, this, batchShader, FBO);
     });
 }
 
@@ -153,6 +151,19 @@ float Scene::getFieldOfViewDegrees() {
 
 float Scene::getAspectRatio() {
     return aspectRatio;
+}
+
+Scene_T Scene::getSnapshot() {
+    Scene_T res;
+    res.cameraPos = camera->getPosition();
+    res.cameraDir = camera->getDirection();
+    res.cameraUp = camera->getUp();
+    res.cameraRight = camera->getRight();
+    res.aspectRatio = aspectRatio;
+    res.FOV = fieldOfView;
+    res.zNear = near;
+    res.zFar = far;
+    return res;
 }
 
 Camera* Scene::getCamera() {

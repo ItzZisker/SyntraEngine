@@ -39,34 +39,35 @@ bool AABB::isOnOrForwardPlane(const FrustumPlane& plane) const {
     return -r <= plane.getSignedDistanceToPlane(center);
 }
 
+AABB FrustumDiscardable::getBounding() {
+    return this->bounding;
+}
+
 FrustumDiscardable::FrustumDiscardable(AABB bounding) : bounding(bounding) {}
 
 FrustumDiscardable::FrustumDiscardable() : bounding(AABB(glm::vec3(1.0f), glm::vec3(1.0f))) {}
 
 FrustumDiscardable::~FrustumDiscardable() = default;
 
-Frustum FrustumDiscardable::createFrustum(Scene* scene) {
+Frustum FrustumDiscardable::createFrustum(Scene_T snapshot) {
     Frustum frustum;
 
-    Camera* camera = scene->getCamera();
+    const float halfVSide = snapshot.zFar * tanf(snapshot.FOV * 0.5f);
+    const float halfHSide = halfVSide * snapshot.aspectRatio;
+    const glm::vec3 frontMultFar = snapshot.zFar * snapshot.cameraDir;
 
-    glm::vec3 cameraPos = camera->getPosition();
-    glm::vec3 cameraDir = camera->getDirection();
-    glm::vec3 cameraUp = camera->getUp();
-    glm::vec3 cameraRight = camera->getRight();
-
-    const float halfVSide = scene->getZFar() * tanf(scene->getFieldOfViewDegrees() * 0.5f);
-    const float halfHSide = halfVSide * scene->getAspectRatio();
-    const glm::vec3 frontMultFar = scene->getZFar() * cameraDir;
-
-    frustum.nearFace = { cameraPos + scene->getZNear() * cameraDir, cameraDir };
-    frustum.farFace = { cameraPos + frontMultFar, -cameraDir };
-    frustum.rightFace = { cameraPos, glm::cross(frontMultFar - cameraRight * halfHSide, cameraUp) };
-    frustum.leftFace = { cameraPos, glm::cross(cameraUp, frontMultFar + cameraRight * halfHSide) };
-    frustum.topFace = { cameraPos, glm::cross(cameraRight, frontMultFar - cameraUp * halfVSide) };
-    frustum.bottomFace = { cameraPos, glm::cross(frontMultFar + cameraUp * halfVSide, cameraRight) };
+    frustum.nearFace = { snapshot.cameraPos + snapshot.zNear * snapshot.cameraDir, snapshot.cameraDir };
+    frustum.farFace = { snapshot.cameraPos + frontMultFar, -snapshot.cameraDir };
+    frustum.rightFace = { snapshot.cameraPos, glm::cross(frontMultFar - snapshot.cameraRight * halfHSide, snapshot.cameraUp) };
+    frustum.leftFace = { snapshot.cameraPos, glm::cross(snapshot.cameraUp, frontMultFar + snapshot.cameraRight * halfHSide) };
+    frustum.topFace = { snapshot.cameraPos, glm::cross(snapshot.cameraRight, frontMultFar - snapshot.cameraUp * halfVSide) };
+    frustum.bottomFace = { snapshot.cameraPos, glm::cross(frontMultFar + snapshot.cameraUp * halfVSide, snapshot.cameraRight) };
 
     return frustum;
+}
+
+Frustum FrustumDiscardable::createFrustum(Scene* scene) {
+    createFrustum(scene->getSnapshot());
 }
 
 bool FrustumDiscardable::isInFrustum(const Frustum& camFrustum, const glm::mat4& transform) {
@@ -98,12 +99,20 @@ bool FrustumDiscardable::isInFrustum(const Frustum& camFrustum, const glm::mat4&
     );
 };
 
+bool FrustumDiscardable::isInView(Scene_T snapshot, const glm::mat4& transform) {
+    return isInFrustum(createFrustum(snapshot), transform);
+}
+
 bool FrustumDiscardable::isInView(Scene* scene, const glm::mat4& transform) {
     return isInFrustum(createFrustum(scene), transform);
 }
 
-AABB FrustumDiscardable::getBounding() {
-    return this->bounding;
+bool FrustumDiscardable::shouldDiscard(Scene_T snapshot, const glm::mat4& transform) {
+    return !isInView(snapshot, transform);
+}
+
+bool FrustumDiscardable::shouldDiscard(Scene* scene, const glm::mat4& transform) {
+    return !isInView(scene, transform);
 }
 
 WorldObject::WorldObject(World *initialWorld) : world(initialWorld) {}

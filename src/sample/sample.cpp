@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "GLFW/glfw3.h"
+#include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/CubemapFramebuffer.hpp"
 #include "Syngine/modules/Framebuffer.hpp"
 #include "Syngine/modules/Mesh.hpp"
@@ -197,7 +198,6 @@ void init(GameWindow *window) {
     scene = new Scene(camera, window);
     scene->installCallbacks(window);
     scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
-    // scene->getBatchRenderTable()->add("appleModel", appleMeshInstance);
 
     skybox = new Skybox(scene, std::vector<std::string> {
         "models/skybox/lightblue/right.png",
@@ -219,13 +219,13 @@ void init(GameWindow *window) {
     framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
     framebuffer->create(window, true);
 
-    glfwSwapInterval(0);
-    glfwSetInputMode(window->getGLFWWindowPtr(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
     window->getWindowRenderTable()->add("overWorld", overWorld);
     window->getWindowRenderTable()->add("appleEntity", appleEntity);
     window->getWindowRenderTable()->add("sceneEntity", sceneEntity);
     window->getWindowRenderTable()->add("framebuffer", framebuffer);
+
+    glfwSwapInterval(0);
+    glfwSetInputMode(window->getGLFWWindowPtr(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void render_Inputs(GameWindow *window) {
@@ -245,10 +245,8 @@ void render_ImGui() {
     ImGui::Text("FPS: %.0f", fps);
 
     if (ImGui::Button("Reset")) {
-        if (appleEntity) {
-            window->getWindowRenderTable()->remove("appleEntity");
-            delete appleEntity;
-        }
+        window->getWindowRenderTable()->wipe("appleEntity");
+
         appleEntity = new EntityConvexHull(overWorld, 0.2f, appleModel->meshes["Hitbox"]);
         appleEntity->load();
 

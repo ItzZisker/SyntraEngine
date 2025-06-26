@@ -1,5 +1,6 @@
 #include <Syngine/engine/RenderTable.hpp>
 #include <algorithm>
+#include <cstdio>
 
 template class RenderTable<WindowRenderable>;
 template class RenderTable<ShaderRenderable>;
@@ -7,8 +8,11 @@ template class RenderTable<ShaderRenderable>;
 template void RenderTable<WindowRenderable>::add(const std::string&, WindowRenderable*);
 template void RenderTable<ShaderRenderable>::add(const std::string&, ShaderRenderable*);
 
-template void RenderTable<WindowRenderable>::remove(const std::string&);
-template void RenderTable<ShaderRenderable>::remove(const std::string&);
+template WindowRenderable* RenderTable<WindowRenderable>::remove(const std::string&);
+template ShaderRenderable* RenderTable<ShaderRenderable>::remove(const std::string&);
+
+template void RenderTable<WindowRenderable>::wipe(const std::string&);
+template void RenderTable<ShaderRenderable>::wipe(const std::string&);
 
 template WindowRenderable* RenderTable<WindowRenderable>::get(const std::string&) const;
 template ShaderRenderable* RenderTable<ShaderRenderable>::get(const std::string&) const;
@@ -25,13 +29,25 @@ void RenderTable<R>::add(const std::string& key, R* renderable) {
 }
 
 template <typename R>
-void RenderTable<R>::remove(const std::string& key) {
-    if (objects.erase(key)) {
+void RenderTable<R>::wipe(const std::string& key) {
+    R* r = remove(key);
+    if (r) delete r;
+}
+
+template <typename R>
+R* RenderTable<R>::remove(const std::string& key) {
+    auto it = objects.find(key);
+    if (it != objects.end()) {
+        R* r = it->second;
+
+        objects.erase(it);
         insertionOrder.erase(
             std::remove(insertionOrder.begin(), insertionOrder.end(), key),
             insertionOrder.end()
         );
+        return r;
     }
+    return nullptr;
 }
 
 template <typename R>

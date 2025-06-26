@@ -3,6 +3,7 @@
 #include "LinearMath/btVector3.h"
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/Scene.hpp"
+#include "Syngine/modules/Shader.hpp"
 
 #include <glm/glm.hpp>
 
@@ -24,5 +25,11 @@ namespace GameUtils
 
     glm::vec3 directionOf(float yaw, float pitch);
 
+    bool shouldDiscard(ShaderRenderable* renderable, Scene_T snapshot);
+
     bool shouldDiscard(ShaderRenderable* renderable, Scene* scene);
+
+    void renderDV(ShaderRenderable* renderable, Scene_T snapshot, Shader shader, int FBO);
+
+    void renderDV(ShaderRenderable* renderable, Scene* scene, Shader shader, int FBO);
 }

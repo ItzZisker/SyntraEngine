@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+struct Scene_T;
 class Scene;
 
 struct FrustumPlane {
@@ -41,7 +42,7 @@ public:
 
 class Discardable {
 public:
-    virtual bool shouldDiscard(Scene* scene, const glm::mat4& transform) = 0;
+    virtual bool shouldDiscard(Scene_T snapshot, const glm::mat4& transform) = 0;
 };
 
 class FrustumDiscardable : public Discardable {
@@ -56,13 +57,17 @@ public:
 
     Frustum createFrustum(Scene* scene);
 
+    Frustum createFrustum(Scene_T snapshot);
+
     bool isInFrustum(const Frustum& frustum, const glm::mat4& transform);
+
+    bool isInView(Scene_T snapshot, const glm::mat4& transform);
 
     bool isInView(Scene* scene, const glm::mat4& transform);
 
-    bool shouldDiscard(Scene* scene, const glm::mat4& transform) override {
-        return !isInView(scene, transform);
-    }
+    bool shouldDiscard(Scene_T snapshot, const glm::mat4& transform) override;
+
+    bool shouldDiscard(Scene* scene, const glm::mat4& transform);
 
     AABB getBounding();
 };
@@ -73,6 +78,13 @@ protected:
 public:
     Coordination(glm::mat4 transform = glm::mat4(1.0f)) {
         this->transform = transform;
+    }
+
+    Coordination(const glm::vec3& position, const glm::vec3& direction, const glm::vec3 up) {
+        this->transform = glm::mat4(1.0f);
+        setPosition(position);
+        setDirection(direction);
+        setUp(up);
     }
 
     virtual const glm::mat4& getTransform() {

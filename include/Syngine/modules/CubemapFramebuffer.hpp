@@ -3,6 +3,7 @@
 #include "Syngine/engine/RenderTable.hpp"
 #include "Scene.hpp"
 #include "Shader.hpp"
+#include "Syngine/world/WorldObject.hpp"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <vector>
@@ -29,6 +30,8 @@ public:
 
     ~CubemapFramebuffer();
 
+    Scene_T getSnapshot(Coordination cubemapSideView);
+
     void create(bool renderToParent = true);
 
     void render(int parentFBO);
@@ -43,7 +46,7 @@ public:
 
     void addInitTask(std::function<void(CubemapFramebuffer*)> task);
 
-    void addRenderTask(std::function<void(unsigned int, const glm::mat4& view)> task);
+    void addRenderTask(std::function<void(unsigned int FBO, const Coordination& sideView)> task);
 
     RenderTable<ShaderRenderable>* getReflectionRenderTable();
 
@@ -69,8 +72,10 @@ private:
     RenderTable<ShaderRenderable> *reflectionRendertable = new RenderTable<ShaderRenderable>();
     RenderTable<ShaderRenderable> *refractionRendertable = new RenderTable<ShaderRenderable>();
 
-    std::vector<std::function<void(CubemapFramebuffer*)>> initTasks;
-    std::vector<std::function<void(unsigned int, const glm::mat4& view)>> renderTasks;
+    std::vector<std::function<void(CubemapFramebuffer* cubemapFramebuffer)>> initTasks;
+    std::vector<std::function<void(unsigned int FBO, const Coordination& sideView)>> renderTasks;
+
+    void renderDV(ShaderRenderable* renderable, Shader shader, int parentFBO);
 
     void renderCubemap(ShaderRenderable* renderable, int parentFBO);
 

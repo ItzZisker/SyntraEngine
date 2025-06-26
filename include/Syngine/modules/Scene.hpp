@@ -6,6 +6,17 @@
 #include "Shader.hpp"
 #include <glm/glm.hpp>
 
+struct Scene_T {
+    glm::vec3 cameraPos;
+    glm::vec3 cameraDir;
+    glm::vec3 cameraUp;
+    glm::vec3 cameraRight;
+    float zNear;
+    float zFar;
+    float aspectRatio;
+    float FOV;
+};
+
 class Scene : public DuplexRenderable
 {
 private:
@@ -72,6 +83,8 @@ public:
     float getFieldOfViewDegrees();
 
     float getAspectRatio();
+
+    Scene_T getSnapshot();
 
     Camera* getCamera();
 

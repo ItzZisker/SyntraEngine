@@ -82,9 +82,7 @@ void Framebuffer::create(GameWindow* window, bool outputToScreenShader) {
     Scene *scene = this->scene;
     addRenderTask([scene, renderTableCopy](Framebuffer* framebuffer){
         renderTableCopy->forEach([&](const std::string& key, ShaderRenderable* renderable){
-            if (!GameUtils::shouldDiscard(renderable, scene)) {
-                renderable->render(scene->getBatchShader(), framebuffer->getFBO());
-            }
+            GameUtils::renderDV(renderable, scene, scene->getBatchShader(), framebuffer->getFBO());
         });
     });
 }

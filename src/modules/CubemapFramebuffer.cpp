@@ -5,6 +5,7 @@
 #include "Syngine/world/WorldObject.hpp"
 #include "Syngine/utils/GameUtils.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
+#include "glm/ext/matrix_transform.hpp"
 #include "glm/fwd.hpp"
 #include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
@@ -73,12 +74,13 @@ void CubemapFramebuffer::create(bool renderToParent) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-    addRenderTask([&](unsigned int FBO, const glm::mat4& view) {
+    addRenderTask([&](unsigned int FBO, const Coordination& sideView) {
         Shader batchShader = scene->getBatchShader();
 
         glm::vec3 cameraPos = scene->getCamera()->getPosition();
         glm::vec3 cameraDir = scene->getCamera()->getDirection();
         glm::mat4 projection = glm::perspective(fieldOfView, aspectRatio, zNear, zFar);
+        glm::mat4 view = glm::lookAt(sideView.getPosition(), sideView.getPosition() + sideView.getDirection(), sideView.getUp());
 
         batchShader.use();
         batchShader.setMatrix4("view", view, 1, GL_FALSE);
@@ -88,9 +90,7 @@ void CubemapFramebuffer::create(bool renderToParent) {
         batchShader.setVec3f("spotLight.direction", cameraDir);
 
         scene->getBatchRenderTable()->forEach([&](const std::string& key, ShaderRenderable* renderable) {
-            if (!GameUtils::shouldDiscard(renderable, scene)) {
-                renderable->render(batchShader, FBO);
-            }
+            GameUtils::renderDV(renderable, getSnapshot(sideView), batchShader, FBO);
         });
     });
 }
@@ -102,13 +102,13 @@ void CubemapFramebuffer::renderCubemap(ShaderRenderable* renderable, int parentF
         position = coords->getPosition();
     }
 
-    glm::mat4 captureViews[6] = {
-        glm::lookAt(position, position + glm::vec3(1, 0, 0), glm::vec3(0, -1, 0)),
-        glm::lookAt(position, position + glm::vec3(-1, 0, 0), glm::vec3(0, -1, 0)),
-        glm::lookAt(position, position + glm::vec3(0, 1, 0), glm::vec3(0, 0, 1)),
-        glm::lookAt(position, position + glm::vec3(0, -1, 0), glm::vec3(0, 0, -1)),
-        glm::lookAt(position, position + glm::vec3(0, 0, 1), glm::vec3(0, -1, 0)),
-        glm::lookAt(position, position + glm::vec3(0, 0, -1), glm::vec3(0, -1, 0))
+    Coordination sideViews[6] = {
+        {position, glm::vec3(1, 0, 0), glm::vec3(0, -1, 0)},
+        {position, glm::vec3(-1, 0, 0), glm::vec3(0, -1, 0)},
+        {position, glm::vec3(0, 1, 0), glm::vec3(0, 0, 1)},
+        {position, glm::vec3(0, -1, 0), glm::vec3(0, 0, -1)},
+        {position, glm::vec3(0, 0, 1), glm::vec3(0, -1, 0)},
+        {position, glm::vec3(0, 0,-1), glm::vec3(0, -1, 0)}
     };
 
     for (unsigned int i = 0; i < SG_CUBEMAP_SIDES; i++) {
@@ -118,10 +118,23 @@ void CubemapFramebuffer::renderCubemap(ShaderRenderable* renderable, int parentF
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         for (auto& task : renderTasks) {
-            task(FBO[i], captureViews[i]);
+            task(FBO[i], sideViews[i]);
         }
     }
     glBindFramebuffer(GL_FRAMEBUFFER, parentFBO);
+}
+
+Scene_T CubemapFramebuffer::getSnapshot(Coordination cubemapSideView) {
+    Scene_T res;
+    res.cameraPos = cubemapSideView.getPosition();
+    res.cameraDir = cubemapSideView.getDirection();
+    res.cameraUp = cubemapSideView.getUp();
+    res.cameraRight = cubemapSideView.getRight();
+    res.aspectRatio = aspectRatio;
+    res.FOV = fieldOfView;
+    res.zNear = zNear;
+    res.zFar = zFar;
+    return res;
 }
 
 void CubemapFramebuffer::render(int parentFBO) {
@@ -144,7 +157,7 @@ void CubemapFramebuffer::render(int parentFBO) {
             reflectionShader.setVec3f("cameraPos", scene->getCamera()->getPosition());
             reflectionShader.setInt("environmentMap", 0);
 
-            renderable->render(reflectionShader, parentFBO);
+            GameUtils::renderDV(renderable, scene, reflectionShader, parentFBO);
         }
     });
     refractionRendertable->forEach([&](const std::string& key, ShaderRenderable* renderable){
@@ -167,7 +180,7 @@ void CubemapFramebuffer::render(int parentFBO) {
             refractionShader.setInt("environmentMap", 0);
             refractionShader.setFloat("ior", 1.5f);
 
-            renderable->render(refractionShader, parentFBO);
+            GameUtils::renderDV(renderable, scene, refractionShader, parentFBO);
         }
     });
 }
@@ -176,7 +189,7 @@ void CubemapFramebuffer::addInitTask(std::function<void(CubemapFramebuffer*)> ta
     initTasks.push_back(task);
 }
 
-void CubemapFramebuffer::addRenderTask(std::function<void(unsigned int FBO, const glm::mat4& view)> task) {
+void CubemapFramebuffer::addRenderTask(std::function<void(unsigned int FBO, const Coordination& sideView)> task) {
     renderTasks.push_back(task);
 }
 

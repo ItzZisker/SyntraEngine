@@ -1,3 +1,4 @@
+#include "Syngine/modules/ModelInstance.hpp"
 #include "Syngine/world/WorldObject.hpp"
 #include "LinearMath/btTransform.h"
 #include "glm/fwd.hpp"
@@ -70,9 +71,28 @@ glm::vec3 GameUtils::directionOf(float yaw, float pitch) {
     );
 }
 
-bool GameUtils::shouldDiscard(ShaderRenderable* renderable, Scene* scene) {
+bool GameUtils::shouldDiscard(ShaderRenderable* renderable, Scene_T snapshot) {
     Discardable* discardable = dynamic_cast<Discardable*>(renderable);
     Coordination* coords = dynamic_cast<Coordination*>(renderable);
 
-    return discardable && coords && discardable->shouldDiscard(scene, coords->getTransform());
+    return discardable && coords && discardable->shouldDiscard(snapshot, coords->getTransform());
+}
+
+bool GameUtils::shouldDiscard(ShaderRenderable* renderable, Scene* scene) {
+    return GameUtils::shouldDiscard(renderable, scene->getSnapshot());
+}
+
+void GameUtils::renderDV(ShaderRenderable *renderable, Scene_T snapshot, Shader shader, int FBO) {
+    if (GameUtils::shouldDiscard(renderable, snapshot)) {
+        return;
+    }
+    if (ModelInstance* mI = dynamic_cast<ModelInstance*>(renderable)) {
+        mI->renderDV(snapshot, shader, FBO);
+    } else {
+        renderable->render(shader, FBO);
+    }
+}
+
+void GameUtils::renderDV(ShaderRenderable *renderable, Scene *scene, Shader shader, int FBO) {
+    GameUtils::renderDV(renderable, scene->getSnapshot(), shader, FBO);
 }
