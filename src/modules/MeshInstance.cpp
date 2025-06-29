@@ -22,3 +22,7 @@ MeshInstance::MeshInstance(Mesh* mesh, Coordination coords) : mesh(mesh) {
 void MeshInstance::render(Shader shader, int FBO) {
     mesh->render(shader, FBO, getTransform());
 }
+
+Mesh* MeshInstance::getMesh() {
+    return this->mesh;
+}

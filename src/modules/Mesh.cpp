@@ -23,9 +23,8 @@ GLuint getDefaultWhiteTexture() {
 
 Mesh::Mesh(std::vector<Vertex> vertices,
            std::vector<unsigned int> indices,
-           std::vector<Texture> textures,
            glm::mat4 parenToNodeTransform)
-    : vertices(vertices), indices(indices), textures(textures), parentToNodeTransform(parenToNodeTransform) {
+    : vertices(vertices), indices(indices), parentToNodeTransform(parenToNodeTransform) {
 }
 
 Mesh::~Mesh() {
@@ -47,6 +46,9 @@ void Mesh::render(Shader shader, int FBO, glm::mat4 transform) {
 
     shader.use();
     shader.setMatrix4("model", transform, 1, GL_FALSE);
+    shader.setBool("transparent", material.opacity < 1.0f);
+    shader.setFloat("opacity", material.opacity);
+    shader.setFloat("ior", material.ior);
 
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;

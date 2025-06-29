@@ -37,6 +37,7 @@ Framebuffer *framebuffer;
 CubemapFramebuffer *cubemapFramebuffer;
 Skybox *skybox;
 
+float gamma = 1.1f;
 float yaw = 0, pitch;
 double lastX, lastY;
 bool firstMouse, mouseCaptured = true;
@@ -173,7 +174,19 @@ void init_ImGUI() {
     ImGui_ImplOpenGL3_Init("#version 330");
 }
 
-// TODO: debug crash
+/* TODO:
+ *   - Window Resize Viewport was bugged
+ *   - Make Spot/Point lights dynamic and configurable
+ *   - Make shaders variables replaceable (AKA Configurable)
+ *   - Make shaders reloadable
+ *   - Flame Particles ( ) | Gamma correction (*) -> HDR ( ) -> Bloom ( ) -> Normal Mapping ( ) -> PBR ( )
+ *   - Make format parser for mesh nodes name <prefix>_<name> (ECH_: Entity Convex Hull, ETM_: Entity Triangle Mesh, PF_: FlameParticle, [B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh)
+ *   - Review https://github.com/kcat/openal-soft for 3D Audio
+ *   - < Game Modeling + Design >
+ *   - < Game UI >
+ *   - < Networking (via Facebook Wangle) >
+ *   - < Produce >
+ */ 
 void init(GameWindow *window) {
     overWorld = new World(0, "overworld");
     camera = new Camera(overWorld, glm::vec3(5.0f, 0.0f, 5.0f), yaw, pitch);
@@ -198,6 +211,11 @@ void init(GameWindow *window) {
     scene = new Scene(camera, window);
     scene->installCallbacks(window);
     scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
+    scene->getBatchShader().use();
+    scene->getBatchShader().setVec3f("dirLight.direction", -0.2f, -1.0f, -0.3f);
+    scene->getBatchShader().setVec3f("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+    scene->getBatchShader().setVec3f("dirLight.diffuse", 0.1f, 0.1f, 0.1f);
+    scene->getBatchShader().setVec3f("dirLight.specular", 0.2f, 0.2f, 0.2f);
 
     skybox = new Skybox(scene, std::vector<std::string> {
         "models/skybox/lightblue/right.png",
@@ -209,9 +227,12 @@ void init(GameWindow *window) {
     });
     skybox->load();
     scene->getBatchRenderTable()->add("skybox", skybox);
+    scene->getBatchShader().use();
+    scene->getBatchShader().setVec3f("spotLights[0].position", camera->getPosition());
+    scene->getBatchShader().setVec3f("spotLights[0].direction", camera->getDirection());
 
     cubemapFramebuffer = new CubemapFramebuffer(scene);
-    cubemapFramebuffer->getReflectionRenderTable()->add("apple", appleMeshInstance);
+    cubemapFramebuffer->getRefractionRenderTable()->add("apple", appleMeshInstance);
     cubemapFramebuffer->create(true);
 
     framebuffer = new Framebuffer(scene);
@@ -229,8 +250,9 @@ void init(GameWindow *window) {
 }
 
 void render_Inputs(GameWindow *window) {
-    glfw_process_keys(window->getGLFWWindowPtr());
     double xpos, ypos;
+
+    glfw_process_keys(window->getGLFWWindowPtr());
     glfwGetCursorPos(window->getGLFWWindowPtr(), &xpos, &ypos);
     glfw_process_mouse(window->getGLFWWindowPtr(), xpos, ypos);
 }
@@ -238,11 +260,10 @@ void render_Inputs(GameWindow *window) {
 void render_ImGui() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
+
     ImGui::NewFrame();
     ImGui::Begin("Debug");
-
-    float fps = (window->getLastFrameTime() == 0) ? 999.0f : 1.0f / window->getLastFrameTime();
-    ImGui::Text("FPS: %.0f", fps);
+    ImGui::Text("FPS: %.0f", (window->getLastFrameTime() == 0) ? 999.0f : 1.0f / window->getLastFrameTime());
 
     if (ImGui::Button("Reset")) {
         window->getWindowRenderTable()->wipe("appleEntity");
@@ -252,16 +273,19 @@ void render_ImGui() {
 
         window->getWindowRenderTable()->add("appleEntity", appleEntity);
     }
+    ImGui::SliderFloat("IOR", &appleMeshInstance->getMesh()->material.ior, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
+    ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
     ImGui::End();
-
     ImGui::Render();
+
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 void onExit() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+
     ImGui::DestroyContext();
 }
 
@@ -273,6 +297,11 @@ int main() {
         init(window);
     });
     window->addRenderTask([](GameWindow *window){ 
+        scene->getScreenShader().use();
+        scene->getScreenShader().setFloat("gamma", gamma);
+        scene->getBatchShader().use();
+        scene->getBatchShader().setVec3f("spotLights[1].position", camera->getPosition());
+        scene->getBatchShader().setVec3f("spotLights[1].direction", camera->getDirection());
         render_Inputs(window);
         render_ImGui();
     });

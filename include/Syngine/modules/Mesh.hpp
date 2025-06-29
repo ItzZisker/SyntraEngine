@@ -37,6 +37,12 @@ struct Texture {
     std::string path;
 };
 
+struct MaterialProps {
+    float ior = 1.0f;
+    float opacity = 1.0f;
+    bool isTransparent = false;
+};
+
 class Mesh {
 private:
     glm::mat4 parentToNodeTransform;
@@ -45,12 +51,14 @@ public:
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;
 
+    MaterialProps material;
+
     unsigned int VAO;
     unsigned int VBO, EBO;
 
     bool loaded;
 
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures, glm::mat4 parentToNodeTransform);
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, glm::mat4 parentToNodeTransform);
 
     ~Mesh();
 

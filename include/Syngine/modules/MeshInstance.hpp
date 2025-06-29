@@ -17,4 +17,6 @@ public:
     MeshInstance(Mesh* mesh, Coordination coords);
 
     void render(Shader shader, int FBO) override;
+
+    Mesh* getMesh();
 };

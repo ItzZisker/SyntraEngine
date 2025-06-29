@@ -4,6 +4,7 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
+uniform float gamma = 2.2f;
 uniform vec2 resolution;
 uniform sampler2D screenTexture;
 
@@ -47,5 +48,6 @@ void main()
     }
 
     //FragColor = Televisionfy(vec4(col, 1.0), TexCoords);
-    FragColor = Televisionfy(texture(screenTexture, TexCoords), TexCoords);
+    vec4 fragColor = Televisionfy(texture(screenTexture, TexCoords), TexCoords);
+    FragColor = vec4(pow(fragColor.rgb, vec3(1.0/gamma)), fragColor.w);
 }

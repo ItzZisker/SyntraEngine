@@ -86,8 +86,6 @@ void CubemapFramebuffer::create(bool renderToParent) {
         batchShader.setMatrix4("view", view, 1, GL_FALSE);
         batchShader.setMatrix4("projection", projection, 1, GL_FALSE);
         batchShader.setVec3f("cameraPos", cameraPos);
-        batchShader.setVec3f("spotLight.position", cameraPos);
-        batchShader.setVec3f("spotLight.direction", cameraDir);
 
         scene->getBatchRenderTable()->forEach([&](const std::string& key, ShaderRenderable* renderable) {
             GameUtils::renderDV(renderable, getSnapshot(sideView), batchShader, FBO);
@@ -138,7 +136,7 @@ Scene_T CubemapFramebuffer::getSnapshot(Coordination cubemapSideView) {
 }
 
 void CubemapFramebuffer::render(int parentFBO) {
-    reflectionRendertable->forEach([&](const std::string& key, ShaderRenderable* renderable){
+    auto renderJob = [&](const std::string& key, ShaderRenderable* renderable, Shader shader){
         if (renderToParent && GameUtils::shouldDiscard(renderable, scene)) {
             return;
         }
@@ -151,38 +149,17 @@ void CubemapFramebuffer::render(int parentFBO) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
-            reflectionShader.use();
-            reflectionShader.setMatrix4("view", scene->getCamera()->getViewMatrix(), 1, GL_FALSE);
-            reflectionShader.setMatrix4("projection", scene->getProjection(), 1, GL_FALSE);
-            reflectionShader.setVec3f("cameraPos", scene->getCamera()->getPosition());
-            reflectionShader.setInt("environmentMap", 0);
+            shader.use();
+            shader.setMatrix4("view", scene->getCamera()->getViewMatrix(), 1, GL_FALSE);
+            shader.setMatrix4("projection", scene->getProjection(), 1, GL_FALSE);
+            shader.setVec3f("cameraPos", scene->getCamera()->getPosition());
+            shader.setInt("environmentMap", 0);
 
-            GameUtils::renderDV(renderable, scene, reflectionShader, parentFBO);
+            GameUtils::renderDV(renderable, scene, shader, parentFBO);
         }
-    });
-    refractionRendertable->forEach([&](const std::string& key, ShaderRenderable* renderable){
-        if (renderToParent && GameUtils::shouldDiscard(renderable, scene)) {
-            return;
-        }
-        renderCubemap(renderable, parentFBO);
-
-        if (renderToParent) {            
-            glViewport(0, 0, scene->getScreenWidth(), scene->getScreenHeight());
-            scene->getCamera()->updateViewMatrix();
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-
-            refractionShader.use();
-            refractionShader.setMatrix4("view", scene->getCamera()->getViewMatrix(), 1, GL_FALSE);
-            refractionShader.setMatrix4("projection", scene->getProjection(), 1, GL_FALSE);
-            refractionShader.setVec3f("cameraPos", scene->getCamera()->getPosition());
-            refractionShader.setInt("environmentMap", 0);
-            refractionShader.setFloat("ior", 1.5f);
-
-            GameUtils::renderDV(renderable, scene, refractionShader, parentFBO);
-        }
-    });
+    };
+    reflectionRendertable->forEach([&](const std::string& key, ShaderRenderable* renderable){renderJob(key, renderable, reflectionShader);});
+    refractionRendertable->forEach([&](const std::string& key, ShaderRenderable* renderable){renderJob(key, renderable, refractionShader);});
 }
 
 void CubemapFramebuffer::addInitTask(std::function<void(CubemapFramebuffer*)> task) {

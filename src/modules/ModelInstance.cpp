@@ -7,6 +7,8 @@
 #include "Syngine/world/WorldObject.hpp"
 #include <Syngine/modules/Mesh.hpp>
 #include <Syngine/utils/GameUtils.hpp>
+#include <iostream>
+#include <ostream>
 
 ModelInstance::ModelInstance(Model* model, Coordination coords) : model(model) {
     setTransform(coords.getTransform());
@@ -70,4 +72,8 @@ void ModelInstance::render(Shader shader, int FBO) {
             pair->second.render(shader, FBO);
         }
     }
+}
+
+Model* ModelInstance::getModel() {
+    return this->model;
 }

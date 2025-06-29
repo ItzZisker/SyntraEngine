@@ -23,4 +23,6 @@ public:
     void render(Shader shader, int FBO) override;
 
     bool shouldDiscard(Scene_T snapshot, const glm::mat4& transform) override;
+
+    Model* getModel();
 };

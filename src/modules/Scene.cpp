@@ -51,26 +51,40 @@ void Scene::setupShaders() {
     batchShader.setVec3f("dirLight.ambient", 0.05f, 0.05f, 0.05f);
     batchShader.setVec3f("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
     batchShader.setVec3f("dirLight.specular", 0.5f, 0.5f, 0.5f);
-    batchShader.setVec3f("spotLight.ambient", 0.0f, 0.0f, 0.0f);
-    batchShader.setVec3f("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
-    batchShader.setVec3f("spotLight.specular", 1.0f, 1.0f, 1.0f);
-    batchShader.setFloat("spotLight.constant", 1.0f);
-    batchShader.setFloat("spotLight.linear", 0.09f);
-    batchShader.setFloat("spotLight.quadratic", 0.032f);
-    batchShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
-    batchShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+
+    batchShader.setVec3f("pointLights[0].ambient", 0.0f, 0.0f, 0.0f);
+    batchShader.setVec3f("pointLights[0].diffuse", 1.0f, 1.0f, 1.0f);
+    batchShader.setVec3f("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
+    batchShader.setFloat("pointLights[0].constant", 1.0f);
+    batchShader.setFloat("pointLights[0].linear", 0.09f);
+    batchShader.setFloat("pointLights[0].quadratic", 0.032f);
+
+    batchShader.setVec3f("spotLights[0].ambient", 0.0f, 0.0f, 0.0f);
+    batchShader.setVec3f("spotLights[0].diffuse", 1.0f, 1.0f, 1.0f);
+    batchShader.setVec3f("spotLights[0].specular", 1.0f, 1.0f, 1.0f);
+    batchShader.setFloat("spotLights[0].constant", 1.0f);
+    batchShader.setFloat("spotLights[0].linear", 0.09f);
+    batchShader.setFloat("spotLights[0].quadratic", 0.032f);
+    batchShader.setFloat("spotLights[0].cutOff", glm::cos(glm::radians(12.5f)));
+    batchShader.setFloat("spotLights[0].outerCutOff", glm::cos(glm::radians(15.0f)));
+
+    batchShader.setVec3f("spotLights[1].ambient", 0.0f, 0.0f, 0.0f);
+    batchShader.setVec3f("spotLights[1].diffuse", 1.0f, 1.0f, 1.0f);
+    batchShader.setVec3f("spotLights[1].specular", 1.0f, 1.0f, 1.0f);
+    batchShader.setFloat("spotLights[1].constant", 1.0f);
+    batchShader.setFloat("spotLights[1].linear", 0.09f);
+    batchShader.setFloat("spotLights[1].quadratic", 0.032f);
+    batchShader.setFloat("spotLights[1].cutOff", glm::cos(glm::radians(12.5f)));
+    batchShader.setFloat("spotLights[1].outerCutOff", glm::cos(glm::radians(15.0f)));
 }
 
 void Scene::render(int FBO) {
     camera->updateViewMatrix();
-    glm::vec3 cameraPos = camera->getPosition();
 
     batchShader.use();
     batchShader.setMatrix4("view", camera->getViewMatrix(), 1, GL_FALSE);
     batchShader.setMatrix4("projection", projection, 1, GL_FALSE);
-    batchShader.setVec3f("cameraPos", cameraPos);
-    batchShader.setVec3f("spotLight.position", cameraPos);
-    batchShader.setVec3f("spotLight.direction", camera->getDirection());
+    batchShader.setVec3f("cameraPos", camera->getPosition());
     batchRenderTable->forEach([&](const std::string& key, ShaderRenderable* renderable) {
         GameUtils::renderDV(renderable, this, batchShader, FBO);
     });

@@ -142,7 +142,24 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& tr
     std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
-    return new Mesh(vertices, indices, textures, transform);
+    MaterialProps props;
+
+    float ior = 1.0f;
+    float opacity = 1.0f;
+
+    if (material->Get(AI_MATKEY_REFRACTI, ior) == AI_SUCCESS) {
+        props.ior = ior;
+    }
+    if (material->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS) {
+        props.opacity = opacity;
+        props.isTransparent = (opacity < 1.0f);
+    }
+
+    Mesh* res = new Mesh(vertices, indices, transform);
+    res->textures = textures;
+    res->material = props;
+
+    return res;
 }
 
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName) {

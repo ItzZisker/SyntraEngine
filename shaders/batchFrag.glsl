@@ -35,11 +35,12 @@ struct SpotLight {
     vec3 specular;
 };
 
-#define NR_POINT_LIGHTS 4
+#define NR_POINT_LIGHTS 1
+#define NR_SPOT_LIGHTS 2
 
 uniform PointLight pointLights[NR_POINT_LIGHTS];
+uniform SpotLight spotLights[NR_SPOT_LIGHTS];
 uniform DirLight dirLight;
-uniform SpotLight spotLight;
 
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_specular1;
@@ -59,23 +60,22 @@ vec3 calculateDirectionalLight(DirLight light, vec3 normal, vec3 viewDir);
 vec3 calculatePointLight(PointLight light, vec3 normal, vec3 viewDir);
 vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir);
 
-void main()
-{
+void main() {
     vec3 norm = normalize(normal);
     vec3 viewDir = normalize(cameraPos - fragPos);
     vec3 result = calculateDirectionalLight(dirLight, norm, viewDir);
 
-    // for(int i = 0; i < NR_POINT_LIGHTS; i++)
-    // {
-    //     result += calculatePointLight(pointLights[i], norm, viewDir);
-    // }
-    result += calculateSpotLight(spotLight, norm, viewDir);
+    for (int i = 0; i < NR_POINT_LIGHTS; i++) {
+        result += calculatePointLight(pointLights[i], norm, viewDir);
+    }
+    for (int i = 0; i < NR_SPOT_LIGHTS; i++) {
+        result += calculateSpotLight(spotLights[i], norm, viewDir);
+    }
 
     FragColor = vec4(result, 1.0);
 }
 
-vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir)
-{
+vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir) {
     vec3 ambient = light.ambient * texture(texture_diffuse1, texCoord).rgb;
 
     vec3 norm = normalize(normal);
@@ -107,8 +107,7 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir)
     return (ambient + diffuse + specular);
 }
 
-vec3 calculateDirectionalLight(DirLight light, vec3 normal, vec3 viewDir)
-{
+vec3 calculateDirectionalLight(DirLight light, vec3 normal, vec3 viewDir) {
     vec3 lightDir = normalize(-light.direction);
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 reflectDir = reflect(-lightDir, normal);
@@ -121,8 +120,7 @@ vec3 calculateDirectionalLight(DirLight light, vec3 normal, vec3 viewDir)
     return (ambient + diffuse + specular);
 }
 
-vec3 calculatePointLight(PointLight light, vec3 normal, vec3 viewDir)
-{
+vec3 calculatePointLight(PointLight light, vec3 normal, vec3 viewDir) {
     vec3 lightDir = normalize(light.position - fragPos);
     
     float diff = max(dot(normal, lightDir), 0.0);
