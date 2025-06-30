@@ -19,9 +19,7 @@ public:
 
     World(unsigned int id, std::string name, glm::vec3 gravity = glm::vec3(0.0f, -9.81f, 0.0f));
 
-    void render(GameWindow* window, int parentFBO) override;
+    void render(GameWindow* window) override;
 
-    btDynamicsWorld* getDynamics() {
-        return this->dynamicsWorld;
-    }
+    btDynamicsWorld* getDynamics();
 };

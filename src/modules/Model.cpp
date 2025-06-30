@@ -1,5 +1,4 @@
 #include "Syngine/modules/Mesh.hpp"
-#include "Syngine/modules/Shader.hpp"
 #include "assimp/matrix4x4.h"
 #include <Syngine/modules/Model.hpp>
 #include <Syngine/utils/GameUtils.hpp>

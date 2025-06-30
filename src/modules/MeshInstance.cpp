@@ -1,5 +1,6 @@
 #include "Syngine/modules/MeshInstance.hpp"
 
+#include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "Syngine/world/WorldObject.hpp"
 #include <Syngine/modules/Mesh.hpp>
@@ -19,8 +20,8 @@ MeshInstance::MeshInstance(Mesh* mesh, Coordination coords) : mesh(mesh) {
     setTransform(coords.getTransform());
 }
 
-void MeshInstance::render(Shader shader, int FBO) {
-    mesh->render(shader, FBO, getTransform());
+void MeshInstance::render(Shader shader, Screenbuffer screen) {
+    mesh->render(shader, screen, getTransform());
 }
 
 Mesh* MeshInstance::getMesh() {

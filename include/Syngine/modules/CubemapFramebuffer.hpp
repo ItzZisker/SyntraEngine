@@ -1,8 +1,9 @@
 #pragma once
 
+#include "Syngine/Syngine.hpp"
 #include "Syngine/engine/RenderTable.hpp"
-#include "Scene.hpp"
-#include "Shader.hpp"
+#include "Syngine/modules/Scene.hpp"
+#include "Syngine/modules/Shader.hpp"
 #include "Syngine/world/WorldObject.hpp"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -20,7 +21,7 @@
       - Use addRenderTask to define scene rendering per face (view matrix provided)
       - You can call renderToCubemap() each frame to update the environment map
  */
-class CubemapFramebuffer : public DuplexRenderable {
+class CubemapFramebuffer : public Screenbuffer, public DuplexRenderable {
 public:
     int sceneSize = 512;
     float fieldOfView = 89.46666f, aspectRatio = 1.0f;
@@ -34,14 +35,14 @@ public:
 
     void create(bool renderToParent = true);
 
-    void render(int parentFBO);
+    void render(Screenbuffer screen);
 
-    void render(GameWindow* window, int parentFBO) override {
-        render(parentFBO);
+    void render(GameWindow* window) override {
+        render(*window);
     }
 
-    void render(Shader window, int parentFBO) override {
-        render(parentFBO);
+    void render(Shader window, Screenbuffer screen) override {
+        render(screen);
     }
 
     void addInitTask(std::function<void(CubemapFramebuffer*)> task);
@@ -58,8 +59,6 @@ public:
 
     const unsigned int* getRBOs() const;
 private:
-    bool renderToParent;
-
     Shader reflectionShader = Shader("shaders/reflectionVertex.glsl", "shaders/reflectionFrag.glsl");
     Shader refractionShader = Shader("shaders/refractionVertex.glsl", "shaders/refractionFrag.glsl");
 

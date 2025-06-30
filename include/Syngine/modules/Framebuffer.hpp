@@ -12,38 +12,35 @@
       - Add rendering operations just as the main window, using renderTask functions
       - Framebuffer itself is also a Renderable which could be added to main window's rendertable
  */
-class Framebuffer : public WindowRenderable
-{
+class Framebuffer : public Screenbuffer, public WindowRenderable {
 private:
     Scene* scene;
 
     std::vector<std::function<void(Framebuffer *)>> initTasks, renderTasks;
     RenderTable<ShaderRenderable>* renderTable = new RenderTable<ShaderRenderable>();
 
-    bool outputToQuad;
     unsigned int quadVAO = 0, quadVBO = 0;
-
-    unsigned int FBO = 0, RBO = 0, TCB = 0; // Texture Color Buffer
+    unsigned int RBO = 0, TCB = 0; // Texture Color Buffer
 public:
     Framebuffer(Scene* scene);
 
     ~Framebuffer();
 
-    void create(GameWindow* window, bool outputToScreenShader = true);
+    void create(bool outputToScreenShader = true);
+
+    void create(unsigned int width, unsigned int height, bool outputToScreenShader = true);
 
     void addInitTask(std::function<void(Framebuffer *)> task);
 
     void addRenderTask(std::function<void(Framebuffer *)> task);
 
-    void render(int parentFBO);
+    void render(Screenbuffer screen);
 
-    void render(GameWindow* window, int parentFBO) override {
-        render(parentFBO);
+    void render(GameWindow* window) override {
+        render(*window);
     }
 
     RenderTable<ShaderRenderable>* getRenderTable();
 
     unsigned int getRBO();
-
-    unsigned int getFBO();
 };

@@ -2,15 +2,19 @@
 #include "GLFW/glfw3.h"
 #include "Syngine/Syngine.hpp"
 #include "Syngine/engine/RenderTable.hpp"
+#include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "Syngine/world/WorldObject.hpp"
 #include "Syngine/utils/GameUtils.hpp"
 #include <glm/gtc/matrix_transform.hpp>
+#include <iostream>
+#include <ostream>
+#include "Syngine/engine/Config.hpp"
 
 Scene::Scene(Camera* camera, GameWindow* window)
     : camera(camera),
-      screenWidth(window->getWindowWidth()),
-      screenHeight(window->getWindowHeight()),
+      screenWidth(window->getWidth()),
+      screenHeight(window->getHeight()),
       near(0.1f),
       far(100.0f),
       fieldOfView(65.0f) {
@@ -44,7 +48,10 @@ void Scene::setupShaders() {
     screenShader.use();
     screenShader.setVec2f("resolution", screenWidth, screenHeight);
 
-    batchShader.init();
+    batchShader.init({
+        {SHADER_BATCH_KEY_NR_POINT_LIGHTS, "1"},
+        {SHADER_BATCH_KEY_NR_SPOT_LIGHTS, "1"}
+    });
     batchShader.use();
     batchShader.setFloat("shininess", 32.0f);
     batchShader.setVec3f("dirLight.direction", -0.2f, -1.0f, -0.3f);
@@ -78,7 +85,7 @@ void Scene::setupShaders() {
     batchShader.setFloat("spotLights[1].outerCutOff", glm::cos(glm::radians(15.0f)));
 }
 
-void Scene::render(int FBO) {
+void Scene::render(Screenbuffer screen) {
     camera->updateViewMatrix();
 
     batchShader.use();
@@ -86,7 +93,7 @@ void Scene::render(int FBO) {
     batchShader.setMatrix4("projection", projection, 1, GL_FALSE);
     batchShader.setVec3f("cameraPos", camera->getPosition());
     batchRenderTable->forEach([&](const std::string& key, ShaderRenderable* renderable) {
-        GameUtils::renderDV(renderable, this, batchShader, FBO);
+        GameUtils::renderDV(renderable, this, batchShader, screen);
     });
 }
 

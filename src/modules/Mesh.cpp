@@ -1,3 +1,4 @@
+#include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "glm/fwd.hpp"
 #include <Syngine/modules/Mesh.hpp>
@@ -41,8 +42,9 @@ glm::mat4 Mesh::getParentToNodeTransform() {
     return parentToNodeTransform;
 }
 
-void Mesh::render(Shader shader, int FBO, glm::mat4 transform) {
+void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
     if (!loaded) return;
+    glBindFramebuffer(GL_FRAMEBUFFER, screen.getFBO());
 
     shader.use();
     shader.setMatrix4("model", transform, 1, GL_FALSE);
@@ -83,6 +85,7 @@ void Mesh::render(Shader shader, int FBO, glm::mat4 transform) {
 
     glBindVertexArray(0);
     glActiveTexture(GL_TEXTURE0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Mesh::init(VRAM_Approach approach) {

@@ -1,6 +1,5 @@
 #include <Syngine/engine/RenderTable.hpp>
 #include <algorithm>
-#include <cstdio>
 
 template class RenderTable<WindowRenderable>;
 template class RenderTable<ShaderRenderable>;

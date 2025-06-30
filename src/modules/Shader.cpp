@@ -5,15 +5,17 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <fstream>
+#include <regex>
 #include <sstream>
 #include <iostream>
+#include <string>
 
 Shader::Shader(const char *vertexPath, const char *fragmentPath) {
     this->vertexPath = vertexPath;
     this->fragmentPath = fragmentPath;
 }
 
-void Shader::init() {
+void Shader::init(std::map<std::string, std::string> variables) {
     std::string vertexCode, fragmentCode;
     std::ifstream vShaderFile, fShaderFile;
 
@@ -34,6 +36,18 @@ void Shader::init() {
 
         vertexCode = vShaderStream.str();
         fragmentCode = fShaderStream.str();
+
+        for (const auto& pair : variables) {
+            std::regex pattern("\\$\\{" + pair.first + "=(.+?)\\}");
+
+            vertexCode = std::regex_replace(vertexCode, pattern, pair.second);
+            fragmentCode = std::regex_replace(fragmentCode, pattern, pair.second);
+        }
+
+        std::regex pattern(R"(\$\{[^=]+=(.+?)\})");
+
+        vertexCode = std::regex_replace(vertexCode, pattern, "$1");
+        fragmentCode = std::regex_replace(fragmentCode, pattern, "$1");
     } catch (std::ifstream::failure e) {
         std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
     }
@@ -81,6 +95,11 @@ void Shader::init() {
 
     glDeleteShader(vertex);
     glDeleteShader(fragment);
+}
+
+void Shader::reloadProgram(std::map<std::string, std::string> variables) {
+    disposeProgram();
+    init(variables);
 }
 
 void Shader::disposeProgram() {

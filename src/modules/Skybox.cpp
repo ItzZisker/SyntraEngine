@@ -1,7 +1,9 @@
+#include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include <Syngine/modules/Skybox.hpp>
 
 #include <iostream>
+#include <ostream>
 #include <stb/stb_image.h>
 #include <glad/glad.h>
 
@@ -108,8 +110,8 @@ void Skybox::load() {
     glBindVertexArray(0);
 }
 
-void Skybox::render(int FBO) {
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+void Skybox::render(Screenbuffer screen) {
+    glBindFramebuffer(GL_FRAMEBUFFER, screen.getFBO());
 
     shader.use();
     shader.setInt("skybox", 0);

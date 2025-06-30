@@ -47,6 +47,7 @@ add_library(Syngine SHARED
     
     src/engine/RenderTable.cpp
 
+    src/modules/Screenbuffer.cpp
     src/modules/CubemapFramebuffer.cpp
     src/modules/Framebuffer.cpp
     src/modules/Scene.cpp

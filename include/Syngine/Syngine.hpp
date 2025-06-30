@@ -4,6 +4,7 @@
 #define _GNU_SOURCE
 
 #include <Syngine/engine/RenderTable.hpp>
+#include <Syngine/modules/Screenbuffer.hpp>
 #include <Syngine/modules/Shader.hpp>
 
 #include <GLFW/glfw3.h>
@@ -13,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-class GameWindow {
+class GameWindow : public Screenbuffer {
 private:
     GLFWwindow *glfwWindowPtr;
     RenderTable<WindowRenderable> *windowRenderTable = new RenderTable<WindowRenderable>(); // Objects that being rendered by window
@@ -53,8 +54,4 @@ public:
     RenderTable<WindowRenderable> *getWindowRenderTable();
 
     GLFWwindow *getGLFWWindowPtr();
-
-    int getWindowHeight();
-
-    int getWindowWidth();
 };

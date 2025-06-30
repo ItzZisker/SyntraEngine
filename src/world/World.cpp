@@ -1,3 +1,4 @@
+#include "BulletDynamics/Dynamics/btDynamicsWorld.h"
 #include <Syngine/world/World.hpp>
 #include <Syngine/utils/GameUtils.hpp>
 
@@ -23,8 +24,12 @@ World::World(unsigned int id, std::string name, glm::vec3 gravity) : id(id), nam
     dynamicsWorld->setGravity(GameUtils::toBulletVector(gravity));
 }
 
-void World::render(GameWindow* window, int FBO) {
+void World::render(GameWindow* window) {
     if (!paused) {
         dynamicsWorld->stepSimulation(window->getLastFrameTime());
     }
+}
+
+btDynamicsWorld* World::getDynamics() {
+    return this->dynamicsWorld;
 }

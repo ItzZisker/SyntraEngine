@@ -46,7 +46,7 @@ public:
 
     virtual const glm::mat4 onMotionState() = 0;
 
-    void render(GameWindow* window, int parentFBO) override {
+    void render(GameWindow* window) override {
         const glm::mat4& transform = onMotionState();
         for (const auto& func : motionStateFunctions) {
             func.second(transform);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Screenbuffer.hpp"
 #include "Syngine/Syngine.hpp"
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/Camera.hpp"
@@ -50,14 +51,14 @@ public:
 
     ~Scene();
 
-    void render(int FBO);
+    void render(Screenbuffer screen);
 
-    void render(GameWindow* window, int FBO) override {
-        render(FBO);
+    void render(GameWindow* window) override {
+        render(*window);
     }
 
-    void render(Shader shader, int FBO) override {
-        render(FBO);
+    void render(Shader shader, Screenbuffer screen = {}) override {
+        render(screen);
     }
 
     void installCallbacks(GameWindow* window);

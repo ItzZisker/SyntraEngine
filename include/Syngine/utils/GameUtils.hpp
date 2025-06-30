@@ -3,6 +3,7 @@
 #include "LinearMath/btVector3.h"
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/Scene.hpp"
+#include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/modules/Shader.hpp"
 
 #include <glm/glm.hpp>
@@ -29,7 +30,7 @@ namespace GameUtils
 
     bool shouldDiscard(ShaderRenderable* renderable, Scene* scene);
 
-    void renderDV(ShaderRenderable* renderable, Scene_T snapshot, Shader shader, int FBO);
+    void renderDV(ShaderRenderable* renderable, Scene_T snapshot, Shader shader, Screenbuffer screen);
 
-    void renderDV(ShaderRenderable* renderable, Scene* scene, Shader shader, int FBO);
+    void renderDV(ShaderRenderable* renderable, Scene* scene, Shader shader, Screenbuffer screen);
 }

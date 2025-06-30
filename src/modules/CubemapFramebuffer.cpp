@@ -1,6 +1,7 @@
 #include "Syngine/modules/CubemapFramebuffer.hpp"
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/Scene.hpp"
+#include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "Syngine/world/WorldObject.hpp"
 #include "Syngine/utils/GameUtils.hpp"
@@ -62,7 +63,6 @@ void CubemapFramebuffer::create(bool renderToParent) {
     reflectionShader.init();
     refractionShader.init();
 
-    this->renderToParent = renderToParent;
     glGenTextures(1, &cubemapTexture);
 
     for (unsigned int i = 0; i < 6; i++) {
@@ -74,6 +74,7 @@ void CubemapFramebuffer::create(bool renderToParent) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
+    onCreate(sceneSize, sceneSize, renderToParent);
     addRenderTask([&](unsigned int FBO, const Coordination& sideView) {
         Shader batchShader = scene->getBatchShader();
 
@@ -88,7 +89,7 @@ void CubemapFramebuffer::create(bool renderToParent) {
         batchShader.setVec3f("cameraPos", cameraPos);
 
         scene->getBatchRenderTable()->forEach([&](const std::string& key, ShaderRenderable* renderable) {
-            GameUtils::renderDV(renderable, getSnapshot(sideView), batchShader, FBO);
+            GameUtils::renderDV(renderable, getSnapshot(sideView), batchShader, Screenbuffer(FBO));
         });
     });
 }
@@ -135,15 +136,15 @@ Scene_T CubemapFramebuffer::getSnapshot(Coordination cubemapSideView) {
     return res;
 }
 
-void CubemapFramebuffer::render(int parentFBO) {
+void CubemapFramebuffer::render(Screenbuffer screen) {
     auto renderJob = [&](const std::string& key, ShaderRenderable* renderable, Shader shader){
-        if (renderToParent && GameUtils::shouldDiscard(renderable, scene)) {
+        if (outputToParent && GameUtils::shouldDiscard(renderable, scene)) {
             return;
         }
-        renderCubemap(renderable, parentFBO);
+        renderCubemap(renderable, screen.getFBO());
 
-        if (renderToParent) {            
-            glViewport(0, 0, scene->getScreenWidth(), scene->getScreenHeight());
+        if (outputToParent) {          
+            glViewport(0, 0, screen.getWidth(), screen.getHeight());
             scene->getCamera()->updateViewMatrix();
 
             glActiveTexture(GL_TEXTURE0);
@@ -155,7 +156,7 @@ void CubemapFramebuffer::render(int parentFBO) {
             shader.setVec3f("cameraPos", scene->getCamera()->getPosition());
             shader.setInt("environmentMap", 0);
 
-            GameUtils::renderDV(renderable, scene, shader, parentFBO);
+            GameUtils::renderDV(renderable, scene, shader, screen.getFBO());
         }
     };
     reflectionRendertable->forEach([&](const std::string& key, ShaderRenderable* renderable){renderJob(key, renderable, reflectionShader);});

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Screenbuffer.hpp"
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/Mesh.hpp"
 #include "Syngine/world/WorldObject.hpp"
@@ -16,7 +17,7 @@ public:
 
     MeshInstance(Mesh* mesh, Coordination coords);
 
-    void render(Shader shader, int FBO) override;
+    void render(Shader shader, Screenbuffer screen = {}) override;
 
     Mesh* getMesh();
 };

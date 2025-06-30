@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "Syngine/modules/Screenbuffer.hpp"
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
@@ -64,7 +63,7 @@ public:
 
     glm::mat4 getParentToNodeTransform();
 
-    void render(Shader shader, int FBO, glm::mat4 transform);
+    void render(Shader shader, Screenbuffer screen, glm::mat4 transform);
 
     void init(VRAM_Approach = Sequential);
 };

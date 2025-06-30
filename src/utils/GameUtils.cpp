@@ -1,4 +1,5 @@
 #include "Syngine/modules/ModelInstance.hpp"
+#include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/world/WorldObject.hpp"
 #include "LinearMath/btTransform.h"
 #include "glm/fwd.hpp"
@@ -82,17 +83,17 @@ bool GameUtils::shouldDiscard(ShaderRenderable* renderable, Scene* scene) {
     return GameUtils::shouldDiscard(renderable, scene->getSnapshot());
 }
 
-void GameUtils::renderDV(ShaderRenderable *renderable, Scene_T snapshot, Shader shader, int FBO) {
+void GameUtils::renderDV(ShaderRenderable *renderable, Scene_T snapshot, Shader shader, Screenbuffer screen) {
     if (GameUtils::shouldDiscard(renderable, snapshot)) {
         return;
     }
     if (ModelInstance* mI = dynamic_cast<ModelInstance*>(renderable)) {
-        mI->renderDV(snapshot, shader, FBO);
+        mI->renderDV(snapshot, shader, screen);
     } else {
-        renderable->render(shader, FBO);
+        renderable->render(shader, screen);
     }
 }
 
-void GameUtils::renderDV(ShaderRenderable *renderable, Scene *scene, Shader shader, int FBO) {
-    GameUtils::renderDV(renderable, scene->getSnapshot(), shader, FBO);
+void GameUtils::renderDV(ShaderRenderable *renderable, Scene *scene, Shader shader, Screenbuffer screen) {
+    GameUtils::renderDV(renderable, scene->getSnapshot(), shader, screen);
 }

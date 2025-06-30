@@ -1,6 +1,5 @@
 #include <Syngine/world/WorldObject.hpp>
 
-#include "Syngine/modules/Camera.hpp"
 #include "glm/fwd.hpp"
 #include <Syngine/engine/RenderTable.hpp>
 #include <Syngine/world/World.hpp>
@@ -35,7 +34,10 @@ AABB::AABB(const glm::vec3& min, const glm::vec3& max) : center{(max + min) * 0.
 AABB::AABB(const glm::vec3& inCenter, float iI, float iJ, float iK) : center(inCenter), extents{iI, iJ, iK} {}
 
 bool AABB::isOnOrForwardPlane(const FrustumPlane& plane) const {
-    const float r = extents.x * std::abs(plane.normal.x) + extents.y * std::abs(plane.normal.y) + extents.z * std::abs(plane.normal.z);
+    const float r =
+        extents.x * std::abs(plane.normal.x) +
+        extents.y * std::abs(plane.normal.y) +
+        extents.z * std::abs(plane.normal.z);
     return -r <= plane.getSignedDistanceToPlane(center);
 }
 
@@ -67,7 +69,7 @@ Frustum FrustumDiscardable::createFrustum(Scene_T snapshot) {
 }
 
 Frustum FrustumDiscardable::createFrustum(Scene* scene) {
-    createFrustum(scene->getSnapshot());
+    return createFrustum(scene->getSnapshot());
 }
 
 bool FrustumDiscardable::isInFrustum(const Frustum& camFrustum, const glm::mat4& transform) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MeshInstance.hpp"
+#include "Screenbuffer.hpp"
 #include "Syngine/modules/Model.hpp"
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/Scene.hpp"
@@ -18,9 +19,9 @@ public:
 
     ModelInstance(Model* model, Coordination coords = Coordination());
 
-    void renderDV(Scene_T snapshot, Shader shader, int FBO);
+    void renderDV(Scene_T snapshot, Shader shader, Screenbuffer screen);
 
-    void render(Shader shader, int FBO) override;
+    void render(Shader shader, Screenbuffer screen = {}) override;
 
     bool shouldDiscard(Scene_T snapshot, const glm::mat4& transform) override;
 

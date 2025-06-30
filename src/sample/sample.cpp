@@ -5,6 +5,7 @@
 #include <Syngine/world/entity/EntityConvexHull.hpp>
 #include <Syngine/world/entity/EntityTriangleMeshCompound.hpp>
 
+#include <iostream>
 #include <stb/stb_image.h>
 
 #include <glm/glm.hpp>
@@ -37,6 +38,7 @@ Framebuffer *framebuffer;
 CubemapFramebuffer *cubemapFramebuffer;
 Skybox *skybox;
 
+float lX = 0.0f;
 float gamma = 1.1f;
 float yaw = 0, pitch;
 double lastX, lastY;
@@ -175,17 +177,20 @@ void init_ImGUI() {
 }
 
 /* TODO:
- *   - Window Resize Viewport was bugged
- *   - Make Spot/Point lights dynamic and configurable
- *   - Make shaders variables replaceable (AKA Configurable)
- *   - Make shaders reloadable
- *   - Flame Particles ( ) | Gamma correction (*) -> HDR ( ) -> Bloom ( ) -> Normal Mapping ( ) -> PBR ( )
- *   - Make format parser for mesh nodes name <prefix>_<name> (ECH_: Entity Convex Hull, ETM_: Entity Triangle Mesh, PF_: FlameParticle, [B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh)
- *   - Review https://github.com/kcat/openal-soft for 3D Audio
- *   - < Game Modeling + Design >
- *   - < Game UI >
- *   - < Networking (via Facebook Wangle) >
- *   - < Produce >
+ *   - [*] Window Resize Viewport was bugged
+ *   - [*] Make shaders variables replaceable (AKA Configurable)
+ *   - [*] Make shaders reloadable
+ *   - [*] Make Spot/Point lights dynamic and configurable
+ *   - [ ] Opacity Support + Blending Objects
+ *   - [ ] Shadow Mapping ( ) -> Point Shadows ( ) -> Cascaded Shadow Mapping ( )
+ *   - [ ] Anti-Aliasing
+ *   - [-] Flame Particles ( ) | Gamma correction (*) -> HDR ( ) -> Bloom ( ) -> Normal Mapping ( ) -> PBR Textures ( )
+ *   - [ ] Make format parser for mesh nodes name <prefix>_<name> (ECH_: Entity Convex Hull, ETM_: Entity Triangle Mesh, PF_: FlameParticle, [B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh)
+ *   - [ ] Review https://github.com/kcat/openal-soft for 3D Audio
+ *   - [ ] < Game Modeling + Design >
+ *   - [ ] < Game UI >
+ *   - [ ] < Networking (via Facebook Wangle) >
+ *   - [ ] < Produce >
  */ 
 void init(GameWindow *window) {
     overWorld = new World(0, "overworld");
@@ -211,11 +216,6 @@ void init(GameWindow *window) {
     scene = new Scene(camera, window);
     scene->installCallbacks(window);
     scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
-    scene->getBatchShader().use();
-    scene->getBatchShader().setVec3f("dirLight.direction", -0.2f, -1.0f, -0.3f);
-    scene->getBatchShader().setVec3f("dirLight.ambient", 0.05f, 0.05f, 0.05f);
-    scene->getBatchShader().setVec3f("dirLight.diffuse", 0.1f, 0.1f, 0.1f);
-    scene->getBatchShader().setVec3f("dirLight.specular", 0.2f, 0.2f, 0.2f);
 
     skybox = new Skybox(scene, std::vector<std::string> {
         "models/skybox/lightblue/right.png",
@@ -232,13 +232,13 @@ void init(GameWindow *window) {
     scene->getBatchShader().setVec3f("spotLights[0].direction", camera->getDirection());
 
     cubemapFramebuffer = new CubemapFramebuffer(scene);
-    cubemapFramebuffer->getRefractionRenderTable()->add("apple", appleMeshInstance);
+    cubemapFramebuffer->getReflectionRenderTable()->add("apple", appleMeshInstance);
     cubemapFramebuffer->create(true);
 
     framebuffer = new Framebuffer(scene);
     framebuffer->getRenderTable()->add("scene", scene);
     framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
-    framebuffer->create(window, true);
+    framebuffer->create(800, 600, true);
 
     window->getWindowRenderTable()->add("overWorld", overWorld);
     window->getWindowRenderTable()->add("appleEntity", appleEntity);
@@ -275,6 +275,7 @@ void render_ImGui() {
     }
     ImGui::SliderFloat("IOR", &appleMeshInstance->getMesh()->material.ior, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
     ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+    ImGui::SliderFloat("Light X", &lX, 0.1f, 20.0f, "%.3f");
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
     ImGui::End();
     ImGui::Render();
@@ -300,6 +301,7 @@ int main() {
         scene->getScreenShader().use();
         scene->getScreenShader().setFloat("gamma", gamma);
         scene->getBatchShader().use();
+        scene->getBatchShader().setVec3f("pointLights[0].position", lX, 2.0f, 0.0f);
         scene->getBatchShader().setVec3f("spotLights[1].position", camera->getPosition());
         scene->getBatchShader().setVec3f("spotLights[1].direction", camera->getDirection());
         render_Inputs(window);

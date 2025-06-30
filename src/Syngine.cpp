@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <math.h>
+#include <ostream>
 
 namespace Callbacks {
     void glfw_framebuffer_resize_callback(GLFWwindow *window, int width, int height) {
@@ -23,24 +24,20 @@ GameWindow::GameWindow(std::string title, int initialWidth, int initialHeight) {
     withHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    addRenderTask([](GameWindow *window)
-    {
+    addRenderTask([](GameWindow *window) {
         static double previousTime = glfwGetTime();
         double currentTime = glfwGetTime();
 
         window->lastFrameTime = currentTime - previousTime;
         previousTime = currentTime;
     });
-    addRenderTask([](GameWindow *window)
-    {
+    addRenderTask([](GameWindow *window) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     });
-    addRenderTask([](GameWindow *window)
-    {
-        window->windowRenderTable->forEach([window](const std::string& name, WindowRenderable* renderable)
-        {
-            renderable->render(window, 0);
+    addRenderTask([](GameWindow *window) {
+        window->windowRenderTable->forEach([window](const std::string& name, WindowRenderable* renderable) {
+            renderable->render(window);
         });
     });
 }
@@ -84,6 +81,7 @@ int GameWindow::initLoop() {
     glViewport(0, 0, width, height);
 
     initialized = true;
+    onCreate(width, height, false);
 
     for (auto &task : initTasks) {
         task(this);
@@ -132,12 +130,4 @@ GLFWwindow *GameWindow::getGLFWWindowPtr() {
 
 RenderTable<WindowRenderable>* GameWindow::getWindowRenderTable() {
     return this->windowRenderTable;
-}
-
-int GameWindow::getWindowHeight() {
-    return this->height;
-}
-
-int GameWindow::getWindowWidth() {
-    return this->width;
 }

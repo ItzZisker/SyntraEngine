@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include <unordered_map>
 #include <string>
@@ -10,7 +11,7 @@ class GameWindow;
 class WindowRenderable
 {
 public:
-    virtual void render(GameWindow* window, int parentFBO = 0) = 0;
+    virtual void render(GameWindow* window) = 0;
 
     virtual ~WindowRenderable() = default;
 };
@@ -18,7 +19,7 @@ public:
 class ShaderRenderable
 {
 public:
-    virtual void render(Shader shader, int parentFBO = 0) = 0;
+    virtual void render(Shader shader, Screenbuffer screen = {}) = 0;
 
     virtual ~ShaderRenderable() = default;
 };

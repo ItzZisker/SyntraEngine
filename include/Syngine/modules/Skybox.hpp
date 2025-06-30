@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Screenbuffer.hpp"
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "Scene.hpp"
@@ -24,13 +25,13 @@ public:
 
     void load();
 
-    void render(int parentFBO = 0);
+    void render(Screenbuffer screen = {});
 
-    void render(Shader shader, int parentFBO) override {
-        render(parentFBO);
+    void render(Shader shader, Screenbuffer screen = {}) override {
+        render(screen);
     }
 
-    void render(GameWindow* window, int parentFBO) override {
-        render(parentFBO);
+    void render(GameWindow* window) override {
+        render(*window);
     }
 };

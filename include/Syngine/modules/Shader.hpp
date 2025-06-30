@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <map>
 #include <string>
 
 #include <glm/glm.hpp>
@@ -15,9 +16,11 @@ public:
 
     Shader(const char *vertexPath, const char *fragmentPath);
 
-    void init();
+    void init(std::map<std::string, std::string> variables = {});
 
     void use();
+    
+    void reloadProgram(std::map<std::string, std::string> variables = {});
 
     void disposeProgram();
 

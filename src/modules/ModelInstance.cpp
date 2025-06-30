@@ -3,12 +3,11 @@
 #include "Syngine/modules/MeshInstance.hpp"
 #include "Syngine/modules/Model.hpp"
 #include "Syngine/modules/Scene.hpp"
+#include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "Syngine/world/WorldObject.hpp"
 #include <Syngine/modules/Mesh.hpp>
 #include <Syngine/utils/GameUtils.hpp>
-#include <iostream>
-#include <ostream>
 
 ModelInstance::ModelInstance(Model* model, Coordination coords) : model(model) {
     setTransform(coords.getTransform());
@@ -28,7 +27,7 @@ bool ModelInstance::shouldDiscard(Scene_T snapshot, const glm::mat4& transform) 
     return true;
 }
 
-void ModelInstance::renderDV(Scene_T snapshot, Shader shader, int FBO) {
+void ModelInstance::renderDV(Scene_T snapshot, Shader shader, Screenbuffer screen) {
     if (!model->loaded) {
         return;
     }
@@ -37,7 +36,7 @@ void ModelInstance::renderDV(Scene_T snapshot, Shader shader, int FBO) {
             MeshInstance meshInstance = pair.second;
 
             if (!meshInstance.shouldDiscard(snapshot, transform * meshInstance.getTransform())) {
-                meshInstance.render(shader, FBO);
+                meshInstance.render(shader, screen);
             }
         }
         return;
@@ -49,19 +48,19 @@ void ModelInstance::renderDV(Scene_T snapshot, Shader shader, int FBO) {
             MeshInstance meshInstance = pair->second;
 
             if (!meshInstance.shouldDiscard(snapshot, transform * meshInstance.getTransform())) {
-                meshInstance.render(shader, FBO);
+                meshInstance.render(shader, screen);
             }
         }
     }
 }
 
-void ModelInstance::render(Shader shader, int FBO) {
+void ModelInstance::render(Shader shader, Screenbuffer screen) {
     if (!model->loaded) {
         return;
     }
     if (model->renderable_meshes.empty()) {
         for (auto& pair : meshInstances) {
-            pair.second.render(shader, FBO);
+            pair.second.render(shader, screen);
         }
         return;
     }
@@ -69,7 +68,7 @@ void ModelInstance::render(Shader shader, int FBO) {
         auto pair = meshInstances.find(meshName);
 
         if (pair != meshInstances.end()) {
-            pair->second.render(shader, FBO);
+            pair->second.render(shader, screen);
         }
     }
 }
