@@ -10,11 +10,15 @@
 
 class Shader
 {
+private:
+    std::map<std::string, std::string> variables;
 public:
     unsigned int ID;
     const char *vertexPath, *fragmentPath;
 
     Shader(const char *vertexPath, const char *fragmentPath);
+
+    std::string getVariable(std::string key);
 
     void init(std::map<std::string, std::string> variables = {});
 
@@ -23,6 +27,8 @@ public:
     void reloadProgram(std::map<std::string, std::string> variables = {});
 
     void disposeProgram();
+
+    void setTexture(const std::string &name, int textureType, int index, int TCB) const;
 
     void setBool(const std::string &name, bool value) const;
 

@@ -4,6 +4,7 @@
 #include "Syngine/world/WorldObject.hpp"
 #include "Syngine/utils/GameUtils.hpp"
 #include <Syngine/modules/Framebuffer.hpp>
+#include <Syngine/modules/ShadowMapper.hpp>
 #include <iostream>
 #include <ostream>
 
@@ -119,10 +120,9 @@ void Framebuffer::render(Screenbuffer screen) {
         glClear(GL_COLOR_BUFFER_BIT);
 
         scene->getScreenShader().use();
-        scene->getScreenShader().setInt("screenTexture", 0);
+        scene->getScreenShader().setTexture("screenTexture", GL_TEXTURE_2D, 0, TCB);
 
         glBindVertexArray(quadVAO);
-        glBindTexture(GL_TEXTURE_2D, TCB);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 }

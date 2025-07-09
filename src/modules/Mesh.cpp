@@ -1,8 +1,10 @@
+#include "Syngine/engine/Config.hpp"
 #include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "glm/fwd.hpp"
 #include <Syngine/modules/Mesh.hpp>
 #include <Syngine/utils/GameUtils.hpp>
+#include <cmath>
 
 GLuint defaultWhiteTexture;
 
@@ -48,9 +50,16 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
 
     shader.use();
     shader.setMatrix4("model", transform, 1, GL_FALSE);
-    shader.setBool("transparent", material.opacity < 1.0f);
-    shader.setFloat("opacity", material.opacity);
-    shader.setFloat("ior", material.ior);
+    shader.setFloat("F0", material.F0);
+    shader.setVec3f("ior", material.ior);
+    shader.setFloat("shininess", material.shininess);
+
+    if (shader.getVariable(SHADER_REFRAC_KEY_DYNAMIC_OPACITY) == SHADER_VAL_ON) {
+        shader.setFloat("minOpacity", material.minOpacity);
+        shader.setFloat("maxOpacity", material.maxOpacity);
+    } else {
+        shader.setFloat("opacity", material.opacity);
+    }
 
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
@@ -58,12 +67,10 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
     unsigned int heightNr = 1;
 
     if (textures.empty()) {
-        glBindTexture(GL_TEXTURE_2D, getDefaultWhiteTexture());
+        shader.setTexture("texture_diffuse", GL_TEXTURE_2D, 0, getDefaultWhiteTexture());
     }
 
     for (unsigned int i = 0; i < textures.size(); i++) {
-        glActiveTexture(GL_TEXTURE0 + i);
-
         std::string number;
         std::string name = textures[i].type;
         
@@ -76,8 +83,7 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
         else if (name == "texture_height")
             number = std::to_string(heightNr++);
 
-        shader.setInt(name + number, i);
-        glBindTexture(GL_TEXTURE_2D, textures[i].id);
+        shader.setTexture(name + number, GL_TEXTURE_2D, i, textures[i].id);
     }
 
     glBindVertexArray(VAO);

@@ -10,6 +10,8 @@ protected:
 public:
     Screenbuffer(unsigned int FBO = 0);
 
+    Screenbuffer(unsigned int FBO, unsigned int width, unsigned int height, bool outputToParent = false);
+
     unsigned int getFBO();
 
     unsigned int getWidth();

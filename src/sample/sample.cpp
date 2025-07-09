@@ -1,11 +1,11 @@
 #include <Syngine/Syngine.hpp>
 #include <Syngine/modules/Camera.hpp>
 #include <Syngine/modules/Model.hpp>
+#include <Syngine/modules/ShadowMapper.hpp>
 
 #include <Syngine/world/entity/EntityConvexHull.hpp>
 #include <Syngine/world/entity/EntityTriangleMeshCompound.hpp>
 
-#include <iostream>
 #include <stb/stb_image.h>
 
 #include <glm/glm.hpp>
@@ -34,6 +34,7 @@ float moveAccel = 2.0f;
 GameWindow *window;
 Scene *scene;
 
+ShadowMapper *shadowMapper;
 Framebuffer *framebuffer;
 CubemapFramebuffer *cubemapFramebuffer;
 Skybox *skybox;
@@ -181,8 +182,8 @@ void init_ImGUI() {
  *   - [*] Make shaders variables replaceable (AKA Configurable)
  *   - [*] Make shaders reloadable
  *   - [*] Make Spot/Point lights dynamic and configurable
- *   - [ ] Opacity Support + Blending Objects
- *   - [ ] Shadow Mapping ( ) -> Point Shadows ( ) -> Cascaded Shadow Mapping ( )
+*    - [-] Opacity Support + Blending Objects (Only Supports Disappearing Objects or showing objects behind, Skybox & Blending is not supported)
+ *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows ( ) -> Cascaded Shadow Mapping ( )
  *   - [ ] Anti-Aliasing
  *   - [-] Flame Particles ( ) | Gamma correction (*) -> HDR ( ) -> Bloom ( ) -> Normal Mapping ( ) -> PBR Textures ( )
  *   - [ ] Make format parser for mesh nodes name <prefix>_<name> (ECH_: Entity Convex Hull, ETM_: Entity Triangle Mesh, PF_: FlameParticle, [B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh)
@@ -214,10 +215,15 @@ void init(GameWindow *window) {
     sceneEntity->load();
 
     scene = new Scene(camera, window);
-    scene->installCallbacks(window);
+    scene->withCallbacks(window);
     scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
+    scene->getBatchRenderTable()->add("appleModel", appleMeshInstance);
 
-    skybox = new Skybox(scene, std::vector<std::string> {
+    shadowMapper = new ShadowMapper(2048);
+    shadowMapper->create();
+    scene->withShadows(shadowMapper);
+
+    skybox = new Skybox(scene, {
         "models/skybox/lightblue/right.png",
         "models/skybox/lightblue/left.png",
         "models/skybox/lightblue/top.png",
@@ -232,12 +238,12 @@ void init(GameWindow *window) {
     scene->getBatchShader().setVec3f("spotLights[0].direction", camera->getDirection());
 
     cubemapFramebuffer = new CubemapFramebuffer(scene);
-    cubemapFramebuffer->getReflectionRenderTable()->add("apple", appleMeshInstance);
+    cubemapFramebuffer->getRefractionRenderTable()->add("apple", appleMeshInstance);
     cubemapFramebuffer->create(true);
 
     framebuffer = new Framebuffer(scene);
     framebuffer->getRenderTable()->add("scene", scene);
-    framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
+    //framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
     framebuffer->create(800, 600, true);
 
     window->getWindowRenderTable()->add("overWorld", overWorld);
@@ -273,9 +279,16 @@ void render_ImGui() {
 
         window->getWindowRenderTable()->add("appleEntity", appleEntity);
     }
-    ImGui::SliderFloat("IOR", &appleMeshInstance->getMesh()->material.ior, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
+    ImGui::SliderFloat("IOR R", &appleMeshInstance->getMesh()->material.ior.x, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
+    ImGui::SliderFloat("IOR G", &appleMeshInstance->getMesh()->material.ior.y, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
+    ImGui::SliderFloat("IOR B", &appleMeshInstance->getMesh()->material.ior.z, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
+    ImGui::SliderFloat("F0", &appleMeshInstance->getMesh()->material.F0, 0.001f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+    ImGui::SliderFloat("Opacity (Scene)", &sceneModelInstance->meshInstances.find("Cube")->second.getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
+    ImGui::SliderFloat("Opacity", &appleMeshInstance->getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
     ImGui::SliderFloat("Light X", &lX, 0.1f, 20.0f, "%.3f");
+    ImGui::SliderFloat("Shadow Bias Min", &shadowMapper->biasMin, 0.001f, 1.0f, "%.3f");
+    ImGui::SliderFloat("Shadow Bias Max", &shadowMapper->biasMax, 0.001f, 1.0f, "%.3f");
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
     ImGui::End();
     ImGui::Render();

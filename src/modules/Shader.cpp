@@ -16,6 +16,8 @@ Shader::Shader(const char *vertexPath, const char *fragmentPath) {
 }
 
 void Shader::init(std::map<std::string, std::string> variables) {
+    this->variables = variables;
+
     std::string vertexCode, fragmentCode;
     std::ifstream vShaderFile, fShaderFile;
 
@@ -97,6 +99,11 @@ void Shader::init(std::map<std::string, std::string> variables) {
     glDeleteShader(fragment);
 }
 
+std::string Shader::getVariable(std::string key) {
+    const auto& pair = variables.find(key);
+    return pair == variables.end() ? "" : pair->second;
+}
+
 void Shader::reloadProgram(std::map<std::string, std::string> variables) {
     disposeProgram();
     init(variables);
@@ -108,6 +115,12 @@ void Shader::disposeProgram() {
 
 void Shader::use() {
     glUseProgram(ID);
+}
+
+void Shader::setTexture(const std::string &name, int textureType, int index, int TCB) const {
+    glActiveTexture(GL_TEXTURE0 + index);
+    glBindTexture(textureType, TCB);
+    glUniform1i(glGetUniformLocation(ID, name.c_str()), index);
 }
 
 void Shader::setBool(const std::string &name, bool value) const {

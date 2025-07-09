@@ -1,4 +1,5 @@
 #include "Syngine/modules/CubemapFramebuffer.hpp"
+#include "Syngine/engine/Config.hpp"
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/Scene.hpp"
 #include "Syngine/modules/Screenbuffer.hpp"
@@ -61,7 +62,9 @@ void CubemapFramebuffer::createFramebuffer(int index) {
 
 void CubemapFramebuffer::create(bool renderToParent) {
     reflectionShader.init();
-    refractionShader.init();
+    refractionShader.init({
+        {SHADER_REFRAC_KEY_DYNAMIC_OPACITY, SHADER_VAL_OFF}
+    });
 
     glGenTextures(1, &cubemapTexture);
 
@@ -147,14 +150,11 @@ void CubemapFramebuffer::render(Screenbuffer screen) {
             glViewport(0, 0, screen.getWidth(), screen.getHeight());
             scene->getCamera()->updateViewMatrix();
 
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-
             shader.use();
             shader.setMatrix4("view", scene->getCamera()->getViewMatrix(), 1, GL_FALSE);
             shader.setMatrix4("projection", scene->getProjection(), 1, GL_FALSE);
             shader.setVec3f("cameraPos", scene->getCamera()->getPosition());
-            shader.setInt("environmentMap", 0);
+            shader.setTexture("environmentMap", GL_TEXTURE_CUBE_MAP, 0, cubemapTexture);
 
             GameUtils::renderDV(renderable, scene, shader, screen.getFBO());
         }

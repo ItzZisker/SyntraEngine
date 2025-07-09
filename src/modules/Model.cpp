@@ -147,7 +147,7 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& tr
     float opacity = 1.0f;
 
     if (material->Get(AI_MATKEY_REFRACTI, ior) == AI_SUCCESS) {
-        props.ior = ior;
+        props.ior = glm::vec3(ior);
     }
     if (material->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS) {
         props.opacity = opacity;

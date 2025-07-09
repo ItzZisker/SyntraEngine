@@ -7,6 +7,8 @@
 #include "Shader.hpp"
 #include <glm/glm.hpp>
 
+class ShadowMapper;
+
 struct Scene_T {
     glm::vec3 cameraPos;
     glm::vec3 cameraDir;
@@ -18,9 +20,18 @@ struct Scene_T {
     float FOV;
 };
 
+struct DirLight {
+    glm::vec3 direction = {-0.5f, -1.0f, -0.5f};
+    glm::vec3 ambient = {0.05f, 0.05f, 0.05f};
+    glm::vec3 diffuse = {0.4f, 0.4f, 0.4f};
+    glm::vec3 specular = {0.5f, 0.5f, 0.5f};
+};
+
 class Scene : public DuplexRenderable
 {
 private:
+    ShadowMapper* shadowMapper = nullptr;
+
     GLFWwindow* callbacksGLFWWindow = nullptr;
     void* lastWindowUserData = nullptr;
 
@@ -29,6 +40,7 @@ private:
 
     RenderTable<ShaderRenderable>* batchRenderTable = new RenderTable<ShaderRenderable>;
     Camera* camera;
+    DirLight dirLight;
 
     int screenWidth;
     int screenHeight;
@@ -61,9 +73,15 @@ public:
         render(screen);
     }
 
-    void installCallbacks(GameWindow* window);
+    void withShadows(ShadowMapper* shadowMapper);
+
+    void withCallbacks(GameWindow* window);
 
     void updateProjection(glm::mat4 customPerspective);
+
+    void updateLights();
+
+    void setDirectionalLight(DirLight light);
 
     void setScreenLayout(int width, int height);
 
@@ -86,6 +104,8 @@ public:
     float getAspectRatio();
 
     Scene_T getSnapshot();
+
+    ShadowMapper* getShadowMapper();
 
     Camera* getCamera();
 

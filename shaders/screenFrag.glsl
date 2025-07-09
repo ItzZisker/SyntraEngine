@@ -5,7 +5,7 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform float gamma = 2.2f;
-uniform vec2 resolution;
+uniform vec2 uv;
 uniform sampler2D screenTexture;
 
 const float FINAL_BLUR_BIAS = 1.0;

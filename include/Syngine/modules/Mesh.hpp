@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Syngine/modules/Screenbuffer.hpp"
+#include "glm/fwd.hpp"
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
@@ -37,8 +38,11 @@ struct Texture {
 };
 
 struct MaterialProps {
-    float ior = 1.0f;
+    glm::vec3 ior = glm::vec3(1.0f);
+    float shininess = 32.0f;
+    float minOpacity = 0.7f, maxOpacity = 1.0f;
     float opacity = 1.0f;
+    float F0 = 0.04f;
     bool isTransparent = false;
 };
 
