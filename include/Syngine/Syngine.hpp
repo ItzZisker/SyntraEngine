@@ -8,6 +8,7 @@
 #include <Syngine/modules/Shader.hpp>
 
 #include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 #include <glad/glad.h>
 
 #include <functional>
@@ -17,6 +18,7 @@
 class GameWindow : public Screenbuffer {
 private:
     GLFWwindow *glfwWindowPtr;
+	SDL_Window * sdlWindowPtr; 
     RenderTable<WindowRenderable> *windowRenderTable = new RenderTable<WindowRenderable>(); // Objects that being rendered by window
 
     double lastFrameTime;
@@ -27,7 +29,7 @@ private:
     std::string title;
     int width, height;
 
-    int glfwWindowStatus, gladLoadStatus;
+    int sdlWindowStatus, glfwWindowStatus, gladLoadStatus;
     bool initialized, disposed;
 
 public:
@@ -35,7 +37,7 @@ public:
 
     bool isInitialized();
 
-    void withHint(int hint, int value);
+    void withHint(SDL_GLAttr hint, int value);
 
     int initLoop();
 
@@ -47,11 +49,15 @@ public:
 
     int getGLADLoadStatus();
 
+	int getSDLWindowStatus();
+
     int getGLFWWindowStatus();
 
     double getLastFrameTime();
 
     RenderTable<WindowRenderable> *getWindowRenderTable();
+
+	SDL_Window *getSDLWindowPtr();
 
     GLFWwindow *getGLFWWindowPtr();
 };

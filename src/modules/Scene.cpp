@@ -40,7 +40,7 @@ Scene::Scene(Camera* camera, float FOVDegrees, float near, float far, int width,
 }
 
 Scene::~Scene() {
-    glfwSetWindowUserPointer(callbacksGLFWWindow, lastWindowUserData);
+    //glfwSetWindowUserPointer(callbacksGLFWWindow, lastWindowUserData);
 }
 
 void Scene::setDirectionalLight(DirLight light) {
@@ -117,22 +117,49 @@ void Scene::withShadows(ShadowMapper* shadowMapper) {
     updateLights();
 }
 
+// SDL 
 void Scene::withCallbacks(GameWindow* window) {
-    GLFWwindow* glfwWindow = window->getGLFWWindowPtr();
+    SDL_Window* sdlWindow = window->getSDLWindowPtr();
 
-    lastWindowUserData = glfwGetWindowUserPointer(glfwWindow);
-
-    WindowUserData* data = new WindowUserData();
+ /*   WindowUserData* data = new WindowUserData();
     data->scene = this;
-    
-    glfwSetWindowUserPointer(glfwWindow, data);
-    glfwSetFramebufferSizeCallback(glfwWindow, [](GLFWwindow* glfwWindow, int width, int height) {
-        WindowUserData* data = static_cast<WindowUserData*>(glfwGetWindowUserPointer(glfwWindow));
-        if (data && data->scene) {
-            data->scene->setScreenLayout(width, height);
+
+    SDL_SetWindowData(sdlWindow, "window_user_data", data);
+
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_WINDOWEVENT) {
+            if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                SDL_Window* win = SDL_GetWindowFromID(event.window.windowID);
+                if (win) {
+                    WindowUserData* ud = static_cast<WindowUserData*>(SDL_GetWindowData(win, "window_user_data"));
+                    if (ud && ud->scene) {
+                        ud->scene->setScreenLayout(event.window.data1, event.window.data2);
+                    }
+                }
+            }
         }
-    });
+    }*/
 }
+
+
+// GLFW
+//void Scene::withCallbacks(GameWindow* window) {
+//    GLFWwindow* glfwWindow = window->getGLFWWindowPtr();
+//
+//    lastWindowUserData = glfwGetWindowUserPointer(glfwWindow);
+//
+//    WindowUserData* data = new WindowUserData();
+//    data->scene = this;
+//    
+//    glfwSetWindowUserPointer(glfwWindow, data);
+//    glfwSetFramebufferSizeCallback(glfwWindow, [](GLFWwindow* glfwWindow, int width, int height) {
+//        WindowUserData* data = static_cast<WindowUserData*>(glfwGetWindowUserPointer(glfwWindow));
+//        if (data && data->scene) {
+//            data->scene->setScreenLayout(width, height);
+//        }
+//    });
+//}
 
 void Scene::updateProjection() {
     updateProjection(glm::perspective(glm::radians(fieldOfView), aspectRatio, near, far));

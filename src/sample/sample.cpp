@@ -251,8 +251,10 @@ void init(GameWindow *window) {
     window->getWindowRenderTable()->add("sceneEntity", sceneEntity);
     window->getWindowRenderTable()->add("framebuffer", framebuffer);
 
-    glfwSwapInterval(0);
-    glfwSetInputMode(window->getGLFWWindowPtr(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    SDL_GL_SetSwapInterval(0);
+
+    /*SDL_SetCursorVisible(false);
+    SDL_SetRelativeMouseMode(true);*/
 }
 
 void render_Inputs(GameWindow *window) {
@@ -305,9 +307,10 @@ void onExit() {
 
 int main() {
     window = new GameWindow("Sample", 800, 600);
-    window->withHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+    //window->withHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+    window->withHint(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
     window->addInitTask([](GameWindow *window){ 
-        init_ImGUI();
+        //init_ImGUI();
         init(window);
     });
     window->addRenderTask([](GameWindow *window){ 
@@ -317,11 +320,11 @@ int main() {
         scene->getBatchShader().setVec3f("pointLights[0].position", lX, 2.0f, 0.0f);
         scene->getBatchShader().setVec3f("spotLights[1].position", camera->getPosition());
         scene->getBatchShader().setVec3f("spotLights[1].direction", camera->getDirection());
-        render_Inputs(window);
-        render_ImGui();
+        //render_Inputs(window);
+        //render_ImGui();
     });
 
     int exitCode = window->initLoop();
-    onExit();
-    return exitCode;
+    //onExit();
+    return 0;
 }

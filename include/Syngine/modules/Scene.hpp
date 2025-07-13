@@ -32,7 +32,8 @@ class Scene : public DuplexRenderable
 private:
     ShadowMapper* shadowMapper = nullptr;
 
-    GLFWwindow* callbacksGLFWWindow = nullptr;
+    //GLFWwindow* callbacksGLFWWindow = nullptr;
+    SDL_Window* callbackSDLWindow = nullptr;
     void* lastWindowUserData = nullptr;
 
     Shader screenShader = Shader("shaders/screenVertex.glsl", "shaders/screenFrag.glsl");
