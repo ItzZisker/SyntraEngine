@@ -72,8 +72,8 @@ int GameWindow::initLoop() {
 
 	sdlWindowPtr = sdlWindow;
 
-    SDL_GLContext context =  SDL_GL_CreateContext(sdlWindow);
-	SDL_GL_MakeCurrent(sdlWindow, context);
+    glContext =  SDL_GL_CreateContext(sdlWindow);
+	SDL_GL_MakeCurrent(sdlWindow, glContext);
 
     if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
         std::cerr << "Syngine: Failed to initialize GLAD" << std::endl;
@@ -187,6 +187,11 @@ double GameWindow::getLastFrameTime() {
 
 SDL_Window *GameWindow::getSDLWindowPtr() {
     return sdlWindowPtr;
+}
+
+SDL_GLContext GameWindow::getGLContext()
+{
+    return glContext;
 }
 
 GLFWwindow *GameWindow::getGLFWWindowPtr() {

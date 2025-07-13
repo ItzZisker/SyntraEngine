@@ -19,6 +19,8 @@ class GameWindow : public Screenbuffer {
 private:
     GLFWwindow *glfwWindowPtr;
 	SDL_Window * sdlWindowPtr; 
+    SDL_GLContext glContext;
+
     RenderTable<WindowRenderable> *windowRenderTable = new RenderTable<WindowRenderable>(); // Objects that being rendered by window
 
     double lastFrameTime;
@@ -58,6 +60,8 @@ public:
     RenderTable<WindowRenderable> *getWindowRenderTable();
 
 	SDL_Window *getSDLWindowPtr();
+
+    SDL_GLContext getGLContext();
 
     GLFWwindow *getGLFWWindowPtr();
 };

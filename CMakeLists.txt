@@ -35,6 +35,7 @@ set(IMGUI_SRC
     ${IMGUI_ROOT}/imgui_tables.cpp
     ${IMGUI_ROOT}/backends/imgui_impl_glfw.cpp
     ${IMGUI_ROOT}/backends/imgui_impl_opengl3.cpp
+    ${IMGUI_ROOT}/backends/imgui_impl_sdl3.cpp
 )
 include_directories(${IMGUI_ROOT})
 include_directories(${IMGUI_ROOT}/backends)

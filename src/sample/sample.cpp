@@ -26,7 +26,7 @@
 #include "Syngine/utils/GameUtils.hpp"
 #include "glm/fwd.hpp"
 #include "imgui.h"
-#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_sdl3.h"
 #include "backends/imgui_impl_opengl3.h"
 
 float moveAccel = 2.0f;
@@ -173,7 +173,7 @@ void init_ImGUI() {
     ImGuiIO& io = ImGui::GetIO();
     ImGui::StyleColorsDark();
 
-    ImGui_ImplGlfw_InitForOpenGL(window->getGLFWWindowPtr(), true);
+    ImGui_ImplSDL3_InitForOpenGL(window->getSDLWindowPtr(), window->getGLContext());
     ImGui_ImplOpenGL3_Init("#version 330");
 }
 
@@ -267,7 +267,7 @@ void render_Inputs(GameWindow *window) {
 
 void render_ImGui() {
     ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
 
     ImGui::NewFrame();
     ImGui::Begin("Debug");
@@ -300,7 +300,7 @@ void render_ImGui() {
 
 void onExit() {
     ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
 
     ImGui::DestroyContext();
 }
@@ -310,7 +310,7 @@ int main() {
     //window->withHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
     window->withHint(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
     window->addInitTask([](GameWindow *window){ 
-        //init_ImGUI();
+        init_ImGUI();
         init(window);
     });
     window->addRenderTask([](GameWindow *window){ 
@@ -321,10 +321,10 @@ int main() {
         scene->getBatchShader().setVec3f("spotLights[1].position", camera->getPosition());
         scene->getBatchShader().setVec3f("spotLights[1].direction", camera->getDirection());
         //render_Inputs(window);
-        //render_ImGui();
+        render_ImGui();
     });
 
     int exitCode = window->initLoop();
-    //onExit();
+    onExit();
     return 0;
 }
