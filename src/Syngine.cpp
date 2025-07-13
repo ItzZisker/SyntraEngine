@@ -28,8 +28,8 @@ GameWindow::GameWindow(std::string title, int initialWidth, int initialHeight) {
 #endif
 
     addRenderTask([](GameWindow *window) {
-        static double previousTime = glfwGetTime();
-        double currentTime = glfwGetTime();
+        static double previousTime = SDL_GetTicks() / 1000.0;
+        double currentTime = SDL_GetTicks() / 1000.0;
 
         window->lastFrameTime = currentTime - previousTime;
         previousTime = currentTime;
