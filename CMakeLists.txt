@@ -81,9 +81,9 @@ add_library(Syngine SHARED
 )
 
 if (UNIX AND NOT APPLE) # Linux
-    target_link_libraries(${PROJECT_NAME} glfw3 OpenGL::OpenGL assimp Xrandr Xi dl)
+    target_link_libraries(${PROJECT_NAME} SDL3 glfw3 OpenGL::OpenGL assimp Xrandr Xi dl)
 elseif (WIN32)
-    target_link_libraries(${PROJECT_NAME} glfw3dll opengl32 assimp
+    target_link_libraries(${PROJECT_NAME} SDL3.dll glfw3dll opengl32 assimp
         libBullet2FileLoader
         libBullet3Collision
         libBullet3Common
@@ -97,7 +97,7 @@ elseif (WIN32)
         libLinearMath
     )
 elseif (APPLE)
-    target_link_libraries(${PROJECT_NAME} glfw3 "-framework OpenGL" "-framework Cocoa" "-framework IOKit" "-framework CoreVideo")
+    target_link_libraries(${PROJECT_NAME} SDL3 glfw3 "-framework OpenGL" "-framework Cocoa" "-framework IOKit" "-framework CoreVideo")
 endif()
 
 add_executable(sample_executable src/sample/sample.cpp)
@@ -139,6 +139,7 @@ function(copy_resource_files target src_dir)
   endforeach()
 endfunction()
 
+copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/sdl-3.2.16/bin")
 copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/glfw-3.4/bin")
 copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/assimp-5.4.3/bin")
 copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/bullet3-3.25/bin")
