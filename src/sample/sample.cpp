@@ -252,9 +252,7 @@ void init(GameWindow *window) {
     window->getWindowRenderTable()->add("framebuffer", framebuffer);
 
     SDL_GL_SetSwapInterval(0);
-
-    /*SDL_SetCursorVisible(false);
-    SDL_SetRelativeMouseMode(true);*/
+    SDL_SetWindowRelativeMouseMode(window->getSDLWindowPtr(), true);
 }
 
 void render_Inputs(GameWindow *window) {
