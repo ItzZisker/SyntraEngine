@@ -11,6 +11,11 @@ set(GLFW_ROOT "${CMAKE_SOURCE_DIR}/libs/glfw-3.4")
 include_directories(${GLFW_ROOT}/include)
 link_directories(${GLFW_ROOT}/static)
 
+# === SDL Config ===
+set(SDL_ROOT "${CMAKE_SOURCE_DIR}/libs/sdl-3.2.16")
+include_directories(${SDL_ROOT}/include)
+link_directories(${SDL_ROOT}/static)
+
 # === Assimp Config ===
 set(ASSIMP_ROOT "${CMAKE_SOURCE_DIR}/libs/assimp-5.4.3")
 include_directories(${ASSIMP_ROOT}/include)
