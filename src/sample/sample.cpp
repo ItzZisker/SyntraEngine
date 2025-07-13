@@ -31,6 +31,8 @@
 
 float moveAccel = 2.0f;
 
+SDL_Event event;
+
 GameWindow *window;
 Scene *scene;
 
@@ -86,6 +88,30 @@ void glfw_process_mouse(GLFWwindow *glfwWindow, double xpos, double ypos) {
     pitch = glm::clamp(pitch, -89.0f, 89.0f);
 
     camera->setDirection(GameUtils::directionOf(yaw, pitch));
+}
+
+void sdl_process_mouse(const SDL_Event& event) {
+	if (!mouseCaptured) {
+		return;
+	}
+
+    float x, y, xrel, yrel;
+
+    if (event.type == SDL_EVENT_MOUSE_MOTION) {
+        float x = static_cast<float>(event.motion.x);
+        float y = static_cast<float>(event.motion.y);
+        float xrel = static_cast<float>(event.motion.xrel);
+        float yrel = static_cast<float>(event.motion.yrel);
+
+        const float sensitivity = 1.1f;
+        xrel *= sensitivity;
+        yrel *= sensitivity;
+        yaw += xrel;
+        pitch += yrel;
+        yaw = fmod(yaw, 360.0f);
+        pitch = glm::clamp(pitch, -89.0f, 89.0f);
+        camera->setDirection(GameUtils::directionOf(yaw, -pitch));
+    }
 }
 
 void glfw_process_keys(GLFWwindow *glfwWindow) {
@@ -256,11 +282,12 @@ void init(GameWindow *window) {
 }
 
 void render_Inputs(GameWindow *window) {
-    double xpos, ypos;
-
-    glfw_process_keys(window->getGLFWWindowPtr());
-    glfwGetCursorPos(window->getGLFWWindowPtr(), &xpos, &ypos);
-    glfw_process_mouse(window->getGLFWWindowPtr(), xpos, ypos);
+    float xpos, ypos;
+    //glfw_process_keys(window->getGLFWWindowPtr());
+    //glfwGetCursorPos(window->getGLFWWindowPtr(), &xpos, &ypos);
+    //glfw_process_mouse(window->getGLFWWindowPtr(), xpos, ypos);
+    SDL_PollEvent(&event);
+    sdl_process_mouse(event);
 }
 
 void render_ImGui() {
@@ -318,7 +345,7 @@ int main() {
         scene->getBatchShader().setVec3f("pointLights[0].position", lX, 2.0f, 0.0f);
         scene->getBatchShader().setVec3f("spotLights[1].position", camera->getPosition());
         scene->getBatchShader().setVec3f("spotLights[1].direction", camera->getDirection());
-        //render_Inputs(window);
+        render_Inputs(window);
         render_ImGui();
     });
 
