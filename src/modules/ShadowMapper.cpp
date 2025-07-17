@@ -1,9 +1,9 @@
-#include "Syngine/modules/ShadowMapper.hpp"
-#include "Syngine/modules/Scene.hpp"
-#include "Syngine/modules/Screenbuffer.hpp"
-#include "Syngine/modules/Shader.hpp"
-#include "Syngine/modules/Skybox.hpp"
-#include "Syngine/utils/GameUtils.hpp"
+#include "modules/ShadowMapper.hpp"
+#include "modules/Scene.hpp"
+#include "modules/Screenbuffer.hpp"
+#include "modules/Shader.hpp"
+#include "modules/Skybox.hpp"
+#include "utils/GameUtils.hpp"
 #include <iostream>
 
 ShadowMapper::ShadowMapper(unsigned int width, unsigned int height, glm::mat4 lightProj, glm::mat4 lightView) :

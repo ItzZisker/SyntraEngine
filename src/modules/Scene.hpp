@@ -1,9 +1,10 @@
 #pragma once
 
+#include "EventHandler.hpp"
 #include "Screenbuffer.hpp"
-#include "Syngine/Syngine.hpp"
-#include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/modules/Camera.hpp"
+#include "Syngine.hpp"
+#include "engine/RenderTable.hpp"
+#include "modules/Camera.hpp"
 #include "Shader.hpp"
 #include <glm/glm.hpp>
 
@@ -27,14 +28,12 @@ struct DirLight {
     glm::vec3 specular = {0.5f, 0.5f, 0.5f};
 };
 
-class Scene : public DuplexRenderable
+class Scene : public SDL_EventHandler, public DuplexRenderable
 {
 private:
     ShadowMapper* shadowMapper = nullptr;
 
-    //GLFWwindow* callbacksGLFWWindow = nullptr;
     SDL_Window* callbackSDLWindow = nullptr;
-    void* lastWindowUserData = nullptr;
 
     Shader screenShader = Shader("shaders/screenVertex.glsl", "shaders/screenFrag.glsl");
     Shader batchShader = Shader("shaders/batchVertex.glsl", "shaders/batchFrag.glsl");
@@ -55,14 +54,10 @@ private:
     void setupShaders();
 
     void updateProjection();
-
-    void glfw_framebuffer_resize_callback(GLFWwindow *glfwWindow, int width, int height);
 public:
     Scene(Camera* camera, GameWindow* window);
 
     Scene(Camera* camera, float FOVDegrees, float near, float far, int width, int height);
-
-    ~Scene();
 
     void render(Screenbuffer screen);
 
@@ -74,9 +69,9 @@ public:
         render(screen);
     }
 
-    void withShadows(ShadowMapper* shadowMapper);
+    void onEvent(const SDL_Event& event) override;
 
-    void withCallbacks(GameWindow* window);
+    void withShadows(ShadowMapper* shadowMapper);
 
     void updateProjection(glm::mat4 customPerspective);
 

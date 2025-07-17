@@ -1,10 +1,10 @@
-#include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/modules/Screenbuffer.hpp"
-#include "Syngine/modules/Shader.hpp"
-#include "Syngine/world/WorldObject.hpp"
-#include "Syngine/utils/GameUtils.hpp"
-#include <Syngine/modules/Framebuffer.hpp>
-#include <Syngine/modules/ShadowMapper.hpp>
+#include "engine/RenderTable.hpp"
+#include "modules/Screenbuffer.hpp"
+#include "modules/Shader.hpp"
+#include "world/WorldObject.hpp"
+#include "utils/GameUtils.hpp"
+#include <modules/Framebuffer.hpp>
+#include <modules/ShadowMapper.hpp>
 #include <iostream>
 #include <ostream>
 

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <Syngine/world/entity/Entity.hpp>
-#include <Syngine/world/WorldObject.hpp>
-#include <Syngine/engine/RenderTable.hpp>
-#include <Syngine/modules/Model.hpp>
+#include <world/entity/Entity.hpp>
+#include <world/WorldObject.hpp>
+#include <engine/RenderTable.hpp>
+#include <modules/Model.hpp>
 
 #include <btBulletDynamicsCommon.h>
 #include <Bullet3Common/b3Vector3.h>

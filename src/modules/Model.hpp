@@ -1,20 +1,20 @@
 #pragma once
 
-#include "Syngine/engine/RenderTable.hpp"
+#include "engine/RenderTable.hpp"
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <set>
-#include <stb/stb_image.h>
+#include <stb_image.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <Syngine/Syngine.hpp>
-#include <Syngine/modules/Mesh.hpp>
-#include <Syngine/modules/Shader.hpp>
-#include <Syngine/world/WorldObject.hpp>
+#include <Syngine.hpp>
+#include <modules/Mesh.hpp>
+#include <modules/Shader.hpp>
+#include <world/WorldObject.hpp>
 
 #include <string>
 #include <unordered_map>

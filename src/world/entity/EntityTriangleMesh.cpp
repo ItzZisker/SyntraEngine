@@ -1,9 +1,9 @@
 #include "BulletCollision/CollisionShapes/btTriangleMesh.h"
-#include "Syngine/world/WorldObject.hpp"
-#include <Syngine/modules/Mesh.hpp>
+#include "world/WorldObject.hpp"
+#include <modules/Mesh.hpp>
 #include <LinearMath/btVector3.h>
-#include <Syngine/world/entity/EntityTriangleMesh.hpp>
-#include "Syngine/utils/GameUtils.hpp"
+#include <world/entity/EntityTriangleMesh.hpp>
+#include "utils/GameUtils.hpp"
 
 #include <iostream>
 

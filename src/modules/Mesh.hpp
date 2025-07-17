@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Syngine/modules/Screenbuffer.hpp"
+#include "modules/Screenbuffer.hpp"
 #include "glm/fwd.hpp"
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <Syngine/modules/Shader.hpp>
+#include <modules/Shader.hpp>
 
 #include <string>
 #include <vector>

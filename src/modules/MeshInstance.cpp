@@ -1,10 +1,10 @@
-#include "Syngine/modules/MeshInstance.hpp"
+#include "modules/MeshInstance.hpp"
 
-#include "Syngine/modules/Screenbuffer.hpp"
-#include "Syngine/modules/Shader.hpp"
-#include "Syngine/world/WorldObject.hpp"
-#include <Syngine/modules/Mesh.hpp>
-#include <Syngine/utils/GameUtils.hpp>
+#include "modules/Screenbuffer.hpp"
+#include "modules/Shader.hpp"
+#include "world/WorldObject.hpp"
+#include <modules/Mesh.hpp>
+#include <utils/GameUtils.hpp>
 
 MeshInstance::MeshInstance(Mesh* mesh) : MeshInstance(mesh, Coordination(glm::mat4(1.0f))) {}
 

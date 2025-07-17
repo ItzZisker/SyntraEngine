@@ -1,13 +1,13 @@
-#include "Syngine/modules/ModelInstance.hpp"
+#include "modules/ModelInstance.hpp"
 
-#include "Syngine/modules/MeshInstance.hpp"
-#include "Syngine/modules/Model.hpp"
-#include "Syngine/modules/Scene.hpp"
-#include "Syngine/modules/Screenbuffer.hpp"
-#include "Syngine/modules/Shader.hpp"
-#include "Syngine/world/WorldObject.hpp"
-#include <Syngine/modules/Mesh.hpp>
-#include <Syngine/utils/GameUtils.hpp>
+#include "modules/MeshInstance.hpp"
+#include "modules/Model.hpp"
+#include "modules/Scene.hpp"
+#include "modules/Screenbuffer.hpp"
+#include "modules/Shader.hpp"
+#include "world/WorldObject.hpp"
+#include <modules/Mesh.hpp>
+#include <utils/GameUtils.hpp>
 
 ModelInstance::ModelInstance(Model* model, Coordination coords) : model(model) {
     setTransform(coords.getTransform());

@@ -1,10 +1,10 @@
+#include <modules/Mesh.hpp>
+#include <world/entity/EntityTriangleMeshCompound.hpp>
+#include "utils/GameUtils.hpp"
+#include <LinearMath/btVector3.h>
+#include <BulletCollision/CollisionDispatch/btInternalEdgeUtility.h>
 #include "BulletCollision/CollisionShapes/btTriangleInfoMap.h"
 #include "BulletCollision/CollisionShapes/btTriangleMesh.h"
-#include <Syngine/modules/Mesh.hpp>
-#include <LinearMath/btVector3.h>
-#include <Syngine/world/entity/EntityTriangleMeshCompound.hpp>
-#include <BulletCollision/CollisionDispatch/btInternalEdgeUtility.h>
-#include "Syngine/utils/GameUtils.hpp"
 
 #include <iostream>
 

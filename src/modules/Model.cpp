@@ -1,7 +1,7 @@
-#include "Syngine/modules/Mesh.hpp"
+#include "modules/Mesh.hpp"
 #include "assimp/matrix4x4.h"
-#include <Syngine/modules/Model.hpp>
-#include <Syngine/utils/GameUtils.hpp>
+#include <modules/Model.hpp>
+#include <utils/GameUtils.hpp>
 
 #include <iostream>
 #include <set>

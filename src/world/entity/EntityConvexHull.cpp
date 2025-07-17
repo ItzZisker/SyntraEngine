@@ -1,10 +1,10 @@
-#include "Syngine/world/WorldObject.hpp"
+#include "world/WorldObject.hpp"
 
 #include <LinearMath/btVector3.h>
 
-#include <Syngine/modules/Mesh.hpp>
-#include <Syngine/world/entity/EntityConvexHull.hpp>
-#include "Syngine/utils/GameUtils.hpp"
+#include <modules/Mesh.hpp>
+#include <world/entity/EntityConvexHull.hpp>
+#include "utils/GameUtils.hpp"
 
 #include <iostream>
 

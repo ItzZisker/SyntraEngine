@@ -1,11 +1,11 @@
-#include "Syngine/modules/ModelInstance.hpp"
-#include "Syngine/modules/Screenbuffer.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "modules/ModelInstance.hpp"
+#include "modules/Screenbuffer.hpp"
+#include "world/WorldObject.hpp"
 #include "LinearMath/btTransform.h"
 #include "glm/fwd.hpp"
 #include "glm/gtc/quaternion.hpp"
 #include <glad/glad.h>
-#include <Syngine/utils/GameUtils.hpp>
+#include <utils/GameUtils.hpp>
 #include <iostream>
 #include <chrono>
 

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Syngine/Syngine.hpp"
-#include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/modules/Scene.hpp"
-#include "Syngine/modules/Shader.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "Syngine.hpp"
+#include "engine/RenderTable.hpp"
+#include "modules/Scene.hpp"
+#include "modules/Shader.hpp"
+#include "world/WorldObject.hpp"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <vector>

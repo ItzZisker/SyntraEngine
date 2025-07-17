@@ -1,6 +1,6 @@
 #include "BulletDynamics/Dynamics/btDynamicsWorld.h"
-#include <Syngine/world/World.hpp>
-#include <Syngine/utils/GameUtils.hpp>
+#include <world/World.hpp>
+#include <utils/GameUtils.hpp>
 
 #include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
 #include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>

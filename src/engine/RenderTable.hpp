@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Syngine/modules/Screenbuffer.hpp"
-#include "Syngine/modules/Shader.hpp"
+#include "modules/Screenbuffer.hpp"
+#include "modules/Shader.hpp"
 #include <unordered_map>
 #include <string>
 #include <functional>

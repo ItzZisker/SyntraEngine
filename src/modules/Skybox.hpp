@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Screenbuffer.hpp"
-#include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/modules/Shader.hpp"
+#include "engine/RenderTable.hpp"
+#include "modules/Shader.hpp"
 #include "Scene.hpp"
 #include <vector>
 #include <string>

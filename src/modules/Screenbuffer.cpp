@@ -1,4 +1,4 @@
-#include <Syngine/modules/Screenbuffer.hpp>
+#include <modules/Screenbuffer.hpp>
 
 Screenbuffer::Screenbuffer(unsigned int FBO) : FBO(FBO) {}
 

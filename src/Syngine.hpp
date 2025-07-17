@@ -3,11 +3,10 @@
 #define _USE_MATH_DEFINES
 #define _GNU_SOURCE
 
-#include <Syngine/engine/RenderTable.hpp>
-#include <Syngine/modules/Screenbuffer.hpp>
-#include <Syngine/modules/Shader.hpp>
+#include <engine/RenderTable.hpp>
+#include <modules/Screenbuffer.hpp>
+#include <modules/Shader.hpp>
 
-#include <GLFW/glfw3.h>
 #include <SDL3/SDL.h>
 #include <glad/glad.h>
 
@@ -17,7 +16,6 @@
 
 class GameWindow : public Screenbuffer {
 private:
-    GLFWwindow *glfwWindowPtr;
 	SDL_Window * sdlWindowPtr; 
     SDL_GLContext glContext;
 
@@ -25,7 +23,7 @@ private:
 
     double lastFrameTime;
 
-    std::unordered_map<int, int> window_hints;
+    std::unordered_map<int, int> window_attributes;
     std::vector<std::function<void(GameWindow *)>> initTasks, renderTasks;
 
     std::string title;
@@ -39,7 +37,7 @@ public:
 
     bool isInitialized();
 
-    void withHint(SDL_GLAttr hint, int value);
+    void attrib(SDL_GLAttr attr, int value);
 
     int initLoop();
 
@@ -62,6 +60,4 @@ public:
 	SDL_Window *getSDLWindowPtr();
 
     SDL_GLContext getGLContext();
-
-    GLFWwindow *getGLFWWindowPtr();
 };

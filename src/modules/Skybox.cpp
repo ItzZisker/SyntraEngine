@@ -1,10 +1,10 @@
-#include "Syngine/modules/Screenbuffer.hpp"
-#include "Syngine/modules/Shader.hpp"
-#include <Syngine/modules/Skybox.hpp>
+#include "modules/Screenbuffer.hpp"
+#include "modules/Shader.hpp"
+#include <modules/Skybox.hpp>
 
 #include <iostream>
 #include <ostream>
-#include <stb/stb_image.h>
+#include <stb_image.h>
 #include <glad/glad.h>
 
 unsigned int loadCubemap(std::vector<std::string> faces) {

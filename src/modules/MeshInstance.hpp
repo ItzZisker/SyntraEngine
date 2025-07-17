@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Screenbuffer.hpp"
-#include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/modules/Mesh.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "engine/RenderTable.hpp"
+#include "modules/Mesh.hpp"
+#include "world/WorldObject.hpp"
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>

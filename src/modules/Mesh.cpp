@@ -1,9 +1,9 @@
-#include "Syngine/engine/Config.hpp"
-#include "Syngine/modules/Screenbuffer.hpp"
-#include "Syngine/modules/Shader.hpp"
+#include "engine/Config.hpp"
+#include "modules/Screenbuffer.hpp"
+#include "modules/Shader.hpp"
 #include "glm/fwd.hpp"
-#include <Syngine/modules/Mesh.hpp>
-#include <Syngine/utils/GameUtils.hpp>
+#include <modules/Mesh.hpp>
+#include <utils/GameUtils.hpp>
 #include <cmath>
 
 GLuint defaultWhiteTexture;

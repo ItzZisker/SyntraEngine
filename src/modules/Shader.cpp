@@ -1,4 +1,4 @@
-#include <Syngine/modules/Shader.hpp>
+#include <modules/Shader.hpp>
 
 #include <cstdlib>
 #include <glm/gtc/matrix_transform.hpp>

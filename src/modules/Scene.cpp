@@ -1,15 +1,14 @@
-#include "Syngine/modules/Scene.hpp"
-#include "GLFW/glfw3.h"
-#include "Syngine/Syngine.hpp"
-#include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/modules/ShadowMapper.hpp"
-#include "Syngine/modules/Screenbuffer.hpp"
-#include "Syngine/modules/Shader.hpp"
-#include "Syngine/world/WorldObject.hpp"
-#include "Syngine/utils/GameUtils.hpp"
+#include "modules/Scene.hpp"
+#include "SDL3/SDL_video.h"
+#include "Syngine.hpp"
+#include "engine/RenderTable.hpp"
+#include "modules/ShadowMapper.hpp"
+#include "modules/Screenbuffer.hpp"
+#include "modules/Shader.hpp"
+#include "world/WorldObject.hpp"
+#include "utils/GameUtils.hpp"
 #include <glm/gtc/matrix_transform.hpp>
-#include <iostream>
-#include "Syngine/engine/Config.hpp"
+#include "engine/Config.hpp"
 
 Scene::Scene(Camera* camera, GameWindow* window)
     : camera(camera),
@@ -37,10 +36,6 @@ Scene::Scene(Camera* camera, float FOVDegrees, float near, float far, int width,
     aspectRatio = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
     updateProjection();
     setupShaders();
-}
-
-Scene::~Scene() {
-    //glfwSetWindowUserPointer(callbacksGLFWWindow, lastWindowUserData);
 }
 
 void Scene::setDirectionalLight(DirLight light) {
@@ -117,49 +112,14 @@ void Scene::withShadows(ShadowMapper* shadowMapper) {
     updateLights();
 }
 
-// SDL 
-void Scene::withCallbacks(GameWindow* window) {
-    SDL_Window* sdlWindow = window->getSDLWindowPtr();
-
- /*   WindowUserData* data = new WindowUserData();
-    data->scene = this;
-
-    SDL_SetWindowData(sdlWindow, "window_user_data", data);
-
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_WINDOWEVENT) {
-            if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                SDL_Window* win = SDL_GetWindowFromID(event.window.windowID);
-                if (win) {
-                    WindowUserData* ud = static_cast<WindowUserData*>(SDL_GetWindowData(win, "window_user_data"));
-                    if (ud && ud->scene) {
-                        ud->scene->setScreenLayout(event.window.data1, event.window.data2);
-                    }
-                }
-            }
-        }
-    }*/
+void Scene::onEvent(const SDL_Event& event) {
+    if (event.type == SDL_EVENT_WINDOW_RESIZED) {
+        int width, height;
+        SDL_Window* current = SDL_GetWindowFromID(event.window.windowID);
+        SDL_GetWindowSize(current, &width, &height);
+        setScreenLayout(width, height);
+    }
 }
-
-
-// GLFW
-//void Scene::withCallbacks(GameWindow* window) {
-//    GLFWwindow* glfwWindow = window->getGLFWWindowPtr();
-//
-//    lastWindowUserData = glfwGetWindowUserPointer(glfwWindow);
-//
-//    WindowUserData* data = new WindowUserData();
-//    data->scene = this;
-//    
-//    glfwSetWindowUserPointer(glfwWindow, data);
-//    glfwSetFramebufferSizeCallback(glfwWindow, [](GLFWwindow* glfwWindow, int width, int height) {
-//        WindowUserData* data = static_cast<WindowUserData*>(glfwGetWindowUserPointer(glfwWindow));
-//        if (data && data->scene) {
-//            data->scene->setScreenLayout(width, height);
-//        }
-//    });
-//}
 
 void Scene::updateProjection() {
     updateProjection(glm::perspective(glm::radians(fieldOfView), aspectRatio, near, far));

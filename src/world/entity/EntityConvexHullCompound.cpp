@@ -1,8 +1,8 @@
 #include <LinearMath/btVector3.h>
 
-#include <Syngine/modules/Mesh.hpp>
-#include <Syngine/world/entity/EntityConvexHullCompound.hpp>
-#include "Syngine/utils/GameUtils.hpp"
+#include <modules/Mesh.hpp>
+#include <world/entity/EntityConvexHullCompound.hpp>
+#include "utils/GameUtils.hpp"
 
 #include <cmath>
 #include <iostream>

@@ -1,10 +1,10 @@
-#include <Syngine/world/WorldObject.hpp>
+#include <world/WorldObject.hpp>
 
 #include "glm/fwd.hpp"
-#include <Syngine/engine/RenderTable.hpp>
-#include <Syngine/world/World.hpp>
-#include <Syngine/utils/FastMath.hpp>
-#include <Syngine/modules/Scene.hpp>
+#include <engine/RenderTable.hpp>
+#include <world/World.hpp>
+#include <utils/FastMath.hpp>
+#include <modules/Scene.hpp>
 
 #include <glm/glm.hpp>
 #include <vector>

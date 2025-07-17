@@ -1,12 +1,12 @@
-#include <Syngine/Syngine.hpp>
-#include <Syngine/modules/Camera.hpp>
-#include <Syngine/modules/Model.hpp>
-#include <Syngine/modules/ShadowMapper.hpp>
+#include <Syngine.hpp>
+#include <modules/Camera.hpp>
+#include <modules/Model.hpp>
+#include <modules/ShadowMapper.hpp>
 
-#include <Syngine/world/entity/EntityConvexHull.hpp>
-#include <Syngine/world/entity/EntityTriangleMeshCompound.hpp>
+#include <world/entity/EntityConvexHull.hpp>
+#include <world/entity/EntityTriangleMeshCompound.hpp>
 
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -14,16 +14,16 @@
 #include <string>
 #include <vector>
 
-#include "GLFW/glfw3.h"
-#include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/modules/CubemapFramebuffer.hpp"
-#include "Syngine/modules/Framebuffer.hpp"
-#include "Syngine/modules/Mesh.hpp"
-#include "Syngine/modules/ModelInstance.hpp"
-#include "Syngine/modules/Scene.hpp"
-#include "Syngine/modules/Shader.hpp"
-#include "Syngine/modules/Skybox.hpp"
-#include "Syngine/utils/GameUtils.hpp"
+#include "SDL3/SDL_events.h"
+#include "engine/RenderTable.hpp"
+#include "modules/CubemapFramebuffer.hpp"
+#include "modules/Framebuffer.hpp"
+#include "modules/Mesh.hpp"
+#include "modules/ModelInstance.hpp"
+#include "modules/Scene.hpp"
+#include "modules/Shader.hpp"
+#include "modules/Skybox.hpp"
+#include "utils/GameUtils.hpp"
 #include "glm/fwd.hpp"
 #include "imgui.h"
 #include "backends/imgui_impl_sdl3.h"
@@ -60,36 +60,6 @@ EntityTriangleMeshCompound* sceneEntity;
 
 Camera* camera;
 
-void glfw_process_mouse(GLFWwindow *glfwWindow, double xpos, double ypos) {
-    if (!mouseCaptured) {
-        return;
-    }
-
-    if (firstMouse) {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos;
-
-    lastX = xpos;
-    lastY = ypos;
-
-    const float sensitivity = 0.1f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
-
-    yaw += xoffset;
-    pitch += yoffset;
-
-    yaw = fmod(yaw, 360.0f);
-    pitch = glm::clamp(pitch, -89.0f, 89.0f);
-
-    camera->setDirection(GameUtils::directionOf(yaw, pitch));
-}
-
 void sdl_process_mouse(const SDL_Event& event) {
 	if (!mouseCaptured) {
 		return;
@@ -103,7 +73,7 @@ void sdl_process_mouse(const SDL_Event& event) {
         float xrel = static_cast<float>(event.motion.xrel);
         float yrel = static_cast<float>(event.motion.yrel);
 
-        const float sensitivity = 1.1f;
+        const float sensitivity = 0.1f;
         xrel *= sensitivity;
         yrel *= sensitivity;
         yaw += xrel;
@@ -114,9 +84,11 @@ void sdl_process_mouse(const SDL_Event& event) {
     }
 }
 
-void glfw_process_keys(GLFWwindow *glfwWindow) {
-    const float cameraSpeed = 1.5f * window->getLastFrameTime(); // adjust accordingly
-    glm::vec3 horizontalDirection = glm::vec3(0.0f);
+void sdl_process_keys(SDL_Window* sdlWindow) {
+    const bool* state = SDL_GetKeyboardState(NULL);
+    const float cameraSpeed = 1.5f * window->getLastFrameTime();
+
+    glm::vec3 horizontalDirection(0.0f);
 
     horizontalDirection.x = cos(glm::radians(yaw));
     horizontalDirection.z = sin(glm::radians(yaw));
@@ -126,64 +98,58 @@ void glfw_process_keys(GLFWwindow *glfwWindow) {
 
     glm::vec3 moving(0.0f);
 
-    if (glfwGetKey(glfwWindow, GLFW_KEY_UP) == GLFW_PRESS) {
+    if (state[SDL_SCANCODE_UP]) {
         glm::vec3 dir(1.0f, 0.0f, 0.0f);
-        dir.y = 0;
         dir *= (window->getLastFrameTime() * moveAccel);
         moving += dir;
     }
-    if (glfwGetKey(glfwWindow, GLFW_KEY_DOWN) == GLFW_PRESS) {
+    if (state[SDL_SCANCODE_DOWN]) {
         glm::vec3 dir(-1.0f, 0.0f, 0.0f);
-        dir.y = 0;
         dir *= (window->getLastFrameTime() * moveAccel);
         moving += dir;
     }
-    if (glfwGetKey(glfwWindow, GLFW_KEY_LEFT) == GLFW_PRESS) {
+    if (state[SDL_SCANCODE_LEFT]) {
         glm::vec3 dir(0.0f, 0.0f, -1.0f);
-        dir.y = 0;
         dir *= (window->getLastFrameTime() * moveAccel);
         moving += dir;
     }
-    if (glfwGetKey(glfwWindow, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+    if (state[SDL_SCANCODE_RIGHT]) {
         glm::vec3 dir(0.0f, 0.0f, 1.0f);
-        dir.y = 0;
         dir *= (window->getLastFrameTime() * moveAccel);
         moving += dir;
     }
-    
+
     btRigidBody* body = appleEntity->getBody();
 
     body->activate();
-    if (body->getLinearVelocity().length2() <= 3) {
-        moving *= (3 / moving.length());
+    if (body->getLinearVelocity().length2() <= 3 && moving.length() > 0.0f) {
+        moving *= (3.0f / moving.length());
     }
     body->applyCentralImpulse(GameUtils::toBulletVector(moving));
 
-    if (glfwGetKey(glfwWindow, GLFW_KEY_W) == GLFW_PRESS)
+    if (state[SDL_SCANCODE_W])
         cameraPos += cameraSpeed * horizontalDirection;
-    if (glfwGetKey(glfwWindow, GLFW_KEY_S) == GLFW_PRESS)
+    if (state[SDL_SCANCODE_S])
         cameraPos -= cameraSpeed * horizontalDirection;
-    if (glfwGetKey(glfwWindow, GLFW_KEY_A) == GLFW_PRESS)
+    if (state[SDL_SCANCODE_A])
         cameraPos -= glm::normalize(glm::cross(horizontalDirection, cameraUp)) * cameraSpeed;
-    if (glfwGetKey(glfwWindow, GLFW_KEY_D) == GLFW_PRESS)
+    if (state[SDL_SCANCODE_D])
         cameraPos += glm::normalize(glm::cross(horizontalDirection, cameraUp)) * cameraSpeed;
-    if (glfwGetKey(glfwWindow, GLFW_KEY_SPACE) == GLFW_PRESS)
+    if (state[SDL_SCANCODE_SPACE])
         cameraPos += cameraSpeed * cameraUp;
-    if (glfwGetKey(glfwWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+    if (state[SDL_SCANCODE_LSHIFT])
         cameraPos -= cameraSpeed * cameraUp;
 
     camera->setPosition(cameraPos);
 
-    if (glfwGetKey(glfwWindow, GLFW_KEY_P) == GLFW_PRESS)
+    if (state[SDL_SCANCODE_P])
         overWorld->paused = false;
 
     static bool escapePressedLastFrame = false;
-
-    if (glfwGetKey(glfwWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+    if (state[SDL_SCANCODE_ESCAPE]) {
         if (!escapePressedLastFrame) {
             mouseCaptured = !mouseCaptured;
-            glfwSetInputMode(glfwWindow, GLFW_CURSOR,
-                             mouseCaptured ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+            SDL_SetWindowRelativeMouseMode(sdlWindow, mouseCaptured);
             firstMouse = true;
         }
         escapePressedLastFrame = true;
@@ -204,20 +170,32 @@ void init_ImGUI() {
 }
 
 /* TODO:
- *   - [*] Window Resize Viewport was bugged
+ *   === SEIZURE PROGRAM (Lethal-like Coop Video Game) ===
+ *
+ *   - [*] Window Resize Viewport bugfix
  *   - [*] Make shaders variables replaceable (AKA Configurable)
  *   - [*] Make shaders reloadable
  *   - [*] Make Spot/Point lights dynamic and configurable
-*    - [-] Opacity Support + Blending Objects (Only Supports Disappearing Objects or showing objects behind, Skybox & Blending is not supported)
- *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows ( ) -> Cascaded Shadow Mapping ( )
+ *   - [*] Move To SDL3 & Delete GLFW3
+ *   - [*] Move headers to source
+ *   - [ ] Fix SDL3 Window I/O ImGui Bug
+ *   - [ ] Rename Bullet-dependent Classes Starting with "BT_" and PhysX with "PX_"
+ *   - [ ] Rebuild Bullet linked all in one libBullet3.dll
+ *   - [ ] Support PhysX (CPU Only, Client-dependent, Comes with reddist installation packages)
+ *   - [ ] Move classes/global functions to "syng" namespace
+ *   - [*] Opacity Support + Blending Objects (Supports both Skybox & Objects behind)
+ *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows (*) -> Deferred Shading ( ) -> Cascaded Shadow Mapping ( )
+ *   - [ ] SSAO (+ < Game Menu Option >)
+ *   - [ ] Room to Room Lighting System (Affects lights only on visible neighboring faces using id Tech 4 method or Minecraft's Lighting System)
  *   - [ ] Anti-Aliasing
  *   - [-] Flame Particles ( ) | Gamma correction (*) -> HDR ( ) -> Bloom ( ) -> Normal Mapping ( ) -> PBR Textures ( )
- *   - [ ] Make format parser for mesh nodes name <prefix>_<name> (ECH_: Entity Convex Hull, ETM_: Entity Triangle Mesh, PF_: FlameParticle, [B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh)
- *   - [ ] Review https://github.com/kcat/openal-soft for 3D Audio
- *   - [ ] < Game Modeling + Design >
- *   - [ ] < Game UI >
- *   - [ ] < Networking (via Facebook Wangle) >
- *   - [ ] < Produce >
+ *   - [ ] < Make format parser for mesh nodes name (Using gltf's custom properties + assimp) (ECH_: Entity Convex Hull, ETM_: Entity Triangle Mesh, PF_: FlameParticle, [B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh) >
+ *   - [ ] < Serialize/Deserialize Game Data >
+ *   - [ ] < Review https://github.com/kcat/openal-soft for 3D Audio >
+ *   - [ ] < Game Modeling + Design (Low Poly? High Constrast colors?) >
+ *   - [ ] < Game UI (VHS Style Menus? idk) >
+ *   - [ ] < Networking (via Facebook Wangle) + ANSI Server >
+ *   - [ ] < Produce (Demo via itch.io, Paid on Steam) >
  */ 
 void init(GameWindow *window) {
     overWorld = new World(0, "overworld");
@@ -241,7 +219,6 @@ void init(GameWindow *window) {
     sceneEntity->load();
 
     scene = new Scene(camera, window);
-    scene->withCallbacks(window);
     scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
     scene->getBatchRenderTable()->add("appleModel", appleMeshInstance);
 
@@ -282,11 +259,8 @@ void init(GameWindow *window) {
 }
 
 void render_Inputs(GameWindow *window) {
-    float xpos, ypos;
-    //glfw_process_keys(window->getGLFWWindowPtr());
-    //glfwGetCursorPos(window->getGLFWWindowPtr(), &xpos, &ypos);
-    //glfw_process_mouse(window->getGLFWWindowPtr(), xpos, ypos);
     SDL_PollEvent(&event);
+    sdl_process_keys(window->getSDLWindowPtr());
     sdl_process_mouse(event);
 }
 
@@ -332,8 +306,7 @@ void onExit() {
 
 int main() {
     window = new GameWindow("Sample", 800, 600);
-    //window->withHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-    window->withHint(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+    window->attrib(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
     window->addInitTask([](GameWindow *window){ 
         init_ImGUI();
         init(window);

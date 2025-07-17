@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Shader.hpp"
-#include "Syngine/modules/Scene.hpp"
-#include "Syngine/modules/Screenbuffer.hpp"
+#include "modules/Scene.hpp"
+#include "modules/Screenbuffer.hpp"
 
 class ShadowMapper {
 private:

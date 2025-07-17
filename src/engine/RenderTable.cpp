@@ -1,4 +1,4 @@
-#include <Syngine/engine/RenderTable.hpp>
+#include <engine/RenderTable.hpp>
 #include <algorithm>
 
 template class RenderTable<WindowRenderable>;

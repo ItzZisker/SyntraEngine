@@ -1,10 +1,10 @@
 #include "LinearMath/btQuaternion.h"
 #include "LinearMath/btTransform.h"
 #include "LinearMath/btVector3.h"
-#include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/modules/Scene.hpp"
-#include "Syngine/modules/Screenbuffer.hpp"
-#include "Syngine/modules/Shader.hpp"
+#include "engine/RenderTable.hpp"
+#include "modules/Scene.hpp"
+#include "modules/Screenbuffer.hpp"
+#include "modules/Shader.hpp"
 
 #include <glm/glm.hpp>
 

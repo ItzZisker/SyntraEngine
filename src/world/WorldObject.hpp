@@ -1,9 +1,9 @@
 #pragma once
 
 #include "glm/fwd.hpp"
-#include <Syngine/engine/RenderTable.hpp>
-#include <Syngine/world/World.hpp>
-#include <Syngine/utils/FastMath.hpp>
+#include <engine/RenderTable.hpp>
+#include <world/World.hpp>
+#include <utils/FastMath.hpp>
 
 #include <glm/glm.hpp>
 #include <vector>

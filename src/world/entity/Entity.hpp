@@ -1,9 +1,9 @@
 #pragma once
 
 #include "BulletDynamics/Dynamics/btRigidBody.h"
-#include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/modules/MeshInstance.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "engine/RenderTable.hpp"
+#include "modules/MeshInstance.hpp"
+#include "world/WorldObject.hpp"
 #include "glm/fwd.hpp"
 
 #include <functional>

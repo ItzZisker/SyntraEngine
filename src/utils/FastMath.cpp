@@ -1,4 +1,4 @@
-#include "Syngine/utils/FastMath.hpp"
+#include "utils/FastMath.hpp"
 #include "glm/glm.hpp"
 
 float FastMath::glmLen2(glm::vec2 vec) {

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <Syngine/Syngine.hpp>
-#include <Syngine/world/World.hpp>
-#include <Syngine/world/WorldObject.hpp>
-#include <Syngine/modules/Shader.hpp>
+#include <Syngine.hpp>
+#include <world/World.hpp>
+#include <world/WorldObject.hpp>
+#include <modules/Shader.hpp>
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>

@@ -2,10 +2,10 @@
 
 #include "MeshInstance.hpp"
 #include "Screenbuffer.hpp"
-#include "Syngine/modules/Model.hpp"
-#include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/modules/Scene.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "modules/Model.hpp"
+#include "engine/RenderTable.hpp"
+#include "modules/Scene.hpp"
+#include "world/WorldObject.hpp"
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
