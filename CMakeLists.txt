@@ -73,10 +73,10 @@ add_library(Syngine SHARED
 
     src/world/World.cpp
     src/world/WorldObject.cpp
-    src/world/entity/EntityConvexHull.cpp
-    src/world/entity/EntityConvexHullCompound.cpp
-    src/world/entity/EntityTriangleMesh.cpp
-    src/world/entity/EntityTriangleMeshCompound.cpp
+    src/world/entity/BT_EntityConvexHull.cpp
+    src/world/entity/BT_EntityConvexHullCompound.cpp
+    src/world/entity/BT_EntityTriangleMesh.cpp
+    src/world/entity/BT_EntityTriangleMeshCompound.cpp
 
     src/utils/FastMath.cpp
     src/utils/GameUtils.cpp

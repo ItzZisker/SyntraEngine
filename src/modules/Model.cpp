@@ -7,7 +7,9 @@
 #include <set>
 #include <string>
 
-unsigned int TextureFromFile(const char *path, const std::string &directory);
+using namespace syng;
+
+unsigned int syng::TextureFromFile(const char *path, const std::string &directory);
 
 Model::Model(std::string const &path, bool gamma) : gammaCorrection(gamma), path(path) {}
 
@@ -186,7 +188,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType 
     return textures;
 }
 
-unsigned int TextureFromFile(const char *path, const std::string &directory) {
+unsigned int syng::TextureFromFile(const char *path, const std::string &directory) {
     std::string filename = std::string(path);
     filename = directory + '/' + filename;
 

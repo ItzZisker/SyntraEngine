@@ -12,6 +12,8 @@
       - Add rendering operations just as the main window, using renderTask functions
       - Framebuffer itself is also a Renderable which could be added to main window's rendertable
  */
+namespace syng
+{
 class Framebuffer : public Screenbuffer, public WindowRenderable {
 private:
     Scene* scene;
@@ -44,3 +46,4 @@ public:
 
     unsigned int getRBO();
 };
+}

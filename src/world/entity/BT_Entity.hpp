@@ -3,6 +3,7 @@
 #include "BulletDynamics/Dynamics/btRigidBody.h"
 #include "engine/RenderTable.hpp"
 #include "modules/MeshInstance.hpp"
+#include "world/World.hpp"
 #include "world/WorldObject.hpp"
 #include "glm/fwd.hpp"
 
@@ -11,12 +12,19 @@
 #include <string>
 #include <unordered_map>
 
-class Entity : public WorldObject, public WindowRenderable {
+namespace syng
+{
+
+class BT_Entity : public WorldObject, public WindowRenderable {
 protected:
     btRigidBody* body;
     std::unordered_map<std::string, std::function<void(const glm::mat4&)>> motionStateFunctions;
 public:
-    Entity(World* world) : WorldObject(world) {}
+    BT_Entity(BT_World* world) : WorldObject(world) {}
+
+    BT_World* worldAsBT() const { 
+        return static_cast<BT_World*>(this->world);
+    }
 
     btRigidBody* getBody() {
         return this->body;
@@ -53,3 +61,5 @@ public:
         }
     }
 };
+
+}

@@ -9,6 +9,8 @@
 #include <modules/Mesh.hpp>
 #include <utils/GameUtils.hpp>
 
+using namespace syng;
+
 ModelInstance::ModelInstance(Model* model, Coordination coords) : model(model) {
     setTransform(coords.getTransform());
 

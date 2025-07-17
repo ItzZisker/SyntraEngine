@@ -8,6 +8,9 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+namespace syng
+{
+
 struct Scene_T;
 class Scene;
 
@@ -164,3 +167,5 @@ public:
 
     World *getWorld() const;
 };
+
+}

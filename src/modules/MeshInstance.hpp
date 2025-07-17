@@ -9,6 +9,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+namespace syng
+{
 class MeshInstance : public FrustumDiscardable, public Coordination, public ShaderRenderable {
 private:
     Mesh* mesh;
@@ -21,3 +23,4 @@ public:
 
     Mesh* getMesh();
 };
+}

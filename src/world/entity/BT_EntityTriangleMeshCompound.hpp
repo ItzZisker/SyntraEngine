@@ -1,8 +1,9 @@
 #pragma once
 
 #include "BulletCollision/CollisionShapes/btTriangleInfoMap.h"
+#include "world/World.hpp"
 #include "world/WorldObject.hpp"
-#include "world/entity/Entity.hpp"
+#include "world/entity/BT_Entity.hpp"
 #include <engine/RenderTable.hpp>
 #include <modules/Model.hpp>
 
@@ -13,7 +14,9 @@
 #include <string>
 #include <unordered_map>
 
-class EntityTriangleMeshCompound : public Entity
+namespace syng
+{
+class BT_EntityTriangleMeshCompound : public BT_Entity
 {
 private:
     std::unordered_map<std::string, Mesh*> meshes;
@@ -23,11 +26,11 @@ private:
 public:
     Coordination coords;
 
-    EntityTriangleMeshCompound(World* world, Model* model);
+    BT_EntityTriangleMeshCompound(BT_World* world, Model* model);
 
-    EntityTriangleMeshCompound(World* world, std::unordered_map<std::string, Mesh*> meshes);
+    BT_EntityTriangleMeshCompound(BT_World* world, std::unordered_map<std::string, Mesh*> meshes);
 
-    ~EntityTriangleMeshCompound();
+    ~BT_EntityTriangleMeshCompound();
 
     const glm::mat4 onMotionState() override;
 
@@ -41,3 +44,4 @@ public:
         return this->meshes;
     }
 };
+}

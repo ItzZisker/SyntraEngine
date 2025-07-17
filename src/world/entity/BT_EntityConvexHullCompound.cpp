@@ -1,7 +1,7 @@
 #include <LinearMath/btVector3.h>
 
 #include <modules/Mesh.hpp>
-#include <world/entity/EntityConvexHullCompound.hpp>
+#include <world/entity/BT_EntityConvexHullCompound.hpp>
 #include "utils/GameUtils.hpp"
 
 #include <cmath>
@@ -9,25 +9,27 @@
 #include <string>
 #include <unordered_map>
 
-EntityConvexHullCompound::EntityConvexHullCompound(World* world, float mass, Model* model) 
-    : Entity(world), mass(mass), meshes(model->meshes) {}
+using namespace syng;
 
-EntityConvexHullCompound::EntityConvexHullCompound(World* world, float mass, std::unordered_map<std::string, Mesh*> meshes) 
-    : Entity(world), mass(mass), meshes(meshes) {}
+BT_EntityConvexHullCompound::BT_EntityConvexHullCompound(BT_World* world, float mass, Model* model) 
+    : BT_Entity(world), mass(mass), meshes(model->meshes) {}
 
-EntityConvexHullCompound::~EntityConvexHullCompound() {
-    world->getDynamics()->removeRigidBody(body);
+BT_EntityConvexHullCompound::BT_EntityConvexHullCompound(BT_World* world, float mass, std::unordered_map<std::string, Mesh*> meshes) 
+    : BT_Entity(world), mass(mass), meshes(meshes) {}
+
+BT_EntityConvexHullCompound::~BT_EntityConvexHullCompound() {
+    worldAsBT()->getDynamics()->removeRigidBody(body);
     delete body;
     delete shape;
 }
 
-const glm::mat4 EntityConvexHullCompound::onMotionState() {
+const glm::mat4 BT_EntityConvexHullCompound::onMotionState() {
     btTransform bulletTransform;
     body->getMotionState()->getWorldTransform(bulletTransform);
     return GameUtils::fromBulletTransform(bulletTransform); // worldTransform
 }
 
-void EntityConvexHullCompound::load(bool enablePolyhedral) {
+void BT_EntityConvexHullCompound::load(bool enablePolyhedral) {
     for (const auto& it : meshes) {
         if (!it.second->loaded) {
             std::cerr << "ERROR::Entity::<UNLOADED_MESH>" << std::endl;

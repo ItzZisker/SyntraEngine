@@ -8,6 +8,8 @@
 #include <iostream>
 #include <ostream>
 
+using namespace syng;
+
 Framebuffer::Framebuffer(Scene* scene) : scene(scene) {}
 
 Framebuffer::~Framebuffer() {

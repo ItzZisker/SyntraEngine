@@ -1,6 +1,8 @@
 #include "utils/FastMath.hpp"
 #include "glm/glm.hpp"
 
+using namespace syng;
+
 float FastMath::glmLen2(glm::vec2 vec) {
     return vec[0]*vec[0] + vec[1]*vec[1];
 }

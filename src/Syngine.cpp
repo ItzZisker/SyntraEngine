@@ -6,11 +6,7 @@
 #include <math.h>
 #include <ostream>
 
-// namespace Callbacks {
-//     void glfw_framebuffer_resize_callback(GLFWwindow *window, int width, int height) {
-//         glViewport(0, 0, width, height);
-//     }
-// }
+using namespace syng;
 
 GameWindow::GameWindow(std::string title, int initialWidth, int initialHeight) {
     this->title = title;
@@ -89,8 +85,13 @@ int GameWindow::initLoop() {
 			task(this);
 		}
 		SDL_GL_SwapWindow(sdlWindow);
+        lastFrameEvents.clear();
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
+            lastFrameEvents.push_back(event);
+            for (auto& handler : eventHandlers) {
+                handler->onEvent(event);
+            }
 			if (event.type == SDL_EVENT_QUIT) {
 				closeWindow();
 			}
@@ -98,6 +99,23 @@ int GameWindow::initLoop() {
 	}
 	SDL_DestroyWindow(sdlWindow);
     return 0;
+}
+
+std::vector<SDL_Event> GameWindow::getLastFrameEvents() {
+    return this->lastFrameEvents;
+}
+
+void GameWindow::addEventHandler(SDL_EventHandler *handler) {
+    this->eventHandlers.push_back(handler);
+}
+
+void GameWindow::pullEventHandler(SDL_EventHandler *handler) {
+    for (int i = 0; i < this->eventHandlers.size(); i++) {
+        if (this->eventHandlers[i] == handler) {
+            this->eventHandlers.erase(this->eventHandlers.begin() + i);
+            return;
+        }
+    }
 }
 
 void GameWindow::addRenderTask(std::function<void(GameWindow *)> task) {

@@ -1,5 +1,5 @@
 #include <modules/Mesh.hpp>
-#include <world/entity/EntityTriangleMeshCompound.hpp>
+#include <world/entity/BT_EntityTriangleMeshCompound.hpp>
 #include "utils/GameUtils.hpp"
 #include <LinearMath/btVector3.h>
 #include <BulletCollision/CollisionDispatch/btInternalEdgeUtility.h>
@@ -8,25 +8,27 @@
 
 #include <iostream>
 
-EntityTriangleMeshCompound::EntityTriangleMeshCompound(World* world, Model* model) 
-    : Entity(world), meshes(model->meshes) {}
+using namespace syng;
 
-EntityTriangleMeshCompound::EntityTriangleMeshCompound(World* world, std::unordered_map<std::string, Mesh*> meshes) 
-    : Entity(world), meshes(meshes) {}
+BT_EntityTriangleMeshCompound::BT_EntityTriangleMeshCompound(BT_World* world, Model* model) 
+    : BT_Entity(world), meshes(model->meshes) {}
 
-EntityTriangleMeshCompound::~EntityTriangleMeshCompound() {
-    world->getDynamics()->removeRigidBody(body);
+BT_EntityTriangleMeshCompound::BT_EntityTriangleMeshCompound(BT_World* world, std::unordered_map<std::string, Mesh*> meshes) 
+    : BT_Entity(world), meshes(meshes) {}
+
+BT_EntityTriangleMeshCompound::~BT_EntityTriangleMeshCompound() {
+    worldAsBT()->getDynamics()->removeRigidBody(body);
     delete body;
     delete shape;
     delete triangleInfoMap;
     delete triangleMesh;
 }
 
-const glm::mat4 EntityTriangleMeshCompound::onMotionState() {
+const glm::mat4 BT_EntityTriangleMeshCompound::onMotionState() {
     return coords.getTransform();
 }
 
-void EntityTriangleMeshCompound::load(bool useQuantizedAabbCompression) {
+void BT_EntityTriangleMeshCompound::load(bool useQuantizedAabbCompression) {
     for (const auto& it : meshes) {
         if (!it.second->loaded) {
             std::cerr << "ERROR::Entity::<UNLOADED_MESH>" << std::endl;
@@ -70,5 +72,5 @@ void EntityTriangleMeshCompound::load(bool useQuantizedAabbCompression) {
     body = new btRigidBody(rigidBodyCI);
     body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
 
-    world->getDynamics()->addRigidBody(body);
+    worldAsBT()->getDynamics()->addRigidBody(body);
 }

@@ -1,8 +1,10 @@
 #include <engine/RenderTable.hpp>
 #include <algorithm>
 
-template class RenderTable<WindowRenderable>;
-template class RenderTable<ShaderRenderable>;
+using namespace syng;
+
+template class syng::RenderTable<WindowRenderable>;
+template class syng::RenderTable<ShaderRenderable>;
 
 template void RenderTable<WindowRenderable>::add(const std::string&, WindowRenderable*);
 template void RenderTable<ShaderRenderable>::add(const std::string&, ShaderRenderable*);

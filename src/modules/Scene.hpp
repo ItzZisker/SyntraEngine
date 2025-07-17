@@ -8,6 +8,8 @@
 #include "Shader.hpp"
 #include <glm/glm.hpp>
 
+namespace syng
+{
 class ShadowMapper;
 
 struct Scene_T {
@@ -120,3 +122,4 @@ struct WindowUserData {
     Scene* scene = nullptr;
     void* suffix = nullptr;
 };
+}

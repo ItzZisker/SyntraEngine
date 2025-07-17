@@ -1,5 +1,7 @@
 #include <modules/Screenbuffer.hpp>
 
+using namespace syng;
+
 Screenbuffer::Screenbuffer(unsigned int FBO) : FBO(FBO) {}
 
 Screenbuffer::Screenbuffer(unsigned int FBO, unsigned int width, unsigned int height, bool outputToParent)

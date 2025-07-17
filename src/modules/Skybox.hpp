@@ -7,6 +7,8 @@
 #include <vector>
 #include <string>
 
+namespace syng
+{
 unsigned int loadCubemap(std::vector<std::string> faces);
 
 class Skybox : public DuplexRenderable
@@ -35,3 +37,4 @@ public:
         render(*window);
     }
 };
+}

@@ -13,6 +13,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <string>
 
+using namespace syng;
+
 CubemapFramebuffer::CubemapFramebuffer(Scene* scene) : scene(scene) {}
 
 CubemapFramebuffer::~CubemapFramebuffer() {

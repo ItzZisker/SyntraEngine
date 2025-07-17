@@ -9,6 +9,8 @@
 #include <iostream>
 #include <chrono>
 
+using namespace syng;
+
 long GameUtils::currentTime() {
     namespace sc = std::chrono;
     return sc::duration_cast<sc::milliseconds>(

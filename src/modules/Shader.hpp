@@ -8,6 +8,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+namespace syng
+{
 class Shader
 {
 private:
@@ -52,3 +54,4 @@ public:
 
     void setMatrix4(const std::string &name, glm::mat4 matrix, int count, bool transpose);
 };
+}

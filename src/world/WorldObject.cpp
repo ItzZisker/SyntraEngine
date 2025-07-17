@@ -9,15 +9,15 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-FrustumPlane::FrustumPlane(): normal(glm::vec3(0.0f, 1.0f, 0.0f)), distance(0.0f) {}
+syng::FrustumPlane::FrustumPlane(): normal(glm::vec3(0.0f, 1.0f, 0.0f)), distance(0.0f) {}
 
-FrustumPlane::FrustumPlane(const glm::vec3& point, const glm::vec3& normalVec) : normal(glm::normalize(normalVec)), distance(-glm::dot(normal, point)) {}
+syng::FrustumPlane::FrustumPlane(const glm::vec3& point, const glm::vec3& normalVec) : normal(glm::normalize(normalVec)), distance(-glm::dot(normal, point)) {}
 
-float FrustumPlane::getSignedDistanceToPlane(const glm::vec3& point) const {
+float syng::FrustumPlane::getSignedDistanceToPlane(const glm::vec3& point) const {
     return glm::dot(normal, point) + distance;
 }
 
-AABB::AABB(std::vector<glm::vec3> positions) {        
+syng::AABB::AABB(std::vector<glm::vec3> positions) {        
     glm::vec3 min = positions[0];
     glm::vec3 max = positions[0];
 
@@ -29,11 +29,11 @@ AABB::AABB(std::vector<glm::vec3> positions) {
     extents = {max.x - center.x, max.y - center.y, max.z - center.z};
 }
 
-AABB::AABB(const glm::vec3& min, const glm::vec3& max) : center{(max + min) * 0.5f}, extents{max.x - center.x, max.y - center.y, max.z - center.z} {}
+syng::AABB::AABB(const glm::vec3& min, const glm::vec3& max) : center{(max + min) * 0.5f}, extents{max.x - center.x, max.y - center.y, max.z - center.z} {}
 
-AABB::AABB(const glm::vec3& inCenter, float iI, float iJ, float iK) : center(inCenter), extents{iI, iJ, iK} {}
+syng::AABB::AABB(const glm::vec3& inCenter, float iI, float iJ, float iK) : center(inCenter), extents{iI, iJ, iK} {}
 
-bool AABB::isOnOrForwardPlane(const FrustumPlane& plane) const {
+bool syng::AABB::isOnOrForwardPlane(const FrustumPlane& plane) const {
     const float r =
         extents.x * std::abs(plane.normal.x) +
         extents.y * std::abs(plane.normal.y) +
@@ -41,17 +41,17 @@ bool AABB::isOnOrForwardPlane(const FrustumPlane& plane) const {
     return -r <= plane.getSignedDistanceToPlane(center);
 }
 
-AABB FrustumDiscardable::getBounding() {
+syng::AABB syng::FrustumDiscardable::getBounding() {
     return this->bounding;
 }
 
-FrustumDiscardable::FrustumDiscardable(AABB bounding) : bounding(bounding) {}
+syng::FrustumDiscardable::FrustumDiscardable(AABB bounding) : bounding(bounding) {}
 
-FrustumDiscardable::FrustumDiscardable() : bounding(AABB(glm::vec3(1.0f), glm::vec3(1.0f))) {}
+syng::FrustumDiscardable::FrustumDiscardable() : bounding(AABB(glm::vec3(1.0f), glm::vec3(1.0f))) {}
 
-FrustumDiscardable::~FrustumDiscardable() = default;
+syng::FrustumDiscardable::~FrustumDiscardable() = default;
 
-Frustum FrustumDiscardable::createFrustum(Scene_T snapshot) {
+syng::Frustum syng::FrustumDiscardable::createFrustum(Scene_T snapshot) {
     Frustum frustum;
 
     const float halfVSide = snapshot.zFar * tanf(snapshot.FOV * 0.5f);
@@ -68,11 +68,11 @@ Frustum FrustumDiscardable::createFrustum(Scene_T snapshot) {
     return frustum;
 }
 
-Frustum FrustumDiscardable::createFrustum(Scene* scene) {
+syng::Frustum syng::FrustumDiscardable::createFrustum(Scene* scene) {
     return createFrustum(scene->getSnapshot());
 }
 
-bool FrustumDiscardable::isInFrustum(const Frustum& camFrustum, const glm::mat4& transform) {
+bool syng::FrustumDiscardable::isInFrustum(const Frustum& camFrustum, const glm::mat4& transform) {
     const glm::vec3 globalCenter(transform * glm::vec4(bounding.center, 1.f));
 
     const glm::vec3 right = glm::normalize(glm::vec3(transform[0])) * bounding.extents.x;
@@ -101,28 +101,28 @@ bool FrustumDiscardable::isInFrustum(const Frustum& camFrustum, const glm::mat4&
     );
 };
 
-bool FrustumDiscardable::isInView(Scene_T snapshot, const glm::mat4& transform) {
+bool syng::FrustumDiscardable::isInView(Scene_T snapshot, const glm::mat4& transform) {
     return isInFrustum(createFrustum(snapshot), transform);
 }
 
-bool FrustumDiscardable::isInView(Scene* scene, const glm::mat4& transform) {
+bool syng::FrustumDiscardable::isInView(Scene* scene, const glm::mat4& transform) {
     return isInFrustum(createFrustum(scene), transform);
 }
 
-bool FrustumDiscardable::shouldDiscard(Scene_T snapshot, const glm::mat4& transform) {
+bool syng::FrustumDiscardable::shouldDiscard(Scene_T snapshot, const glm::mat4& transform) {
     return !isInView(snapshot, transform);
 }
 
-bool FrustumDiscardable::shouldDiscard(Scene* scene, const glm::mat4& transform) {
+bool syng::FrustumDiscardable::shouldDiscard(Scene* scene, const glm::mat4& transform) {
     return !isInView(scene, transform);
 }
 
-WorldObject::WorldObject(World *initialWorld) : world(initialWorld) {}
+syng::WorldObject::WorldObject(World *initialWorld) : world(initialWorld) {}
 
-void WorldObject::setWorld(World *world) {
+void syng::WorldObject::setWorld(World *world) {
     this->world = world; 
 }
 
-World* WorldObject::getWorld() const { 
+syng::World* syng::WorldObject::getWorld() const { 
     return world;
 }

@@ -1,29 +1,32 @@
 #include "BulletCollision/CollisionShapes/btTriangleMesh.h"
+#include "world/World.hpp"
 #include "world/WorldObject.hpp"
 #include <modules/Mesh.hpp>
 #include <LinearMath/btVector3.h>
-#include <world/entity/EntityTriangleMesh.hpp>
+#include <world/entity/BT_EntityTriangleMesh.hpp>
 #include "utils/GameUtils.hpp"
 
 #include <iostream>
 
-EntityTriangleMesh::EntityTriangleMesh(World* world, float mass, Mesh* mesh)
-    : Entity(world), mass(mass), mesh(mesh) {}
+using namespace syng;
 
-EntityTriangleMesh::~EntityTriangleMesh() {
-    world->getDynamics()->removeRigidBody(body);
+BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, float mass, Mesh* mesh)
+    : BT_Entity(world), mass(mass), mesh(mesh) {}
+
+BT_EntityTriangleMesh::~BT_EntityTriangleMesh() {
+    worldAsBT()->getDynamics()->removeRigidBody(body);
     delete body;
     delete shape;
     delete triangleMesh;
 }
 
-const glm::mat4 EntityTriangleMesh::onMotionState() {
+const glm::mat4 BT_EntityTriangleMesh::onMotionState() {
     btTransform transform;
     body->getMotionState()->getWorldTransform(transform);
     return GameUtils::fromBulletTransform(transform);
 }
 
-void EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
+void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
     if (!mesh->loaded) {
         std::cerr << "ERROR::Entity::<UNLOADED_MESH>" << std::endl;
         return;
@@ -51,5 +54,5 @@ void EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
     ));
 
     body = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(mass, motionState, shape, btVector3(0, 0, 0)));
-    world->getDynamics()->addRigidBody(body);
+    worldAsBT()->getDynamics()->addRigidBody(body);
 }

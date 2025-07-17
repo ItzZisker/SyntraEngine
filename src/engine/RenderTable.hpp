@@ -6,6 +6,8 @@
 #include <string>
 #include <functional>
 
+namespace syng
+{
 class GameWindow;
 
 class WindowRenderable
@@ -50,3 +52,4 @@ public:
 
     void forEach(const std::function<void(const std::string&, R*)>& func) const;
 };
+}

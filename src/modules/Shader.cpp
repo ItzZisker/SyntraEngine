@@ -10,6 +10,8 @@
 #include <iostream>
 #include <string>
 
+using namespace syng;
+
 Shader::Shader(const char *vertexPath, const char *fragmentPath) {
     this->vertexPath = vertexPath;
     this->fragmentPath = fragmentPath;

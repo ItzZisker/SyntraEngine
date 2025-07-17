@@ -1,5 +1,7 @@
 #pragma once
 
+namespace syng
+{
 class Screenbuffer {
 protected:
     unsigned int FBO = 0;
@@ -20,3 +22,4 @@ public:
 
     bool isOutputToParent();
 };
+}

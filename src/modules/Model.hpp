@@ -20,6 +20,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace syng
+{
 unsigned int TextureFromFile(const char *path, const std::string &directory);
 
 class Model
@@ -57,3 +59,4 @@ private:
 
     std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName);
 };
+}

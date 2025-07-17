@@ -1,6 +1,6 @@
 #pragma once
 
-#include <world/entity/Entity.hpp>
+#include <world/entity/BT_Entity.hpp>
 #include <world/WorldObject.hpp>
 #include <engine/RenderTable.hpp>
 #include <modules/Model.hpp>
@@ -10,7 +10,10 @@
 #include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <BulletCollision/CollisionShapes/btConvexHullShape.h>
 
-class EntityConvexHull : public Entity
+namespace syng
+{
+
+class BT_EntityConvexHull : public syng::BT_Entity
 {
 private:
     Mesh* mesh;
@@ -21,9 +24,9 @@ public:
     float mass;
     float friction = 1.0f, rollingFriction = 0.3f, linearDamping = 0.8f, angularDamping = 0.2f;
 
-    EntityConvexHull(World* world, float mass, Mesh* mesh);
+    BT_EntityConvexHull(syng::BT_World* world, float mass, Mesh* mesh);
 
-    ~EntityConvexHull();
+    ~BT_EntityConvexHull();
 
     const glm::mat4 onMotionState() override;
 
@@ -37,3 +40,5 @@ public:
         return this->mesh;
     }
 };
+
+}

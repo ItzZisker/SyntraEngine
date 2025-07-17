@@ -6,6 +6,8 @@
 #include <modules/Mesh.hpp>
 #include <utils/GameUtils.hpp>
 
+using namespace syng;
+
 MeshInstance::MeshInstance(Mesh* mesh) : MeshInstance(mesh, Coordination(glm::mat4(1.0f))) {}
 
 MeshInstance::MeshInstance(Mesh* mesh, Coordination coords) : mesh(mesh) {

@@ -1,29 +1,29 @@
+#include <world/entity/BT_EntityConvexHull.hpp>
+#include "world/World.hpp"
 #include "world/WorldObject.hpp"
-
 #include <LinearMath/btVector3.h>
-
 #include <modules/Mesh.hpp>
-#include <world/entity/EntityConvexHull.hpp>
 #include "utils/GameUtils.hpp"
-
 #include <iostream>
 
-EntityConvexHull::EntityConvexHull(World* world, float mass, Mesh* mesh) 
-    : Entity(world), mass(mass), mesh(mesh) {}
+using namespace syng;
 
-EntityConvexHull::~EntityConvexHull() {
-    world->getDynamics()->removeRigidBody(body);
+BT_EntityConvexHull::BT_EntityConvexHull(BT_World* world, float mass, Mesh* mesh) 
+    : BT_Entity(world), mass(mass), mesh(mesh) {}
+
+BT_EntityConvexHull::~BT_EntityConvexHull() {
+    worldAsBT()->getDynamics()->removeRigidBody(body);
     delete body;
     delete shape;
 }
 
-const glm::mat4 EntityConvexHull::onMotionState() {
+const glm::mat4 BT_EntityConvexHull::onMotionState() {
     btTransform transform;
     body->getMotionState()->getWorldTransform(transform);
     return GameUtils::fromBulletTransform(transform);
 }
 
-void EntityConvexHull::load(bool enablePolyhedral) {
+void BT_EntityConvexHull::load(bool enablePolyhedral) {
     if (!mesh->loaded) {
         std::cerr << "ERROR::Entity::<UNLOADED_MESH>" << std::endl;
         return;
@@ -59,5 +59,5 @@ void EntityConvexHull::load(bool enablePolyhedral) {
     body->setFriction(1.0f);
     body->setDamping(0.8f, 0.2f);
 
-    world->getDynamics()->addRigidBody(body);
+    worldAsBT()->getDynamics()->addRigidBody(body);
 }

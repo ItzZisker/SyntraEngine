@@ -11,6 +11,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+namespace syng
+{
 class ModelInstance : public Discardable, public Coordination, public ShaderRenderable {
 private:
     Model* model;
@@ -27,3 +29,4 @@ public:
 
     Model* getModel();
 };
+}

@@ -4,6 +4,8 @@
 #include "modules/Scene.hpp"
 #include "modules/Screenbuffer.hpp"
 
+namespace syng
+{
 class ShadowMapper {
 private:
     Shader depthShader = Shader("shaders/depthShaderVert.glsl", "shaders/depthShaderFrag.glsl");
@@ -35,3 +37,4 @@ public:
 
     const glm::mat4 getLightSpaceMatrix();
 };
+}

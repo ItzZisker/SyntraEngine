@@ -1,6 +1,7 @@
 #pragma once
 
-#include "world/entity/Entity.hpp"
+#include "world/World.hpp"
+#include "world/entity/BT_Entity.hpp"
 #include <engine/RenderTable.hpp>
 #include <modules/Model.hpp>
 
@@ -9,7 +10,9 @@
 #include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <BulletCollision/CollisionShapes/btBvhTriangleMeshShape.h>
 
-class EntityTriangleMesh : public Entity
+namespace syng
+{
+class BT_EntityTriangleMesh : public syng::BT_Entity
 {
 private:
     Mesh* mesh;
@@ -19,9 +22,9 @@ public:
     Coordination coords;
     float mass;
 
-    EntityTriangleMesh(World* world, float mass, Mesh* mesh);
+    BT_EntityTriangleMesh(BT_World* world, float mass, Mesh* mesh);
 
-    ~EntityTriangleMesh();
+    ~BT_EntityTriangleMesh();
 
     const glm::mat4 onMotionState() override;
 
@@ -35,3 +38,4 @@ public:
         return this->mesh;
     }
 };
+}

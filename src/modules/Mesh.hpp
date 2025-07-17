@@ -14,6 +14,8 @@
 
 #define MAX_BONE_INFLUENCE 4
 
+namespace syng
+{
 GLuint getDefaultWhiteTexture();
 
 enum VRAM_Approach {
@@ -71,3 +73,4 @@ public:
 
     void init(VRAM_Approach = Sequential);
 };
+}

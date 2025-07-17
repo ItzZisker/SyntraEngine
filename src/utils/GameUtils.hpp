@@ -10,7 +10,7 @@
 
 #include <string>
 
-namespace GameUtils
+namespace syng::GameUtils
 {
     long currentTime();
 

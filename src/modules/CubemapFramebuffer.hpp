@@ -21,6 +21,8 @@
       - Use addRenderTask to define scene rendering per face (view matrix provided)
       - You can call renderToCubemap() each frame to update the environment map
  */
+namespace syng
+{
 class CubemapFramebuffer : public Screenbuffer, public DuplexRenderable {
 public:
     int sceneSize = 512;
@@ -80,3 +82,4 @@ private:
 
     void createFramebuffer(int index);
 };
+}

@@ -7,7 +7,9 @@
 #include <stb_image.h>
 #include <glad/glad.h>
 
-unsigned int loadCubemap(std::vector<std::string> faces) {
+using namespace syng;
+
+unsigned int syng::loadCubemap(std::vector<std::string> faces) {
     unsigned int textureID;
 
     glGenTextures(1, &textureID);

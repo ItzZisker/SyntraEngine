@@ -6,6 +6,8 @@
 #include "utils/GameUtils.hpp"
 #include <iostream>
 
+using namespace syng;
+
 ShadowMapper::ShadowMapper(unsigned int width, unsigned int height, glm::mat4 lightProj, glm::mat4 lightView) :
                             shadowWidth(width), shadowHeight(height), lightProjection(lightProj), lightView(lightView) {}
 

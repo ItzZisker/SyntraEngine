@@ -3,8 +3,8 @@
 #include <modules/Model.hpp>
 #include <modules/ShadowMapper.hpp>
 
-#include <world/entity/EntityConvexHull.hpp>
-#include <world/entity/EntityTriangleMeshCompound.hpp>
+#include <world/entity/BT_EntityConvexHull.hpp>
+#include <world/entity/BT_EntityTriangleMeshCompound.hpp>
 
 #include <stb_image.h>
 
@@ -29,9 +29,9 @@
 #include "backends/imgui_impl_sdl3.h"
 #include "backends/imgui_impl_opengl3.h"
 
-float moveAccel = 2.0f;
+using namespace syng;
 
-SDL_Event event;
+float moveAccel = 2.0f;
 
 GameWindow *window;
 Scene *scene;
@@ -47,7 +47,7 @@ float yaw = 0, pitch;
 double lastX, lastY;
 bool firstMouse, mouseCaptured = true;
 
-World* overWorld;
+BT_World* overWorld;
 
 Model* appleModel;
 Model* sceneModel;
@@ -55,8 +55,8 @@ Model* sceneModel;
 ModelInstance* sceneModelInstance;
 MeshInstance* appleMeshInstance;
 
-EntityConvexHull* appleEntity;
-EntityTriangleMeshCompound* sceneEntity;
+BT_EntityConvexHull* appleEntity;
+BT_EntityTriangleMeshCompound* sceneEntity;
 
 Camera* camera;
 
@@ -178,11 +178,13 @@ void init_ImGUI() {
  *   - [*] Make Spot/Point lights dynamic and configurable
  *   - [*] Move To SDL3 & Delete GLFW3
  *   - [*] Move headers to source
- *   - [ ] Fix SDL3 Window I/O ImGui Bug
- *   - [ ] Rename Bullet-dependent Classes Starting with "BT_" and PhysX with "PX_"
+ *   - [*] Fix SDL3 Window I/O ImGui Bug
+ *   - [*] Move classes/global functions to "syng" namespace
+ *   - [*] Rename Bullet-dependent Classes Starting with "BT_" and PhysX with "PX_"
+ *   - [ ] Rename OpenGL-dependent Classes Starting with "GL_" and Vulkan with "VK_"
+ *   - [ ] Merge Point Shadow Mapping into "development" branch
  *   - [ ] Rebuild Bullet linked all in one libBullet3.dll
  *   - [ ] Support PhysX (CPU Only, Client-dependent, Comes with reddist installation packages)
- *   - [ ] Move classes/global functions to "syng" namespace
  *   - [*] Opacity Support + Blending Objects (Supports both Skybox & Objects behind)
  *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows (*) -> Deferred Shading ( ) -> Cascaded Shadow Mapping ( )
  *   - [ ] SSAO (+ < Game Menu Option >)
@@ -198,7 +200,7 @@ void init_ImGUI() {
  *   - [ ] < Produce (Demo via itch.io, Paid on Steam) >
  */ 
 void init(GameWindow *window) {
-    overWorld = new World(0, "overworld");
+    overWorld = new BT_World(0, "overworld");
     camera = new Camera(overWorld, glm::vec3(5.0f, 0.0f, 5.0f), yaw, pitch);
 
     appleModel = new Model("models/apple2/apple.obj");
@@ -206,7 +208,7 @@ void init(GameWindow *window) {
     appleModel->loadModel(Interleaved);
     appleMeshInstance = new MeshInstance(appleModel->meshes["Apple"]);
 
-    appleEntity = new EntityConvexHull(overWorld, 0.2f, appleModel->meshes["Hitbox"]);
+    appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, appleModel->meshes["Hitbox"]);
     appleEntity->setPosition(glm::vec3(0, 2, 0));
     appleEntity->bind("Apple", appleMeshInstance);
     appleEntity->load(false);
@@ -215,7 +217,7 @@ void init(GameWindow *window) {
     sceneModel->loadModel(Sequential);
     sceneModelInstance = new ModelInstance(sceneModel);
 
-    sceneEntity = new EntityTriangleMeshCompound(overWorld, sceneModel);
+    sceneEntity = new BT_EntityTriangleMeshCompound(overWorld, sceneModel);
     sceneEntity->load();
 
     scene = new Scene(camera, window);
@@ -239,6 +241,7 @@ void init(GameWindow *window) {
     scene->getBatchShader().use();
     scene->getBatchShader().setVec3f("spotLights[0].position", camera->getPosition());
     scene->getBatchShader().setVec3f("spotLights[0].direction", camera->getDirection());
+    window->addEventHandler(scene);
 
     cubemapFramebuffer = new CubemapFramebuffer(scene);
     cubemapFramebuffer->getRefractionRenderTable()->add("apple", appleMeshInstance);
@@ -259,12 +262,16 @@ void init(GameWindow *window) {
 }
 
 void render_Inputs(GameWindow *window) {
-    SDL_PollEvent(&event);
     sdl_process_keys(window->getSDLWindowPtr());
-    sdl_process_mouse(event);
+    for (SDL_Event event : window->getLastFrameEvents()) {
+        sdl_process_mouse(event);
+    }
 }
 
 void render_ImGui() {
+    for (SDL_Event event : window->getLastFrameEvents()) {
+        ImGui_ImplSDL3_ProcessEvent(&event);
+    }
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
 
@@ -275,7 +282,7 @@ void render_ImGui() {
     if (ImGui::Button("Reset")) {
         window->getWindowRenderTable()->wipe("appleEntity");
 
-        appleEntity = new EntityConvexHull(overWorld, 0.2f, appleModel->meshes["Hitbox"]);
+        appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, appleModel->meshes["Hitbox"]);
         appleEntity->load();
 
         window->getWindowRenderTable()->add("appleEntity", appleEntity);
@@ -311,7 +318,7 @@ int main() {
         init_ImGUI();
         init(window);
     });
-    window->addRenderTask([](GameWindow *window){ 
+    window->addRenderTask([](GameWindow *window){
         scene->getScreenShader().use();
         scene->getScreenShader().setFloat("gamma", gamma);
         scene->getBatchShader().use();

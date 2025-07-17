@@ -1,7 +1,8 @@
 #pragma once
 
 #include "BulletCollision/CollisionShapes/btCompoundShape.h"
-#include <world/entity/Entity.hpp>
+#include "world/World.hpp"
+#include <world/entity/BT_Entity.hpp>
 #include <world/WorldObject.hpp>
 #include <engine/RenderTable.hpp>
 #include <modules/Model.hpp>
@@ -12,7 +13,9 @@
 #include <BulletCollision/CollisionShapes/btConvexHullShape.h>
 #include <unordered_map>
 
-class EntityConvexHullCompound : public Entity
+namespace syng
+{
+class BT_EntityConvexHullCompound : public syng::BT_Entity
 {
 private:
     std::unordered_map<std::string, Mesh*> meshes;
@@ -23,11 +26,11 @@ public:
     float mass;
     float friction = 1.0f, rollingFriction = 0.3f, linearDamping = 0.8f, angularDamping = 0.2f;
 
-    EntityConvexHullCompound(World* world, float mass, Model* model);
+    BT_EntityConvexHullCompound(BT_World* world, float mass, Model* model);
 
-    EntityConvexHullCompound(World* world, float mass, std::unordered_map<std::string, Mesh*> meshes);
+    BT_EntityConvexHullCompound(BT_World* world, float mass, std::unordered_map<std::string, Mesh*> meshes);
 
-    ~EntityConvexHullCompound();
+    ~BT_EntityConvexHullCompound();
 
     const glm::mat4 onMotionState() override;
 
@@ -41,3 +44,4 @@ public:
         return this->meshes;
     }
 };
+}

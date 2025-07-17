@@ -6,6 +6,8 @@
 #include <utils/GameUtils.hpp>
 #include <cmath>
 
+using namespace syng;
+
 GLuint defaultWhiteTexture;
 
 void createDefaultWhiteTexture() {
@@ -19,7 +21,7 @@ void createDefaultWhiteTexture() {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-GLuint getDefaultWhiteTexture() {
+GLuint syng::getDefaultWhiteTexture() {
     if (!defaultWhiteTexture) createDefaultWhiteTexture();
     return defaultWhiteTexture;
 }

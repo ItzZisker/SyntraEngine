@@ -10,6 +10,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "engine/Config.hpp"
 
+using namespace syng;
+
 Scene::Scene(Camera* camera, GameWindow* window)
     : camera(camera),
       screenWidth(window->getWidth()),
@@ -117,7 +119,8 @@ void Scene::onEvent(const SDL_Event& event) {
         int width, height;
         SDL_Window* current = SDL_GetWindowFromID(event.window.windowID);
         SDL_GetWindowSize(current, &width, &height);
-        setScreenLayout(width, height);
+        if (width != 0 && height != 0)
+            setScreenLayout(width, height);
     }
 }
 
