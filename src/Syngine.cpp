@@ -50,54 +50,54 @@ void GameWindow::attrib(SDL_GLAttr attr, int value) {
 }
 
 int GameWindow::initLoop() {
-	if (SDL_Init(SDL_INIT_VIDEO) <= 0) {
-		std::cerr << "Syngine: Failed to initialize SDL3: " << SDL_GetError() << std::endl;
-		return -1;
-	}
-	SDL_Window *sdlWindow = SDL_CreateWindow(title.c_str(), width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-	if (sdlWindow == NULL) {
-		std::cerr << "Syngine: Failed to create SDL3 window: " << SDL_GetError() << std::endl;
-		SDL_Quit();
-		return -2;
-	}
+    if (SDL_Init(SDL_INIT_VIDEO) <= 0) {
+        std::cerr << "Syngine: Failed to initialize SDL3: " << SDL_GetError() << std::endl;
+        return -1;
+    }
+    SDL_Window *sdlWindow = SDL_CreateWindow(title.c_str(), width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    if (sdlWindow == NULL) {
+        std::cerr << "Syngine: Failed to create SDL3 window: " << SDL_GetError() << std::endl;
+        SDL_Quit();
+        return -2;
+    }
 
-	sdlWindowPtr = sdlWindow;
+    sdlWindowPtr = sdlWindow;
 
     glContext =  SDL_GL_CreateContext(sdlWindow);
-	SDL_GL_MakeCurrent(sdlWindow, glContext);
+    SDL_GL_MakeCurrent(sdlWindow, glContext);
 
     if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress)) {
         std::cerr << "Syngine: Failed to initialize GLAD" << std::endl;
         return -3;
     }
 
-	glViewport(0, 0, width, height);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	initialized = true;
-	onCreate(width, height, false);
-	for (auto& task : initTasks) {
-		task(this);
-	}
-	while (initialized) {
-		for (auto& task : renderTasks) {
-			task(this);
-		}
-		SDL_GL_SwapWindow(sdlWindow);
+    glViewport(0, 0, width, height);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    initialized = true;
+    onCreate(width, height, false);
+    for (auto& task : initTasks) {
+        task(this);
+    }
+    while (initialized) {
+        for (auto& task : renderTasks) {
+            task(this);
+        }
+        SDL_GL_SwapWindow(sdlWindow);
         lastFrameEvents.clear();
-		SDL_Event event;
-		while (SDL_PollEvent(&event)) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
             lastFrameEvents.push_back(event);
             for (auto& handler : eventHandlers) {
                 handler->onEvent(event);
             }
-			if (event.type == SDL_EVENT_QUIT) {
-				closeWindow();
-			}
-		}
-	}
-	SDL_DestroyWindow(sdlWindow);
+            if (event.type == SDL_EVENT_QUIT) {
+                closeWindow();
+            }
+        }
+    }
+    SDL_DestroyWindow(sdlWindow);
     return 0;
 }
 
