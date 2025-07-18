@@ -6,28 +6,12 @@ Syntra Engine is a lightweight, User Friendly, Beta (Work in progress) 3D game e
 
 Goals:
 
-- ~~Cross-Platform~~
-- ~~Lightweight,~~ Optimized
-- ~~Frustum Culling, Dynamic environment Mapping + Fresnel's Law~~ (along with other community development ideas within learnopengl itself & engines such as Source 2, etc.)
-- ~~Simple & Easy to Use in Code~~ (IN PROGRESS)
-- Normal Mapping (as well as other chapters <https://www.learnopengl.com> 29.1+)
-- 3D/2D Audio Support (Sydio Project + OpenAL)
-- GLTF + Bones & Rigid Animation Support
-- Graphical Interface
-  - QT + Window/Frames Management
-- Physics
-  - ~~Bullet Support~~ (IN PROGRESS)
-    - PhysX Support
+- An Engine Built for my horror/shooter games, a very basic. TODO in sample/sample.cpp
 
 ## Manual Build
 
 **Required Libraries**
-Before building, ensure the following libraries are statically built and placed in the `libs/` folder for your platform (`.so`, `.dll`, `.a`):
-
-- **GLAD** (Included as `glad.c`)
-- **GLFW-3** v3.4
-- **OpenGL** (Atleast v3.3) (Installed with Graphics drivers, eg. MESA) including glad.zip
-- **Assimp** v5.4.3 (Open Asset Import Library)
+Before building, ensure the following libraries are statically built and placed in the `libs/` folder for your platform (`.so`, `.dll`, `.a`)
 
 ### Mac OS
 
@@ -62,7 +46,7 @@ cmake .
 **2.** Ensure all of (clang ninja cmake) packages are installed:
 
 ```bash
-# Update MSYS2 package database and core system packages first
+# Update MSYS2 package database and core system packages first (using mingw environment)
 pacman -Syu
 pacman -S mingw-w64-x86_64-clang mingw-w64-x86_64-ninja mingw-w64-x86_64-cmake
 

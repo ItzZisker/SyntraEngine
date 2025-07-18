@@ -7,7 +7,9 @@
 #include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
-void syng::BT_World::create(unsigned int id, std::string name, glm::vec3 gravity) {
+using namespace syng;
+
+void BT_World::create(unsigned int id, std::string name, glm::vec3 gravity) {
     if (this->dynamicsWorld) return;
 
     this->id = id;
@@ -27,19 +29,19 @@ void syng::BT_World::create(unsigned int id, std::string name, glm::vec3 gravity
         solver,
         collisionConfiguration
     );
-    dynamicsWorld->setGravity(syng::GameUtils::toBulletVector(gravity));
+    dynamicsWorld->setGravity(GameUtils::toBulletVector(gravity));
 }
 
-syng::BT_World::BT_World(unsigned int id, std::string name, glm::vec3 gravity) {
+BT_World::BT_World(unsigned int id, std::string name, glm::vec3 gravity) {
     create(id, name, gravity);
 }
 
-void syng::BT_World::render(GameWindow* window) {
+void BT_World::render(GameWindow* window) {
     if (!paused) {
         dynamicsWorld->stepSimulation(window->getLastFrameTime());
     }
 }
 
-btDynamicsWorld* syng::BT_World::getDynamics() {
+btDynamicsWorld* BT_World::getDynamics() {
     return this->dynamicsWorld;
 }

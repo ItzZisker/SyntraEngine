@@ -10,7 +10,6 @@
 
 namespace syng
 {
-
 class World : public WindowRenderable {
 protected:
     unsigned int id;
@@ -40,7 +39,5 @@ public:
 
     btDynamicsWorld* getDynamics();
 };
-
 // TODO: add PhysX world + Entities
-
 }
