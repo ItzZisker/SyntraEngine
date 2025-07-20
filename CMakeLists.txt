@@ -29,7 +29,21 @@ link_directories(${ASSIMP_ROOT}/static)
 # === Bullet3 Config ===
 set(BULLET3_ROOT "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25")
 include_directories(${BULLET3_ROOT}/include)
-link_directories(${BULLET3_ROOT}/static)
+set(BULLET_LIBS
+    "${BULLET3_ROOT}/static/libBullet2FileLoader.a"
+    "${BULLET3_ROOT}/static/libBulletFileLoader.a"
+    "${BULLET3_ROOT}/static/libBullet3OpenCL_clew.a"
+    "${BULLET3_ROOT}/static/libBullet3Common.a"
+    "${BULLET3_ROOT}/static/libBullet3Geometry.a"
+    "${BULLET3_ROOT}/static/libBulletCollision.a"
+    "${BULLET3_ROOT}/static/libBullet3Collision.a"
+    "${BULLET3_ROOT}/static/libBulletInverseDynamicsUtils.a"
+    "${BULLET3_ROOT}/static/libBulletInverseDynamics.a"
+    "${BULLET3_ROOT}/static/libBulletDynamics.a"
+    "${BULLET3_ROOT}/static/libBullet3Dynamics.a"
+    "${BULLET3_ROOT}/static/libBulletSoftBody.a"
+    "${BULLET3_ROOT}/static/libLinearMath.a"
+)
 
 # === GLM Config ===
 set(GLM_ROOT "${CMAKE_SOURCE_DIR}/libs/glm")
@@ -89,18 +103,13 @@ add_library(Syngine SHARED
 if (UNIX AND NOT APPLE) # Linux
     target_link_libraries(${PROJECT_NAME} SDL3 glfw3 OpenGL::OpenGL assimp Xrandr Xi dl)
 elseif (WIN32)
-    target_link_libraries(${PROJECT_NAME} SDL3.dll opengl32 assimp
-        libBullet2FileLoader
-        libBullet3Collision
-        libBullet3Common
-        libBullet3Dynamics
-        libBullet3Geometry
-        libBullet3OpenCL_clew
-        libBulletCollision
-        libBulletDynamics
-        libBulletInverseDynamics
-        libBulletSoftBody
-        libLinearMath
+    target_link_libraries(${PROJECT_NAME}
+        SDL3
+        opengl32
+        assimp
+        -Wl,--start-group
+        "${BULLET_LIBS}"
+        -Wl,--end-group
     )
 elseif (APPLE)
     target_link_libraries(${PROJECT_NAME} SDL3 "-framework OpenGL" "-framework Cocoa" "-framework IOKit" "-framework CoreVideo")
@@ -108,45 +117,3 @@ endif()
 
 add_executable(sample_executable src/sample/sample.cpp)
 target_link_libraries(sample_executable Syngine)
-
-function(copy_resource target src_path)
-  if(IS_DIRECTORY "${src_path}")
-    get_filename_component(dir_name "${src_path}" NAME)
-    add_custom_command(TARGET ${target} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${src_path}"
-        "$<TARGET_FILE_DIR:${target}>/${dir_name}"
-      COMMENT "Copying directory ${dir_name} to output directory"
-    )
-  elseif(EXISTS "${src_path}")
-    get_filename_component(file_name "${src_path}" NAME)
-    add_custom_command(TARGET ${target} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${src_path}"
-        "$<TARGET_FILE_DIR:${target}>/${file_name}"
-      COMMENT "Copying file ${file_name} to output directory"
-    )
-  else()
-    message(WARNING "Path '${src_path}' does not exist.")
-  endif()
-endfunction()
-
-function(copy_resource_files target src_dir)
-  file(GLOB files_to_copy "${src_dir}/*")
-
-  foreach(file_path IN LISTS files_to_copy)
-    get_filename_component(file_name "${file_path}" NAME)
-    add_custom_command(TARGET ${target} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${file_path}"
-        "$<TARGET_FILE_DIR:${target}>/${file_name}"
-      COMMENT "Copying ${file_name} to output directory"
-    )
-  endforeach()
-endfunction()
-
-copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/sdl-3.2.16/bin")
-copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/assimp-5.4.3/bin")
-copy_resource_files(sample_executable "${PROJECT_SOURCE_DIR}/libs/bullet3-3.25/bin")
-copy_resource(sample_executable "${PROJECT_SOURCE_DIR}/shaders")
-copy_resource(sample_executable "${PROJECT_SOURCE_DIR}/models")

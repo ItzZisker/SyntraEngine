@@ -4,7 +4,6 @@
 #include <world/entity/BT_EntityConvexHullCompound.hpp>
 #include "utils/GameUtils.hpp"
 
-#include <cmath>
 #include <iostream>
 #include <string>
 #include <unordered_map>

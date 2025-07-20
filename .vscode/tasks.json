@@ -4,17 +4,41 @@
     {
       "label": "Build and Run",
       "type": "shell",
-      "command": "bash",
-      "args": [
-        "-c",
-        "ninja && ./sample_executable.exe"
-      ],
-      "options": {
-        "cwd": "out/build/clang"
+      "windows": {
+        "command": "powershell",
+        "args": [
+          "-NoLogo",
+          "-NoProfile",
+          "-Command",
+          "New-Item -ItemType Directory -Force -Path 'shaders','models'; ",
+          "Copy-Item -Recurse -Force '${workspaceFolder}/libs/sdl-3.2.16/bin/*' .; ",
+          "Copy-Item -Recurse -Force '${workspaceFolder}/libs/assimp-5.4.3/bin/*' .; ",
+          "Copy-Item -Recurse -Force '${workspaceFolder}/shaders/*' shaders; ",
+          "Copy-Item -Recurse -Force '${workspaceFolder}/models/*' models; ",
+          "ninja; ",
+          "Start-Process -NoNewWindow -Wait 'sample_executable.exe'"
+        ]
       },
-      "group": "build",
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-c",
+          "mkdir -p shaders models && ",
+          "cp -ru ${workspaceFolder}/libs/sdl-3.2.16/bin/* .",
+          "cp -ru ${workspaceFolder}/libs/assimp-5.4.3/bin/* .",
+          "cp -ru ${workspaceFolder}/shaders/* shaders/",
+          "cp -ru ${workspaceFolder}/models/* models/",
+          "ninja && ./sample_executable.exe"
+        ]
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/out/build/clang"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
       "problemMatcher": []
     }
   ]
 }
-

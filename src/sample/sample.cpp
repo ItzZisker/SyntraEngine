@@ -181,12 +181,12 @@ void init_ImGUI() {
  *   - [*] Fix SDL3 Window I/O ImGui Bug
  *   - [*] Move classes/global functions to "syng" namespace
  *   - [*] Rename Bullet-dependent Classes Starting with "BT_" and PhysX with "PX_"
- *   - [ ] Rename OpenGL-dependent Classes Starting with "GL_" and Vulkan with "VK_"
- *   - [ ] Merge Point Shadow Mapping into "development" branch
- *   - [ ] Rebuild Bullet linked all in one libBullet3.dll
- *   - [ ] Support PhysX (CPU Only, Client-dependent, Comes with reddist installation packages)
  *   - [*] Opacity Support + Blending Objects (Supports both Skybox & Objects behind)
- *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows (*) -> Deferred Shading ( ) -> Cascaded Shadow Mapping ( )
+ *   - [*] Rebuild Bullet linked all in one libBullet3.dll (Impossible, linked them statically, much more cleaner)
+ *   - [ ] Deferred Shading
+ *   - [ ] Merge Point Shadow Mapping into "development" branch
+ *   - [ ] Support PhysX (CPU Only, Client-dependent, Comes with reddist installation packages)
+ *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows (*) -> Cascaded Shadow Mapping ( )
  *   - [ ] SSAO (+ < Game Menu Option >)
  *   - [ ] Room to Room Lighting System (Affects lights only on visible neighboring faces using id Tech 4 method or Minecraft's Lighting System)
  *   - [ ] Anti-Aliasing

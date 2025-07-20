@@ -57,10 +57,7 @@ public:
     std::vector<Texture> textures;
 
     MaterialProps material;
-
-    unsigned int VAO;
-    unsigned int VBO, EBO;
-
+    unsigned int VAO, VBO, EBO;
     bool loaded;
 
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, glm::mat4 parentToNodeTransform);

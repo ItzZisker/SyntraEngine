@@ -4,7 +4,6 @@
 #include "glm/fwd.hpp"
 #include <modules/Mesh.hpp>
 #include <utils/GameUtils.hpp>
-#include <cmath>
 
 using namespace syng;
 
