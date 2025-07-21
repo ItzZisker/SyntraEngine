@@ -41,6 +41,8 @@ Framebuffer *framebuffer;
 CubemapFramebuffer *cubemapFramebuffer;
 Skybox *skybox;
 
+const float sensitivity = 0.1f;
+
 float lX = 0.0f;
 float gamma = 1.1f;
 float yaw = 0, pitch;
@@ -61,27 +63,21 @@ BT_EntityTriangleMeshCompound* sceneEntity;
 Camera* camera;
 
 void sdl_process_mouse(const SDL_Event& event) {
-	if (!mouseCaptured) {
+	if (!mouseCaptured || event.type != SDL_EVENT_MOUSE_MOTION) {
 		return;
 	}
+    float x = static_cast<float>(event.motion.x);
+    float y = static_cast<float>(event.motion.y);
+    float xrel = static_cast<float>(event.motion.xrel);
+    float yrel = static_cast<float>(event.motion.yrel);
 
-    float x, y, xrel, yrel;
-
-    if (event.type == SDL_EVENT_MOUSE_MOTION) {
-        float x = static_cast<float>(event.motion.x);
-        float y = static_cast<float>(event.motion.y);
-        float xrel = static_cast<float>(event.motion.xrel);
-        float yrel = static_cast<float>(event.motion.yrel);
-
-        const float sensitivity = 0.1f;
-        xrel *= sensitivity;
-        yrel *= sensitivity;
-        yaw += xrel;
-        pitch += yrel;
-        yaw = fmod(yaw, 360.0f);
-        pitch = glm::clamp(pitch, -89.0f, 89.0f);
-        camera->setDirection(GameUtils::directionOf(yaw, -pitch));
-    }
+    xrel *= sensitivity;
+    yrel *= sensitivity;
+    yaw += xrel;
+    pitch += yrel;
+    yaw = fmod(yaw, 360.0f);
+    pitch = glm::clamp(pitch, -89.0f, 89.0f);
+    camera->setDirection(GameUtils::directionOf(yaw, -pitch));
 }
 
 void sdl_process_keys(SDL_Window* sdlWindow) {

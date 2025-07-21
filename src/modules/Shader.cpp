@@ -53,7 +53,7 @@ void Shader::init(std::map<std::string, std::string> variables) {
         vertexCode = std::regex_replace(vertexCode, pattern, "$1");
         fragmentCode = std::regex_replace(fragmentCode, pattern, "$1");
     } catch (std::ifstream::failure e) {
-        std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+        std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ::" << e.what() << ", Code: " << e.code() << std::endl;
     }
 
     const char *vShaderCode = vertexCode.c_str();

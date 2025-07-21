@@ -1,3 +1,5 @@
+#include "SDL3/SDL_oldnames.h"
+#include "SDL3/SDL_video.h"
 #include "engine/RenderTable.hpp"
 #include "modules/Shader.hpp"
 #include "Syngine.hpp"
@@ -60,22 +62,22 @@ int GameWindow::initLoop() {
         SDL_Quit();
         return -2;
     }
-
     sdlWindowPtr = sdlWindow;
-
     glContext =  SDL_GL_CreateContext(sdlWindow);
+
     SDL_GL_MakeCurrent(sdlWindow, glContext);
 
     if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress)) {
         std::cerr << "Syngine: Failed to initialize GLAD" << std::endl;
         return -3;
     }
-
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     initialized = true;
+
     onCreate(width, height, false);
     for (auto& task : initTasks) {
         task(this);
@@ -98,6 +100,7 @@ int GameWindow::initLoop() {
         }
     }
     SDL_DestroyWindow(sdlWindow);
+    SDL_GL_DestroyContext(glContext);
     return 0;
 }
 
