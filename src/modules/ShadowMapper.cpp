@@ -4,7 +4,6 @@
 #include "modules/Shader.hpp"
 #include "modules/Skybox.hpp"
 #include "utils/GameUtils.hpp"
-#include <iostream>
 
 using namespace syng;
 

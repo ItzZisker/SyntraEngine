@@ -5,13 +5,110 @@ find_package(OpenGL REQUIRED COMPONENTS OpenGL)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if (NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build/lib")
+    message(STATUS "Building Assimp...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND}
+            -B build
+            -G Ninja
+            -DCMAKE_C_COMPILER=clang
+            -DCMAKE_CXX_COMPILER=clang++
+            -DASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT=ON
+            -DASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT=ON
+            -DASSIMP_BUILD_ASSIMP_TOOLS=ON
+            -DASSIMP_BUILD_ASSIMP_VIEW=ON
+            -DASSIMP_BUILD_DOCS=OFF
+            -DASSIMP_BUILD_DRACO=OFF
+            -DASSIMP_BUILD_FRAMEWORK=ON
+            -DASSIMP_BUILD_M3D_EXPORTER=ON
+            -DASSIMP_BUILD_M3D_IMPORTER=ON
+            -DASSIMP_BUILD_NONFREE_C4D_IMPORTER=OFF
+            -DASSIMP_BUILD_SAMPLES=OFF
+            -DASSIMP_BUILD_TESTS=OFF
+            -DASSIMP_BUILD_USD_IMPORTER=OFF
+            -DASSIMP_BUILD_USD_VERBOSE_LOGS=OFF
+            -DASSIMP_BUILD_USE_CCACHE=OFF
+            -DASSIMP_BUILD_VRML_IMPORTER=OFF
+            -DASSIMP_BUILD_ZLIB=ON
+            -DASSIMP_COVERALLS=OFF
+            -DASSIMP_DOUBLE_PRECISION=OFF
+            -DASSIMP_HEADERCHECK=OFF
+            -DASSIMP_HUNTER_ENABLED=OFF
+            -DASSIMP_IGNORE_GIT_HASH=OFF
+            -DASSIMP_INCLUDE_INSTALL_DIR=include
+            -DASSIMP_INJECT_DEBUG_POSTFIX=ON
+            -DASSIMP_RAPIDJSON_NO_MEMBER_ITERATOR=ON
+            -DASSIMP_UBSAN=OFF
+            -DASSIMP_WARNINGS_AS_ERRORS=OFF
+            -DASSIMP_INSTALL=ON
+            -DBUILD_SHARED_LIBS=ON
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2
+    )
+    execute_process(
+        COMMAND ninja
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build
+    )
+endif()
+
+if (NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build/lib")
+    message(STATUS "Building Bullet...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND}
+            -B build
+            -G Ninja
+            -DCMAKE_C_COMPILER=clang
+            -DCMAKE_CXX_COMPILER=clang++
+            -DBUILD_BULLET2_DEMOS=OFF
+            -DBUILD_BULLET3=ON
+            -DBUILD_BULLET_ROBOTICS_EXTRA=OFF
+            -DBUILD_BULLET_ROBOTICS_GUI_EXTRA=OFF
+            -DBUILD_CLSOCKET=OFF
+            -DBUILD_CONVEX_DECOMPOSITION_EXTRA=OFF
+            -DBUILD_CPU_DEMOS=OFF
+            -DBUILD_ENET=OFF
+            -DBUILD_EXTRAS=OFF
+            -DBUILD_GIMPACTUTILS_EXTRA=OFF
+            -DBUILD_HACD_EXTRA=OFF
+            -DBUILD_INVERSE_DYNAMIC_EXTRA=OFF
+            -DBUILD_OBJ2SDF_EXTRA=OFF
+            -DBUILD_OPENGL3_DEMOS=OFF
+            -DBUILD_PYBULLET=OFF
+            -DBUILD_SERIALIZE_EXTRA=OFF
+            -DBUILD_SHARED_LIBS=OFF
+            -DBUILD_UNIT_TESTS=OFF
+            -DBULLET2_MULTITHREADING=OFF
+            -DCLSOCKET_DEP_ONLY=OFF
+            -DCLSOCKET_SHARED=OFF
+            -DENABLE_VHACD=ON
+            -DINSTALL_CMAKE_FILES=ON
+            -DINSTALL_LIBS=ON
+            -DINTERNAL_ADD_POSTFIX_EXECUTABLE_NAMES=OFF
+            -DINTERNAL_CREATE_DISTRIBUTABLE_MSVC_PROJECTFILES=OFF
+            -DINTERNAL_CREATE_MSVC_RELATIVE_PATH_PROJECTFILES=OFF
+            -DINTERNAL_UPDATE_SERIALIZATION_STRUCTURES=OFF
+            -DUSE_DOUBLE_PRECISION=OFF
+            -DUSE_GLUT=OFF
+            -DUSE_GRAPHICAL_BENCHMARK=OFF
+            -DUSE_MSVC_INCREMENTAL_LINKING=OFF
+            -DUSE_MSVC_RELEASE_RUNTIME_ALWAYS=OFF
+            -DUSE_MSVC_RUNTIME_LIBRARY_DLL=OFF
+            -DUSE_OPENVR=OFF
+            -DUSE_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD=ON
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/bullet3-3.25
+    )
+    execute_process(
+        COMMAND ninja
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build
+    )
+endif()
+
 # Include headers
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # === SDL Config ===
-set(SDL_ROOT "${CMAKE_SOURCE_DIR}/libs/sdl-3.2.16")
+set(SDL_ROOT "${CMAKE_SOURCE_DIR}/libs/sdl-3.2.18")
 include_directories(${SDL_ROOT}/include)
-link_directories(${SDL_ROOT}/static)
+link_directories(${SDL_ROOT}/lib)
 
 # === GLAD Config ===
 set(GLAD_ROOT "${CMAKE_SOURCE_DIR}/libs/glad-3.3")
@@ -22,27 +119,26 @@ set(STB_ROOT "${CMAKE_SOURCE_DIR}/libs/stb-image")
 include_directories(${STB_ROOT})
 
 # === Assimp Config ===
-set(ASSIMP_ROOT "${CMAKE_SOURCE_DIR}/libs/assimp-5.4.3")
+set(ASSIMP_ROOT "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2")
 include_directories(${ASSIMP_ROOT}/include)
-link_directories(${ASSIMP_ROOT}/static)
+include_directories(${ASSIMP_ROOT}/build/include)
+link_directories(${ASSIMP_ROOT}/build/lib)
 
 # === Bullet3 Config ===
 set(BULLET3_ROOT "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25")
-include_directories(${BULLET3_ROOT}/include)
+include_directories(${BULLET3_ROOT}/src)
 set(BULLET_LIBS
-    "${BULLET3_ROOT}/static/libBullet2FileLoader.a"
-    "${BULLET3_ROOT}/static/libBulletFileLoader.a"
-    "${BULLET3_ROOT}/static/libBullet3OpenCL_clew.a"
-    "${BULLET3_ROOT}/static/libBullet3Common.a"
-    "${BULLET3_ROOT}/static/libBullet3Geometry.a"
-    "${BULLET3_ROOT}/static/libBulletCollision.a"
-    "${BULLET3_ROOT}/static/libBullet3Collision.a"
-    "${BULLET3_ROOT}/static/libBulletInverseDynamicsUtils.a"
-    "${BULLET3_ROOT}/static/libBulletInverseDynamics.a"
-    "${BULLET3_ROOT}/static/libBulletDynamics.a"
-    "${BULLET3_ROOT}/static/libBullet3Dynamics.a"
-    "${BULLET3_ROOT}/static/libBulletSoftBody.a"
-    "${BULLET3_ROOT}/static/libLinearMath.a"
+    "${BULLET3_ROOT}/build/lib/libBullet2FileLoader.a"
+    "${BULLET3_ROOT}/build/lib/libBullet3OpenCL_clew.a"
+    "${BULLET3_ROOT}/build/lib/libBullet3Common.a"
+    "${BULLET3_ROOT}/build/lib/libBullet3Geometry.a"
+    "${BULLET3_ROOT}/build/lib/libBulletCollision.a"
+    "${BULLET3_ROOT}/build/lib/libBullet3Collision.a"
+    "${BULLET3_ROOT}/build/lib/libBulletInverseDynamics.a"
+    "${BULLET3_ROOT}/build/lib/libBulletDynamics.a"
+    "${BULLET3_ROOT}/build/lib/libBullet3Dynamics.a"
+    "${BULLET3_ROOT}/build/lib/libBulletSoftBody.a"
+    "${BULLET3_ROOT}/build/lib/libLinearMath.a"
 )
 
 # === GLM Config ===
@@ -69,7 +165,7 @@ enable_testing()
 # Define library files
 add_library(Syngine SHARED
     src/Syngine.cpp
-    
+
     src/engine/RenderTable.cpp
 
     src/modules/ShadowMapper.cpp
