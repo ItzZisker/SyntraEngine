@@ -4,7 +4,7 @@
 #include <modules/ShadowMapper.hpp>
 
 #include <world/entity/BT_EntityConvexHull.hpp>
-#include <world/entity/BT_EntityTriangleMeshCompound.hpp>
+#include <world/entity/BT_EntityTriangleMesh.hpp>
 
 #include <stb_image.h>
 
@@ -58,7 +58,7 @@ ModelInstance* sceneModelInstance;
 MeshInstance* appleMeshInstance;
 
 BT_EntityConvexHull* appleEntity;
-BT_EntityTriangleMeshCompound* sceneEntity;
+BT_EntityTriangleMesh* sceneEntity;
 
 Camera* camera;
 
@@ -213,7 +213,7 @@ void init(GameWindow *window) {
     sceneModel->loadModel(Sequential);
     sceneModelInstance = new ModelInstance(sceneModel);
 
-    sceneEntity = new BT_EntityTriangleMeshCompound(overWorld, sceneModel);
+    sceneEntity = new BT_EntityTriangleMesh(overWorld, *sceneModelInstance);
     sceneEntity->load();
 
     scene = new Scene(camera, window);

@@ -16,10 +16,10 @@ if (NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build/lib")
             -DASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT=ON
             -DASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT=ON
             -DASSIMP_BUILD_ASSIMP_TOOLS=ON
-            -DASSIMP_BUILD_ASSIMP_VIEW=ON
+            -DASSIMP_BUILD_ASSIMP_VIEW=OFF
             -DASSIMP_BUILD_DOCS=OFF
             -DASSIMP_BUILD_DRACO=OFF
-            -DASSIMP_BUILD_FRAMEWORK=ON
+            -DASSIMP_BUILD_FRAMEWORK=OFF
             -DASSIMP_BUILD_M3D_EXPORTER=ON
             -DASSIMP_BUILD_M3D_IMPORTER=ON
             -DASSIMP_BUILD_NONFREE_C4D_IMPORTER=OFF
@@ -32,7 +32,6 @@ if (NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build/lib")
             -DASSIMP_BUILD_ZLIB=ON
             -DASSIMP_COVERALLS=OFF
             -DASSIMP_DOUBLE_PRECISION=OFF
-            -DASSIMP_HEADERCHECK=OFF
             -DASSIMP_HUNTER_ENABLED=OFF
             -DASSIMP_IGNORE_GIT_HASH=OFF
             -DASSIMP_INCLUDE_INSTALL_DIR=include
@@ -184,9 +183,7 @@ add_library(Syngine SHARED
     src/world/World.cpp
     src/world/WorldObject.cpp
     src/world/entity/BT_EntityConvexHull.cpp
-    src/world/entity/BT_EntityConvexHullCompound.cpp
     src/world/entity/BT_EntityTriangleMesh.cpp
-    src/world/entity/BT_EntityTriangleMeshCompound.cpp
 
     src/utils/FastMath.cpp
     src/utils/GameUtils.cpp

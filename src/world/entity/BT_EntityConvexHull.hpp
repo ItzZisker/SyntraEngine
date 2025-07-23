@@ -1,5 +1,10 @@
 #pragma once
 
+#include "modules/MeshInstance.hpp"
+#include "modules/ModelInstance.hpp"
+#include "world/World.hpp"
+#include <string>
+#include <unordered_map>
 #include <world/entity/BT_Entity.hpp>
 #include <world/WorldObject.hpp>
 #include <engine/RenderTable.hpp>
@@ -12,11 +17,10 @@
 
 namespace syng
 {
-
 class BT_EntityConvexHull : public syng::BT_Entity
 {
 private:
-    Mesh* mesh;
+    std::unordered_map<std::string, MeshInstance> meshes;
     btConvexHullShape* shape;
 public:
     Coordination coords;
@@ -24,7 +28,11 @@ public:
     float mass;
     float friction = 1.0f, rollingFriction = 0.3f, linearDamping = 0.8f, angularDamping = 0.2f;
 
-    BT_EntityConvexHull(syng::BT_World* world, float mass, Mesh* mesh);
+    BT_EntityConvexHull(BT_World* world, float mass, ModelInstance model);
+
+    BT_EntityConvexHull(BT_World* world, float mass, MeshInstance mesh);
+
+    BT_EntityConvexHull(BT_World* world, float mass, std::unordered_map<std::string, MeshInstance> meshes);
 
     ~BT_EntityConvexHull();
 
@@ -36,9 +44,8 @@ public:
         return this->shape;
     }
 
-    Mesh* getMesh() {
-        return this->mesh;
+    std::unordered_map<std::string, MeshInstance> getMeshes() {
+        return this->meshes;
     }
 };
-
 }

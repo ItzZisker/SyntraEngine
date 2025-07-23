@@ -15,7 +15,6 @@
           "Copy-Item -Recurse -Force '${workspaceFolder}/libs/assimp-6.0.2/build/bin/*' .; ",
           "Copy-Item -Recurse -Force '${workspaceFolder}/shaders/*' shaders; ",
           "Copy-Item -Recurse -Force '${workspaceFolder}/models/*' models; ",
-          "echo \"\"",
           "ninja; ",
           "Start-Process -NoNewWindow -Wait 'sample_executable.exe'"
         ]
