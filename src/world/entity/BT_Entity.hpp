@@ -35,7 +35,9 @@ public:
             std::cerr << "Already has MotionState: " << motionKey << std::endl;
         } else {
             addMotionState(motionKey, [meshInstance](const glm::mat4& m) {
+                glm::vec3 scale = meshInstance->getScale();
                 meshInstance->setTransform(m);
+                meshInstance->setScale(scale);
             });
         }
     }

@@ -19,6 +19,7 @@
 #include "modules/CubemapFramebuffer.hpp"
 #include "modules/Framebuffer.hpp"
 #include "modules/Mesh.hpp"
+#include "modules/MeshInstance.hpp"
 #include "modules/ModelInstance.hpp"
 #include "modules/Scene.hpp"
 #include "modules/Shader.hpp"
@@ -55,6 +56,7 @@ Model* appleModel;
 Model* sceneModel;
 
 ModelInstance* sceneModelInstance;
+MeshInstance* appleHMeshInstance;
 MeshInstance* appleMeshInstance;
 
 BT_EntityConvexHull* appleEntity;
@@ -181,7 +183,6 @@ void init_ImGUI() {
  *   - [*] Rebuild Bullet linked all in one libBullet3.dll (Impossible, linked them statically, much more cleaner)
  *   - [ ] Deferred Shading
  *   - [ ] Merge Point Shadow Mapping into "development" branch
- *   - [ ] Support PhysX (CPU Only, Client-dependent, Comes with reddist installation packages)
  *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows (*) -> Cascaded Shadow Mapping ( )
  *   - [ ] SSAO (+ < Game Menu Option >)
  *   - [ ] Room to Room Lighting System (Affects lights only on visible neighboring faces using id Tech 4 method or Minecraft's Lighting System)
@@ -202,10 +203,15 @@ void init(GameWindow *window) {
     appleModel = new Model("models/apple2/apple.obj");
     appleModel->filterMesh("Apple");
     appleModel->loadModel(Interleaved);
-    appleMeshInstance = new MeshInstance(appleModel->meshes["Apple"]);
 
-    appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, appleModel->meshes["Hitbox"]);
-    appleEntity->setPosition(glm::vec3(0, 2, 0));
+    appleHMeshInstance = new MeshInstance(appleModel->meshes["Hitbox"]);
+    appleHMeshInstance->setScale(glm::vec3(1.0f, 3.0f, 1.0f));
+
+    appleMeshInstance = new MeshInstance(appleModel->meshes["Apple"]);
+    appleMeshInstance->setScale(glm::vec3(1.0f, 3.0f, 1.0f));
+
+    appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, *appleHMeshInstance);
+    appleEntity->setPosition(glm::vec3(0, 10, 0));
     appleEntity->bind("Apple", appleMeshInstance);
     appleEntity->load(false);
 
@@ -239,9 +245,9 @@ void init(GameWindow *window) {
     scene->getBatchShader().setVec3f("spotLights[0].direction", camera->getDirection());
     window->addEventHandler(scene);
 
-    cubemapFramebuffer = new CubemapFramebuffer(scene);
-    cubemapFramebuffer->getRefractionRenderTable()->add("apple", appleMeshInstance);
-    cubemapFramebuffer->create(true);
+    // cubemapFramebuffer = new CubemapFramebuffer(scene);
+    // cubemapFramebuffer->getRefractionRenderTable()->add("apple", appleMeshInstance);
+    // cubemapFramebuffer->create(true);
 
     framebuffer = new Framebuffer(scene);
     framebuffer->getRenderTable()->add("scene", scene);

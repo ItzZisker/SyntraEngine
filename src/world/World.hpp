@@ -39,5 +39,4 @@ public:
 
     btDynamicsWorld* getDynamics();
 };
-// TODO: add PhysX world + Entities
 }

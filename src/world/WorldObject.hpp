@@ -10,7 +10,6 @@
 
 namespace syng
 {
-
 struct Scene_T;
 class Scene;
 
@@ -78,20 +77,36 @@ public:
 class Coordination {
 protected:
     glm::mat4 transform = glm::mat4(1.0f);
+    glm::vec3 position = glm::vec3(0.0f);
+    glm::vec3 direction = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 scale = glm::vec3(1.0f);
+
+    void updateTransform() {
+        glm::vec3 forward = glm::normalize(direction);
+        glm::vec3 right = glm::normalize(glm::cross(up, forward));
+        glm::vec3 correctedUp = glm::normalize(glm::cross(forward, right));
+        glm::mat4 rotation(1.0f);
+
+        rotation[0] = glm::vec4(right, 0.0f);
+        rotation[1] = glm::vec4(correctedUp, 0.0f);
+        rotation[2] = glm::vec4(-forward, 0.0f);
+        rotation[3] = glm::vec4(position, 1.0f);
+
+        this->transform = rotation * glm::scale(glm::mat4(1.0f), scale);
+    }
 public:
     Coordination(glm::mat4 transform = glm::mat4(1.0f)) {
         this->transform = transform;
+        this->position = glm::vec3(transform[3]);
+        this->direction = getDirection();
+        this->up = getUp();
+        this->scale = glm::vec3(1.0f);
     }
 
-    Coordination(const glm::vec3& position, const glm::vec3& direction, const glm::vec3 up) {
-        this->transform = glm::mat4(1.0f);
-        setPosition(position);
-        setDirection(direction);
-        setUp(up);
-    }
-
-    virtual const glm::mat4& getTransform() {
-        return transform;
+    Coordination(const glm::vec3& position, const glm::vec3& direction, const glm::vec3 up)
+        : position(position), direction(direction), up(up), scale(1.0f) {
+        updateTransform();
     }
 
     virtual float getYaw() const {
@@ -111,49 +126,48 @@ public:
         return glm::normalize(glm::cross(getDirection(), getUp()));
     }
 
-    virtual glm::vec3 getPosition() const {
-        return glm::vec3(transform[3]);
-    }
-
     virtual glm::vec3 getDirection() const {
         return glm::normalize(glm::vec3(-transform[2]));
     }
 
+    virtual glm::vec3 getPosition() const {
+        return this->position;
+    }
+
+    virtual glm::vec3 getScale() const {
+        return scale;
+    }
+
+    virtual const glm::mat4& getTransform() {
+        return this->transform;
+    }
+
     virtual void setTransform(const glm::mat4& transform) {
         this->transform = transform;
+        this->position = glm::vec3(transform[3]);
+        this->direction = getDirection();
+        this->up = getUp();
+        this->scale = glm::vec3(1.0f);
     }
 
     virtual void setPosition(const glm::vec3& pos) {
-        transform[3] = glm::vec4(pos, 1.0f);
+        this->position = pos;
+        updateTransform();
     }
 
-    virtual void setUp(const glm::vec3& newUp) {
-        glm::vec3 forward = getDirection();
-        glm::vec3 right = glm::normalize(glm::cross(newUp, forward));
-        glm::vec3 up = glm::normalize(glm::cross(forward, right));
-
-        glm::mat4 rotation = glm::mat4(1.0f);
-        rotation[0] = glm::vec4(right, 0.0f);
-        rotation[1] = glm::vec4(up, 0.0f);
-        rotation[2] = glm::vec4(-forward, 0.0f);
-        rotation[3] = transform[3];
-
-        transform = rotation;
+    virtual void setUp(const glm::vec3& up) {
+        this->up = up;
+        updateTransform();
     }
 
     virtual void setDirection(const glm::vec3& dir) {
-        glm::vec3 forward = glm::normalize(dir);
-        glm::vec3 worldUp = glm::vec3(0, 1, 0);
-        glm::vec3 right = glm::normalize(glm::cross(worldUp, forward));
-        glm::vec3 up = glm::normalize(glm::cross(forward, right));
+        this->direction = glm::normalize(dir);
+        updateTransform();
+    }
 
-        glm::mat4 rotation(1.0f);
-        rotation[0] = glm::vec4(right, 0.0f);
-        rotation[1] = glm::vec4(up, 0.0f);
-        rotation[2] = glm::vec4(-forward, 0.0f);
-        rotation[3] = transform[3];
-
-        transform = rotation;
+    virtual void setScale(const glm::vec3& scale) {
+        this->scale = scale;
+        updateTransform();
     }
 };
 
@@ -167,5 +181,4 @@ public:
 
     World *getWorld() const;
 };
-
 }
