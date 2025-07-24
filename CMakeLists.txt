@@ -208,5 +208,8 @@ elseif (APPLE)
     target_link_libraries(${PROJECT_NAME} SDL3 "-framework OpenGL" "-framework Cocoa" "-framework IOKit" "-framework CoreVideo")
 endif()
 
-add_executable(sample_executable src/sample/sample.cpp)
+add_executable(sample_executable
+    src/sample/SampleCallbacks.cpp
+    src/sample/SampleGame.cpp
+)
 target_link_libraries(sample_executable Syngine)
