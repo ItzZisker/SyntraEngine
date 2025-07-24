@@ -53,11 +53,11 @@ public:
 
     int initLoop();
 
-    std::vector<SDL_Event> getLastFrameEvents();
-
     void addEventHandler(SDL_EventHandler *handler);
 
     void pullEventHandler(SDL_EventHandler *handler);
+
+    void forEachFrameEvents(std::function<void(const SDL_Event event)> func);
 
     void addRenderTask(std::function<void(GameWindow *)> task);
 
@@ -72,6 +72,8 @@ public:
     int getGLFWWindowStatus();
 
     double getLastFrameTime();
+
+    std::vector<SDL_Event> getLastFrameEvents();
 
     RenderTable<WindowRenderable> *getWindowRenderTable();
 

@@ -9,6 +9,9 @@ template class syng::RenderTable<ShaderRenderable>;
 template void RenderTable<WindowRenderable>::add(const std::string&, WindowRenderable*);
 template void RenderTable<ShaderRenderable>::add(const std::string&, ShaderRenderable*);
 
+template void RenderTable<WindowRenderable>::add(RenderTable<WindowRenderable> *rendertable);
+template void RenderTable<ShaderRenderable>::add(RenderTable<ShaderRenderable> *rendertable);
+
 template WindowRenderable* RenderTable<WindowRenderable>::remove(const std::string&);
 template ShaderRenderable* RenderTable<ShaderRenderable>::remove(const std::string&);
 
@@ -20,6 +23,13 @@ template ShaderRenderable* RenderTable<ShaderRenderable>::get(const std::string&
 
 template void RenderTable<WindowRenderable>::forEach(const std::function<void(const std::string&, WindowRenderable*)>&) const;
 template void RenderTable<ShaderRenderable>::forEach(const std::function<void(const std::string&, ShaderRenderable*)>&) const;
+
+template <typename R>
+void RenderTable<R>::add(RenderTable<R> *rendertable) {
+    rendertable->forEach([&](const std::string& key, R* renderable){
+        add(key, renderable);
+    });
+}
 
 template <typename R>
 void RenderTable<R>::add(const std::string& key, R* renderable) {

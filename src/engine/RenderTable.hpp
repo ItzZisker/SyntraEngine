@@ -44,6 +44,8 @@ class RenderTable {
 public:
     void add(const std::string& key, R* renderable);
 
+    void add(RenderTable<R> *rendertable);
+
     void wipe(const std::string& key);
 
     R* remove(const std::string& key);

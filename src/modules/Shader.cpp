@@ -119,9 +119,9 @@ void Shader::use() {
     glUseProgram(ID);
 }
 
-void Shader::setTexture(const std::string &name, int textureType, int index, int TCB) const {
+void Shader::setTexture(const std::string &name, int type, int index, int TCB) const {
     glActiveTexture(GL_TEXTURE0 + index);
-    glBindTexture(textureType, TCB);
+    glBindTexture(type, TCB);
     glUniform1i(glGetUniformLocation(ID, name.c_str()), index);
 }
 

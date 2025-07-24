@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Shader.hpp"
+#include "engine/RenderTable.hpp"
 #include "modules/Scene.hpp"
 #include "modules/Screenbuffer.hpp"
 
@@ -8,6 +9,7 @@ namespace syng
 {
 class ShadowMapper {
 private:
+    RenderTable<ShaderRenderable> *depthRendertable = new RenderTable<ShaderRenderable>();
     Shader depthShader = Shader("shaders/depthShaderVert.glsl", "shaders/depthShaderFrag.glsl");
     unsigned int depthMapFBO = 0, depthMapTCB = 0;
 public:
@@ -36,5 +38,7 @@ public:
     unsigned int getDepthMapTCB();
 
     const glm::mat4 getLightSpaceMatrix();
+
+    RenderTable<ShaderRenderable>* getDepthRenderTable();
 };
 }

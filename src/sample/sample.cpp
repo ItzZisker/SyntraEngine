@@ -223,9 +223,6 @@ void init(GameWindow *window) {
     sceneEntity->load();
 
     scene = new Scene(camera, window);
-    scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
-    scene->getBatchRenderTable()->add("appleModel", appleMeshInstance);
-
     shadowMapper = new ShadowMapper(2048);
     shadowMapper->create();
     scene->withShadows(shadowMapper);
@@ -240,18 +237,23 @@ void init(GameWindow *window) {
     });
     skybox->load();
     scene->getBatchRenderTable()->add("skybox", skybox);
+    scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
+    //scene->getBatchRenderTable()->add("appleModel", appleMeshInstance);
+
     scene->getBatchShader().use();
     scene->getBatchShader().setVec3f("spotLights[0].position", camera->getPosition());
     scene->getBatchShader().setVec3f("spotLights[0].direction", camera->getDirection());
     window->addEventHandler(scene);
 
-    // cubemapFramebuffer = new CubemapFramebuffer(scene);
-    // cubemapFramebuffer->getRefractionRenderTable()->add("apple", appleMeshInstance);
-    // cubemapFramebuffer->create(true);
+    cubemapFramebuffer = new CubemapFramebuffer(scene);
+    cubemapFramebuffer->getRefractionRenderTable()->add("apple", appleMeshInstance);
+    cubemapFramebuffer->create(true);
+
+    shadowMapper->getDepthRenderTable()->add(cubemapFramebuffer->getRefractionRenderTable());
 
     framebuffer = new Framebuffer(scene);
     framebuffer->getRenderTable()->add("scene", scene);
-    //framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
+    framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
     framebuffer->create(800, 600, true);
 
     window->getWindowRenderTable()->add("overWorld", overWorld);
@@ -265,15 +267,11 @@ void init(GameWindow *window) {
 
 void render_Inputs(GameWindow *window) {
     sdl_process_keys(window->getSDLWindowPtr());
-    for (SDL_Event event : window->getLastFrameEvents()) {
-        sdl_process_mouse(event);
-    }
+    window->forEachFrameEvents([](const SDL_Event event){sdl_process_mouse(event);});
 }
 
 void render_ImGui() {
-    for (SDL_Event event : window->getLastFrameEvents()) {
-        ImGui_ImplSDL3_ProcessEvent(&event);
-    }
+    window->forEachFrameEvents([](const SDL_Event event){ImGui_ImplSDL3_ProcessEvent(&event);});
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
 

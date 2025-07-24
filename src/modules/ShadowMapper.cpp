@@ -1,4 +1,5 @@
 #include "modules/ShadowMapper.hpp"
+#include "engine/RenderTable.hpp"
 #include "modules/Scene.hpp"
 #include "modules/Screenbuffer.hpp"
 #include "modules/Shader.hpp"
@@ -57,17 +58,20 @@ void ShadowMapper::renderDepth(Screenbuffer screen, Scene *scene) {
     glClear(GL_DEPTH_BUFFER_BIT);
 
     Screenbuffer shadowScreen(depthMapFBO, shadowWidth, shadowHeight);
-
-    glCullFace(GL_FRONT);
-    depthShader.use();
-    depthShader.setMatrix4("lightSpaceMatrix", getLightSpaceMatrix(), 1, GL_FALSE);
-    scene->getBatchRenderTable()->forEach([&](const std::string& key, ShaderRenderable* renderable) {
+    auto renderFunc = [&](const std::string& key, ShaderRenderable* renderable){
         if (!dynamic_cast<Skybox*>(renderable)) {
             renderable->render(depthShader, shadowScreen);
         }
-    });
-    glCullFace(GL_BACK);
+    };
+    glCullFace(GL_FRONT);
+    
+    depthShader.use();
+    depthShader.setMatrix4("lightSpaceMatrix", getLightSpaceMatrix(), 1, GL_FALSE);
 
+    scene->getBatchRenderTable()->forEach(renderFunc);
+    depthRendertable->forEach(renderFunc);
+
+    glCullFace(GL_BACK);
     glBindFramebuffer(GL_FRAMEBUFFER, screen.getFBO());
     glViewport(0, 0, screen.getWidth(), screen.getHeight());
 }
@@ -78,4 +82,8 @@ unsigned int ShadowMapper::getDepthMapFBO() {
 
 unsigned int ShadowMapper::getDepthMapTCB() {
     return this->depthMapTCB;
+}
+
+RenderTable<ShaderRenderable>* ShadowMapper::getDepthRenderTable() {
+    return this->depthRendertable;
 }

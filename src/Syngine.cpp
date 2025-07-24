@@ -1,3 +1,4 @@
+#include "SDL3/SDL_events.h"
 #include "SDL3/SDL_oldnames.h"
 #include "SDL3/SDL_video.h"
 #include "engine/RenderTable.hpp"
@@ -23,11 +24,13 @@ GameWindow::GameWindow(std::string title, int initialWidth, int initialHeight) {
 #endif
 
     addRenderTask([](GameWindow *window) {
-        static double previousTime = SDL_GetTicks() / 1000.0;
-        double currentTime = SDL_GetTicks() / 1000.0;
+        static Uint64 previousCounter = SDL_GetPerformanceCounter();
+        Uint64 currentCounter = SDL_GetPerformanceCounter();
 
-        window->lastFrameTime = currentTime - previousTime;
-        previousTime = currentTime;
+        double deltaTime = (double)(currentCounter - previousCounter) / (double) SDL_GetPerformanceFrequency();
+        previousCounter = currentCounter;
+
+        window->lastFrameTime = deltaTime;
     });
     addRenderTask([](GameWindow *window) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -104,10 +107,6 @@ int GameWindow::initLoop() {
     return 0;
 }
 
-std::vector<SDL_Event> GameWindow::getLastFrameEvents() {
-    return this->lastFrameEvents;
-}
-
 void GameWindow::addEventHandler(SDL_EventHandler *handler) {
     this->eventHandlers.push_back(handler);
 }
@@ -118,6 +117,12 @@ void GameWindow::pullEventHandler(SDL_EventHandler *handler) {
             this->eventHandlers.erase(this->eventHandlers.begin() + i);
             return;
         }
+    }
+}
+
+void GameWindow::forEachFrameEvents(std::function<void(const SDL_Event event)> func) {
+    for (const SDL_Event event : lastFrameEvents) {
+        func(event);
     }
 }
 
@@ -147,6 +152,10 @@ int GameWindow::getGLFWWindowStatus() {
 
 double GameWindow::getLastFrameTime() {
     return this->lastFrameTime;
+}
+
+std::vector<SDL_Event> GameWindow::getLastFrameEvents() {
+    return this->lastFrameEvents;
 }
 
 SDL_Window *GameWindow::getSDLWindowPtr() {

@@ -116,15 +116,14 @@ void Skybox::render(Screenbuffer screen) {
     glBindFramebuffer(GL_FRAMEBUFFER, screen.getFBO());
 
     shader.use();
-    shader.setInt("skybox", 0);
     shader.setMatrix4("view", glm::mat4(glm::mat3(scene->getCamera()->getViewMatrix())), 1, GL_FALSE);
     shader.setMatrix4("projection", scene->getProjection(), 1, GL_FALSE);
+    shader.setTexture("skybox", GL_TEXTURE_CUBE_MAP, 0, cubemapTexture);
 
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_FALSE);
 
     glBindVertexArray(cubeVAO);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     glDepthFunc(GL_LESS);
