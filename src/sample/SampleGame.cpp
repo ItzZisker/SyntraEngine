@@ -4,6 +4,38 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"
 
+
+/* TODO:
+ *   === SEIZURE PROGRAM (Lethal-like Coop Video Game) ===
+ *
+ *   - [*] Window Resize Viewport bugfix
+ *   - [*] Make shaders variables replaceable (AKA Configurable)
+ *   - [*] Make shaders reloadable
+ *   - [*] Make Spot/Point lights dynamic and configurable
+ *   - [*] Move To SDL3 & Delete GLFW3
+ *   - [*] Move headers to source
+ *   - [*] Fix SDL3 Window I/O ImGui Bug
+ *   - [*] Move classes/global functions to "syng" namespace
+ *   - [*] Rename Bullet-dependent Classes Starting with "BT_" and PhysX with "PX_"
+ *   - [*] Opacity Support + Blending Objects (Supports both Skybox & Objects behind)
+ *   - [*] Rebuild Bullet linked all in one libBullet3.dll (Impossible, linked them statically, much more cleaner)
+ *   - [ ] Deferred Shading
+ *   - [ ] Merge Point Shadow Mapping into "development" branch
+ *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows (*) -> Cascaded Shadow Mapping ( )
+ *   - [ ] SSAO (+ < Game Menu Option >)
+ *   - [ ] Room to Room Lighting System (Affects lights only on visible neighboring faces using id Tech 4 method or Minecraft's Lighting System)
+ *   - [ ] Anti-Aliasing
+ *   - [-] Flame Particles ( ) | Gamma correction (*) -> HDR ( ) -> Bloom ( ) -> Normal Mapping ( ) -> PBR Textures ( )
+ *   - [ ] Test/Load Sample GLTF Models by Standard
+ *   - [ ] < Make format parser for mesh nodes name (Using gltf's custom properties + assimp) (ECH_: Entity Convex Hull, ETM_: Entity Triangle Mesh, PF_: FlameParticle, [B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh) >
+ *   - [ ] < Serialize/Deserialize Game Data >
+ *   - [ ] < Review https://github.com/kcat/openal-soft for 3D Audio >
+ *   - [ ] < Game Modeling + Design (Low Poly? High Constrast colors?) >
+ *   - [ ] < Game UI (VHS Style Menus? idk) >
+ *   - [ ] < Networking (via Facebook Wangle) + ANSI Server >
+ *   - [ ] < Produce (Demo via itch.io, Paid on Steam) >
+ */ 
+
 int SampleGame::launch() {
     window = new GameWindow("Sample", 800, 600);
     window->attrib(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
