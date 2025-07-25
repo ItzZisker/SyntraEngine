@@ -70,10 +70,10 @@ void SampleGame::createWindow(GameWindow *window) {
     appleModel->loadModel(Interleaved);
 
     appleHMeshInstance = new MeshInstance(appleModel->meshes["Hitbox"]);
-    appleHMeshInstance->setScale(glm::vec3(1.0f, 3.0f, 1.0f));
+    appleHMeshInstance->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
 
     appleMeshInstance = new MeshInstance(appleModel->meshes["Apple"]);
-    appleMeshInstance->setScale(glm::vec3(1.0f, 3.0f, 1.0f));
+    appleMeshInstance->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
 
     appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, *appleHMeshInstance);
     appleEntity->setPosition(glm::vec3(0, 10, 0));
@@ -161,6 +161,7 @@ void SampleGame::renderImGUI() {
     ImGui::SliderFloat("Opacity (Scene)", &sceneModelInstance->meshInstances.find("Cube")->second.getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("Opacity", &appleMeshInstance->getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+    ImGui::SliderFloat("FOV (Reflectives)", &cubemapFramebuffer->fieldOfView, 80.0f, 100.0f, "%.3f");
     ImGui::SliderFloat("Light X", &lX, 0.1f, 20.0f, "%.3f");
     ImGui::SliderFloat("Shadow Bias Min", &shadowMapper->biasMin, 0.001f, 1.0f, "%.3f");
     ImGui::SliderFloat("Shadow Bias Max", &shadowMapper->biasMax, 0.001f, 1.0f, "%.3f");

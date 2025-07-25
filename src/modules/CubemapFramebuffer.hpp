@@ -26,7 +26,7 @@ namespace syng
 class CubemapFramebuffer : public Screenbuffer, public DuplexRenderable {
 public:
     int sceneSize = 512;
-    float fieldOfView = 89.46666f, aspectRatio = 1.0f;
+    float fieldOfView = 89.527f, aspectRatio = 1.0f;
     float zNear = 0.1f, zFar = 100.0f;
 
     CubemapFramebuffer(Scene* scene);

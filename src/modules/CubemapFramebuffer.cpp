@@ -39,12 +39,6 @@ void CubemapFramebuffer::createFramebuffer(int index) {
 
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
-    for (unsigned int i = 0; i < 6; ++i) {
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB,
-                    sceneSize, sceneSize,
-                    0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-    }
-
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -69,6 +63,13 @@ void CubemapFramebuffer::create(bool renderToParent) {
     });
 
     glGenTextures(1, &cubemapTexture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+
+    for (unsigned int i = 0; i < 6; i++) {
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB,
+                     sceneSize, sceneSize,
+                     0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    }
 
     for (unsigned int i = 0; i < 6; i++) {
         createFramebuffer(i);
@@ -83,15 +84,13 @@ void CubemapFramebuffer::create(bool renderToParent) {
     addRenderTask([&](unsigned int FBO, const Coordination& sideView) {
         Shader batchShader = scene->getBatchShader();
 
-        glm::vec3 cameraPos = scene->getCamera()->getPosition();
-        glm::vec3 cameraDir = scene->getCamera()->getDirection();
         glm::mat4 projection = glm::perspective(fieldOfView, aspectRatio, zNear, zFar);
         glm::mat4 view = glm::lookAt(sideView.getPosition(), sideView.getPosition() + sideView.getDirection(), sideView.getUp());
 
         batchShader.use();
         batchShader.setMatrix4("view", view, 1, GL_FALSE);
         batchShader.setMatrix4("projection", projection, 1, GL_FALSE);
-        batchShader.setVec3f("cameraPos", cameraPos);
+        batchShader.setVec3f("cameraPos", sideView.getPosition());
 
         scene->getBatchRenderTable()->forEach([&](const std::string& key, ShaderRenderable* renderable) {
             GameUtils::renderDV(renderable, getSnapshot(sideView), batchShader, Screenbuffer(FBO));
@@ -128,19 +127,6 @@ void CubemapFramebuffer::renderCubemap(ShaderRenderable* renderable, int parentF
     glBindFramebuffer(GL_FRAMEBUFFER, parentFBO);
 }
 
-Scene_T CubemapFramebuffer::getSnapshot(Coordination cubemapSideView) {
-    Scene_T res;
-    res.cameraPos = cubemapSideView.getPosition();
-    res.cameraDir = cubemapSideView.getDirection();
-    res.cameraUp = cubemapSideView.getUp();
-    res.cameraRight = cubemapSideView.getRight();
-    res.aspectRatio = aspectRatio;
-    res.FOV = fieldOfView;
-    res.zNear = zNear;
-    res.zFar = zFar;
-    return res;
-}
-
 void CubemapFramebuffer::render(Screenbuffer screen) {
     auto renderJob = [&](const std::string& key, ShaderRenderable* renderable, Shader shader){
         if (outputToParent && GameUtils::shouldDiscard(renderable, scene)) {
@@ -163,6 +149,19 @@ void CubemapFramebuffer::render(Screenbuffer screen) {
     };
     reflectionRendertable->forEach([&](const std::string& key, ShaderRenderable* renderable){renderJob(key, renderable, reflectionShader);});
     refractionRendertable->forEach([&](const std::string& key, ShaderRenderable* renderable){renderJob(key, renderable, refractionShader);});
+}
+
+Scene_T CubemapFramebuffer::getSnapshot(Coordination cubemapSideView) {
+    Scene_T res;
+    res.cameraPos = cubemapSideView.getPosition();
+    res.cameraDir = cubemapSideView.getDirection();
+    res.cameraUp = cubemapSideView.getUp();
+    res.cameraRight = cubemapSideView.getRight();
+    res.aspectRatio = aspectRatio;
+    res.FOV = fieldOfView;
+    res.zNear = zNear;
+    res.zFar = zFar;
+    return res;
 }
 
 void CubemapFramebuffer::addInitTask(std::function<void(CubemapFramebuffer*)> task) {
