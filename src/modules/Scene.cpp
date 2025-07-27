@@ -51,7 +51,7 @@ void Scene::setupShaders() {
     screenShader.setVec2f("uv", screenWidth, screenHeight);
 
     batchShader.init({
-        {SHADER_BATCH_KEY_NR_POINT_LIGHTS, "0"},
+        {SHADER_BATCH_KEY_NR_POINT_LIGHTS, "1"},
         {SHADER_BATCH_KEY_NR_SPOT_LIGHTS, "0"},
         {SHADER_BATCH_KEY_HAS_SHADOWS, "0"}
     });

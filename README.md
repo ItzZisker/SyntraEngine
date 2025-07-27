@@ -55,8 +55,8 @@ clang --version
 gcc --version
 ```
 
-> If you get errors or command not found, it means you've failed the installation (part 2) or your environment variables are not set.
-> Set MSYS binaries to your Windows Path (By default MSYS installed at C:\msys64. replace it with your installation as exception):
+If you get errors or command not found, it means you've failed the installation (part 2) or your environment variables are not set.
+Set MSYS binaries to your Windows Path (By default MSYS installed at C:\msys64. replace it with your installation as exception):
 
 ```bash
 C:\msys64\clang64\bin

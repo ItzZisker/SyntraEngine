@@ -65,7 +65,7 @@ public:
     }
 
     void wipeAll() {
-        for (const std::string key : objects) wipe(key);
+        for (const auto& pair : objects) wipe(pair.first);
         clear();
     }
 
