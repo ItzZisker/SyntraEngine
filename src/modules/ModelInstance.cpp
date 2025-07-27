@@ -14,9 +14,15 @@ using namespace syng;
 
 ModelInstance::ModelInstance(Model* model, Coordination coords) : model(model) {
     setTransform(coords.getTransform());
+    meshInstances = new RenderTable<MeshInstance>();
     for (auto& pair : model->meshes) {
         meshInstances->add(pair.first, new MeshInstance(pair.second));
     }
+}
+
+ModelInstance::~ModelInstance() {
+    meshInstances->wipeAll();
+    delete meshInstances;
 }
 
 bool ModelInstance::shouldDiscard(Scene_T snapshot, const glm::mat4& transform) {

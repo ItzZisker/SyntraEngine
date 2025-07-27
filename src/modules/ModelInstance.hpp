@@ -17,9 +17,11 @@ namespace syng
 class ModelInstance : public Discardable, public Coordination, public ShaderRenderable {
 private:
     Model* model;
-    RenderTable<MeshInstance>* meshInstances = new RenderTable<MeshInstance>();
+    RenderTable<MeshInstance>* meshInstances;
 public:
     ModelInstance(Model* model, Coordination coords = Coordination());
+
+    ~ModelInstance();
 
     void renderDV(Scene_T snapshot, Shader shader, Screenbuffer screen);
 

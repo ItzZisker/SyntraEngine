@@ -1,6 +1,5 @@
 #pragma once
 
-#include "engine/RenderTable.hpp"
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
@@ -17,7 +16,6 @@
 #include <world/WorldObject.hpp>
 
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace syng

@@ -64,6 +64,16 @@ public:
         if (r) delete r;
     }
 
+    void wipeAll() {
+        for (const std::string key : objects) wipe(key);
+        clear();
+    }
+
+    void clear() {
+        objects.clear();
+        insertionOrder.clear();
+    }
+
     R* remove(const std::string& key) {
         auto it = objects.find(key);
         if (it != objects.end()) {
