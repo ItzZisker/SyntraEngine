@@ -12,13 +12,13 @@
 
 using namespace syng;
 
-BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, ModelInstance model) 
-    : BT_Entity(world), meshes(model.meshInstances), coords(model.getTransform()) {}
+BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, ModelInstance* model) 
+    : BT_Entity(world), meshes(model->getMeshInstances()->asMap()), coords(model->getTransform()) {}
 
-BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, std::unordered_map<std::string, MeshInstance> meshes) 
+BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, std::unordered_map<std::string, MeshInstance*> meshes) 
     : BT_Entity(world), meshes(meshes) {}
 
-BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, MeshInstance mesh) 
+BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, MeshInstance* mesh) 
     : BT_Entity(world), meshes({{"", mesh}}) {}
 
 BT_EntityTriangleMesh::~BT_EntityTriangleMesh() {
@@ -35,8 +35,8 @@ const glm::mat4 BT_EntityTriangleMesh::onMotionState() {
 
 void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
     for (const auto& it : meshes) {
-        MeshInstance instance = it.second;
-        if (!instance.getMesh()->loaded) {
+        MeshInstance* instance = it.second;
+        if (!instance->getMesh()->loaded) {
             std::cerr << "ERROR::Entity::<UNLOADED_MESH>" << std::endl;
             return;
         }
@@ -45,8 +45,8 @@ void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
     triangleInfoMap = new btTriangleInfoMap();
 
     for (const auto& it : meshes) {
-        MeshInstance instance = it.second;
-        Mesh *mesh = instance.getMesh();
+        MeshInstance* instance = it.second;
+        Mesh *mesh = instance->getMesh();
     
         glm::mat4 transform = mesh->getParentToNodeTransform();
 

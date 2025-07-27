@@ -21,18 +21,18 @@ namespace syng
 class BT_EntityTriangleMesh : public BT_Entity
 {
 private:
-    std::unordered_map<std::string, MeshInstance> meshes;
+    std::unordered_map<std::string, MeshInstance*> meshes;
     btTriangleMesh* triangleMesh;
     btTriangleInfoMap* triangleInfoMap;
     btBvhTriangleMeshShape* shape;
 public:
     Coordination coords;
 
-    BT_EntityTriangleMesh(BT_World* world, ModelInstance model);
+    BT_EntityTriangleMesh(BT_World* world, ModelInstance* model);
 
-    BT_EntityTriangleMesh(BT_World* world, std::unordered_map<std::string, MeshInstance> meshes);
+    BT_EntityTriangleMesh(BT_World* world, std::unordered_map<std::string, MeshInstance*> meshes);
 
-    BT_EntityTriangleMesh(BT_World* world, MeshInstance mesh);
+    BT_EntityTriangleMesh(BT_World* world, MeshInstance* mesh);
 
     ~BT_EntityTriangleMesh();
 
@@ -44,7 +44,7 @@ public:
         return this->shape;
     }
 
-    const std::unordered_map<std::string, MeshInstance>& getMeshes() {
+    const std::unordered_map<std::string, MeshInstance*>& getMeshes() {
         return this->meshes;
     }
 };

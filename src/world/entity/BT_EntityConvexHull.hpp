@@ -20,7 +20,7 @@ namespace syng
 class BT_EntityConvexHull : public syng::BT_Entity
 {
 private:
-    std::unordered_map<std::string, MeshInstance> meshes;
+    std::unordered_map<std::string, MeshInstance*> meshes;
     btConvexHullShape* shape;
 public:
     Coordination coords;
@@ -28,11 +28,11 @@ public:
     float mass;
     float friction = 1.0f, rollingFriction = 0.3f, linearDamping = 0.8f, angularDamping = 0.2f;
 
-    BT_EntityConvexHull(BT_World* world, float mass, ModelInstance model);
+    BT_EntityConvexHull(BT_World* world, float mass, ModelInstance* model);
 
-    BT_EntityConvexHull(BT_World* world, float mass, MeshInstance mesh);
+    BT_EntityConvexHull(BT_World* world, float mass, MeshInstance* mesh);
 
-    BT_EntityConvexHull(BT_World* world, float mass, std::unordered_map<std::string, MeshInstance> meshes);
+    BT_EntityConvexHull(BT_World* world, float mass, std::unordered_map<std::string, MeshInstance*> meshes);
 
     ~BT_EntityConvexHull();
 
@@ -44,7 +44,7 @@ public:
         return this->shape;
     }
 
-    std::unordered_map<std::string, MeshInstance> getMeshes() {
+    const std::unordered_map<std::string, MeshInstance*>& getMeshes() {
         return this->meshes;
     }
 };

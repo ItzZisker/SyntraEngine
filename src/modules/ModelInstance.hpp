@@ -2,6 +2,7 @@
 
 #include "MeshInstance.hpp"
 #include "Screenbuffer.hpp"
+#include "modules/MeshInstance.hpp"
 #include "modules/Model.hpp"
 #include "engine/RenderTable.hpp"
 #include "modules/Scene.hpp"
@@ -16,9 +17,8 @@ namespace syng
 class ModelInstance : public Discardable, public Coordination, public ShaderRenderable {
 private:
     Model* model;
+    RenderTable<MeshInstance>* meshInstances = new RenderTable<MeshInstance>();
 public:
-    std::unordered_map<std::string, MeshInstance> meshInstances;
-
     ModelInstance(Model* model, Coordination coords = Coordination());
 
     void renderDV(Scene_T snapshot, Shader shader, Screenbuffer screen);
@@ -26,6 +26,8 @@ public:
     void render(Shader shader, Screenbuffer screen = {}) override;
 
     bool shouldDiscard(Scene_T snapshot, const glm::mat4& transform) override;
+
+    RenderTable<MeshInstance>* getMeshInstances();
 
     Model* getModel();
 };

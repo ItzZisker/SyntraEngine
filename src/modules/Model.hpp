@@ -29,7 +29,7 @@ class Model
 public:
     std::set<std::string> renderable_meshes;
     std::vector<Texture> textures_loaded;
-    std::unordered_map<std::string, Mesh*> meshes;
+    std::map<std::string, Mesh*> meshes;
     std::string directory;
     bool loaded, gammaCorrection;
     

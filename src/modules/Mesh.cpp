@@ -1,3 +1,4 @@
+#include "Shader.hpp"
 #include "engine/Config.hpp"
 #include "modules/Screenbuffer.hpp"
 #include "modules/Shader.hpp"

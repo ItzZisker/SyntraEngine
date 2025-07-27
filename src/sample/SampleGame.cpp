@@ -1,6 +1,7 @@
 #include "SampleGame.hpp"
 
 #include "SampleCallbacks.hpp"
+#include "engine/RenderTable.hpp"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"
 
@@ -75,7 +76,7 @@ void SampleGame::createWindow(GameWindow *window) {
     appleMeshInstance = new MeshInstance(appleModel->meshes["Apple"]);
     appleMeshInstance->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
 
-    appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, *appleHMeshInstance);
+    appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, appleHMeshInstance);
     appleEntity->setPosition(glm::vec3(0, 10, 0));
     appleEntity->bind("Apple", appleMeshInstance);
     appleEntity->load(false);
@@ -83,8 +84,10 @@ void SampleGame::createWindow(GameWindow *window) {
     sceneModel = new Model("models/wall/wall.obj");
     sceneModel->loadModel(Sequential);
     sceneModelInstance = new ModelInstance(sceneModel);
+    sceneModelInstance->getMeshInstances()->get("Cube")->getMesh()->material.opacity = 0.5f;
+    sceneModelInstance->getMeshInstances()->sort(RT_SORT_OPACITY);
 
-    sceneEntity = new BT_EntityTriangleMesh(overWorld, *sceneModelInstance);
+    sceneEntity = new BT_EntityTriangleMesh(overWorld, sceneModelInstance);
     sceneEntity->load();
 
     scene = new Scene(camera, window);
@@ -149,7 +152,7 @@ void SampleGame::renderImGUI() {
     if (ImGui::Button("Reset")) {
         window->getWindowRenderTable()->wipe("appleEntity");
 
-        appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, appleModel->meshes["Hitbox"]);
+        appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, appleHMeshInstance);
         appleEntity->load();
 
         window->getWindowRenderTable()->add("appleEntity", appleEntity);
@@ -158,7 +161,7 @@ void SampleGame::renderImGUI() {
     ImGui::SliderFloat("IOR G", &appleMeshInstance->getMesh()->material.ior.y, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
     ImGui::SliderFloat("IOR B", &appleMeshInstance->getMesh()->material.ior.z, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
     ImGui::SliderFloat("F0", &appleMeshInstance->getMesh()->material.F0, 0.001f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-    ImGui::SliderFloat("Opacity (Scene)", &sceneModelInstance->meshInstances.find("Cube")->second.getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
+    ImGui::SliderFloat("Opacity (Scene)", &sceneModelInstance->getMeshInstances()->get("Cube")->getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("Opacity", &appleMeshInstance->getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
     ImGui::SliderFloat("FOV (Reflectives)", &cubemapFramebuffer->fieldOfView, 80.0f, 100.0f, "%.3f");

@@ -1,5 +1,6 @@
 #include "modules/ModelInstance.hpp"
 
+#include "engine/RenderTable.hpp"
 #include "modules/MeshInstance.hpp"
 #include "modules/Model.hpp"
 #include "modules/Scene.hpp"
@@ -13,20 +14,20 @@ using namespace syng;
 
 ModelInstance::ModelInstance(Model* model, Coordination coords) : model(model) {
     setTransform(coords.getTransform());
-
     for (auto& pair : model->meshes) {
-        meshInstances.emplace(pair.first, MeshInstance(pair.second));
+        meshInstances->add(pair.first, new MeshInstance(pair.second));
     }
 }
 
 bool ModelInstance::shouldDiscard(Scene_T snapshot, const glm::mat4& transform) {
-    for (auto& meshInstance : meshInstances) {
-        glm::mat4 worldTransform = transform * meshInstance.second.getTransform();
-        if (!meshInstance.second.shouldDiscard(snapshot, worldTransform)) {
-            return false;
+    bool shouldDiscard = true;
+    meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance){
+        glm::mat4 worldTransform = transform * meshInstance->getTransform();
+        if (!meshInstance->shouldDiscard(snapshot, worldTransform)) {
+            shouldDiscard = false;
         }
-    }
-    return true;
+    });
+    return shouldDiscard;
 }
 
 void ModelInstance::renderDV(Scene_T snapshot, Shader shader, Screenbuffer screen) {
@@ -34,23 +35,18 @@ void ModelInstance::renderDV(Scene_T snapshot, Shader shader, Screenbuffer scree
         return;
     }
     if (model->renderable_meshes.empty()) {
-        for (auto& pair : meshInstances) {
-            MeshInstance meshInstance = pair.second;
-
-            if (!meshInstance.shouldDiscard(snapshot, transform * meshInstance.getTransform())) {
-                meshInstance.render(shader, screen);
+        meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance) {
+            if (!meshInstance->shouldDiscard(snapshot, transform * meshInstance->getTransform())) {
+                meshInstance->render(shader, screen);
             }
-        }
+        });
         return;
     }
     for (const std::string& meshName : model->renderable_meshes) {
-        auto pair = meshInstances.find(meshName);
-
-        if (pair != meshInstances.end()) {
-            MeshInstance meshInstance = pair->second;
-
-            if (!meshInstance.shouldDiscard(snapshot, transform * meshInstance.getTransform())) {
-                meshInstance.render(shader, screen);
+        MeshInstance* meshInstance = meshInstances->get(meshName);
+        if (meshInstance) {
+            if (!meshInstance->shouldDiscard(snapshot, transform * meshInstance->getTransform())) {
+                meshInstance->render(shader, screen);
             }
         }
     }
@@ -61,18 +57,21 @@ void ModelInstance::render(Shader shader, Screenbuffer screen) {
         return;
     }
     if (model->renderable_meshes.empty()) {
-        for (auto& pair : meshInstances) {
-            pair.second.render(shader, screen);
-        }
+        meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance) {
+            meshInstance->render(shader, screen);
+        });
         return;
     }
     for (const std::string& meshName : model->renderable_meshes) {
-        auto pair = meshInstances.find(meshName);
-
-        if (pair != meshInstances.end()) {
-            pair->second.render(shader, screen);
+        MeshInstance* meshInstance = meshInstances->get(meshName);
+        if (meshInstance) {
+            meshInstance->render(shader, screen);
         }
     }
+}
+
+RenderTable<MeshInstance>* ModelInstance::getMeshInstances() {
+    return this->meshInstances;
 }
 
 Model* ModelInstance::getModel() {
