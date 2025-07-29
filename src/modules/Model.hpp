@@ -39,11 +39,16 @@ public:
 
     void draw(Shader &shader);
 
-    void read(const std::set<std::string>& meshes = {}, bool flipTextures = false);
-
-    void readAll(bool flipTextures = false) {
-        read({}, flipTextures);
-    }
+    void read(
+        const std::set<std::string>& meshes = {},
+        bool flipTextures = false,
+        aiPostProcessSteps postProcessSteps = static_cast<aiPostProcessSteps>(
+            aiProcess_Triangulate |
+            aiProcess_GenSmoothNormals |
+            aiProcess_FlipUVs |
+            aiProcess_CalcTangentSpace
+        )
+    );
 
     void load(VRAM_Approach approach = Sequential);
 

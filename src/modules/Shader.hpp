@@ -14,10 +14,10 @@ class Shader
 {
 private:
     std::map<std::string, std::string> variables;
-public:
-    unsigned int ID;
-    const char *vertexPath, *fragmentPath;
 
+    unsigned int ID = 0;
+    const char *vertexPath, *fragmentPath;
+public:
     Shader(const char *vertexPath, const char *fragmentPath);
 
     std::string getVariable(std::string key);
@@ -53,5 +53,11 @@ public:
     void setMatrix3(const std::string &name, glm::mat3 matrix, int count, bool transpose);
 
     void setMatrix4(const std::string &name, glm::mat4 matrix, int count, bool transpose);
+
+    const char *getVertexPath() const { return vertexPath; }
+
+    const char *getFragmentPath() const { return fragmentPath; }
+
+    unsigned int getProgramID() const { return ID; }
 };
 }

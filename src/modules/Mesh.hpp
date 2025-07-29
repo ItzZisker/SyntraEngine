@@ -16,8 +16,6 @@
 
 namespace syng
 {
-GLuint getDefaultWhiteTexture();
-
 enum VRAM_Approach {
     Sequential,
     Interleaved
@@ -42,7 +40,7 @@ struct Texture {
 struct MaterialProps {
     glm::vec3 ior = glm::vec3(1.0f);
     float shininess = 32.0f;
-    float minOpacity = 0.7f, maxOpacity = 1.0f;
+    float minOpacity = 0.7f, maxOpacity = 1.0f; // Used if dynamic opacity is enabled within shader
     float opacity = 1.0f;
     float F0 = 0.04f;
     bool isTransparent = false;
@@ -58,6 +56,7 @@ public:
 
     MaterialProps material;
     unsigned int VAO, VBO, EBO;
+    unsigned int fallbackDiffuseTCB = 0, fallbackNormalTCB = 0;
     bool loaded;
 
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, glm::mat4 parentToNodeTransform);
@@ -65,6 +64,10 @@ public:
     ~Mesh();
 
     glm::mat4 getParentToNodeTransform();
+
+    void setFallBackDiffuseColor(unsigned char rgb[3]);
+
+    void setFallBackNormalColor(unsigned char rgb[3]);
 
     void render(Shader shader, Screenbuffer screen, glm::mat4 transform);
 

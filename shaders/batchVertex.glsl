@@ -13,6 +13,7 @@ layout (location = 6) in float aWeights[4];
 out vec3 normal;
 out vec3 fragPos;
 out vec2 texCoord;
+out mat3 TBN;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -31,6 +32,10 @@ void main()
 #if HAS_SHADOWS
     fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
 #endif
+    vec3 T = normalize(vec3(model * vec4(aTangent, 0.0)));
+    vec3 B = normalize(vec3(model * vec4(aBiTangent, 0.0)));
+    vec3 N = normalize(vec3(model * vec4(aNormal, 0.0)));
+    TBN = mat3(T, B, N);
     
     gl_Position = projection * view * vec4(fragPos, 1.0);
 }

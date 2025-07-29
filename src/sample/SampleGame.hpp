@@ -25,7 +25,7 @@ public:
     CubemapFramebuffer *cubemapFramebuffer;
     Skybox *skybox;
 
-    float lX = 0.0f;
+    float lX = 0.0f, lY = 2.0f, lZ = 0.0f;
     float gamma = 1.1f;
     float yaw = 0, pitch = 0;
     

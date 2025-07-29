@@ -1,3 +1,4 @@
+#include "assimp/postprocess.h"
 #include "modules/Mesh.hpp"
 #include "assimp/matrix4x4.h"
 #include <modules/Model.hpp>
@@ -35,11 +36,11 @@ void Model::load(VRAM_Approach approach) {
     }
 }
 
-void Model::read(const std::set<std::string>& meshNames, bool flipTextures) {
+void Model::read(const std::set<std::string>& meshNames, bool flipTextures, aiPostProcessSteps postProcessSteps) {
     stbi_set_flip_vertically_on_load(flipTextures);
 
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+    const aiScene *scene = importer.ReadFile(path, postProcessSteps);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;

@@ -113,6 +113,7 @@ void Shader::reloadProgram(std::map<std::string, std::string> variables) {
 
 void Shader::disposeProgram() {
     glDeleteProgram(ID);
+    ID = 0;
 }
 
 void Shader::use() {

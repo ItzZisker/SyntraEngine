@@ -4,6 +4,8 @@
 #include "engine/RenderTable.hpp"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"
+#include "modules/Scene.hpp"
+#include <iostream>
 
 
 /* TODO:
@@ -38,7 +40,7 @@
  */ 
 
 int SampleGame::launch() {
-    window = new GameWindow("Sample", 800, 600);
+    window = new GameWindow("Sample", 1024, 768);
     window->attrib(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
     window->addInitTask([&](GameWindow *window){ 
         createImGUI();
@@ -81,8 +83,10 @@ void SampleGame::createWindow(GameWindow *window) {
     appleEntity->bind("Apple", appleMeshInstance);
     appleEntity->load(false);
 
-    sceneModel = new Model("models/wall/wall.obj");
+    sceneModel = new Model("models/wall/2o/wall2.obj");
+    std::cout << "boom1\n";
     sceneModel->loadModel(Sequential);
+    std::cout << "boom2\n";
     sceneModelInstance = new ModelInstance(sceneModel);
     sceneModelInstance->getMeshInstances()->get("Cube")->getMesh()->material.opacity = 0.5f;
     sceneModelInstance->getMeshInstances()->sort(RT_SORT_OPACITY);
@@ -106,11 +110,9 @@ void SampleGame::createWindow(GameWindow *window) {
     skybox->load();
     scene->getBatchRenderTable()->add("skybox", skybox);
     scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
-    //scene->getBatchRenderTable()->add("appleModel", appleMeshInstance);
-
-    scene->getBatchShader().use();
-    scene->getBatchShader().setVec3f("spotLights[0].position", camera->getPosition());
-    scene->getBatchShader().setVec3f("spotLights[0].direction", camera->getDirection());
+    scene->getBatchRenderTable()->add("appleModel", appleMeshInstance);
+    scene->setPointLights({{}});
+    scene->reloadShaders();
 
     keyHandler = new SampleKeyHandler(this);
     mouseEventHandler = new SampleMouseEventHandler(this);
@@ -118,16 +120,16 @@ void SampleGame::createWindow(GameWindow *window) {
     window->addEventHandler(scene);
     window->addEventHandler(mouseEventHandler);
 
-    cubemapFramebuffer = new CubemapFramebuffer(scene);
-    cubemapFramebuffer->getRefractionRenderTable()->add("apple", appleMeshInstance);
-    cubemapFramebuffer->create(true);
+    //cubemapFramebuffer = new CubemapFramebuffer(scene);
+    //cubemapFramebuffer->getRefractionRenderTable()->add("apple", appleMeshInstance);
+    //cubemapFramebuffer->create(true);
 
-    shadowMapper->getDepthRenderTable()->add(cubemapFramebuffer->getRefractionRenderTable());
+    //shadowMapper->getDepthRenderTable()->add(cubemapFramebuffer->getRefractionRenderTable());
 
     framebuffer = new Framebuffer(scene);
     framebuffer->getRenderTable()->add("scene", scene);
-    framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
-    framebuffer->create(800, 600, true);
+    //framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
+    framebuffer->create(1024, 768, true);
 
     window->getWindowRenderTable()->add("overWorld", overWorld);
     window->getWindowRenderTable()->add("appleEntity", appleEntity);
@@ -164,8 +166,10 @@ void SampleGame::renderImGUI() {
     ImGui::SliderFloat("Opacity (Scene)", &sceneModelInstance->getMeshInstances()->get("Cube")->getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("Opacity", &appleMeshInstance->getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-    ImGui::SliderFloat("FOV (Reflectives)", &cubemapFramebuffer->fieldOfView, 80.0f, 100.0f, "%.3f");
-    ImGui::SliderFloat("Light X", &lX, 0.1f, 20.0f, "%.3f");
+    //ImGui::SliderFloat("FOV (Reflectives)", &cubemapFramebuffer->fieldOfView, 80.0f, 100.0f, "%.3f");
+    ImGui::SliderFloat("Light X", &lX, -20.0f, 20.0f, "%.3f");
+    ImGui::SliderFloat("Light Y", &lY, -20.0f, 20.0f, "%.3f");
+    ImGui::SliderFloat("Light Z", &lZ, -20.0f, 20.0f, "%.3f");
     ImGui::SliderFloat("Shadow Bias Min", &shadowMapper->biasMin, 0.001f, 1.0f, "%.3f");
     ImGui::SliderFloat("Shadow Bias Max", &shadowMapper->biasMax, 0.001f, 1.0f, "%.3f");
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
@@ -176,12 +180,8 @@ void SampleGame::renderImGUI() {
 }
 
 void SampleGame::renderETC() {
-    scene->getScreenShader().use();
-    scene->getScreenShader().setFloat("gamma", gamma);
-    scene->getBatchShader().use();
-    scene->getBatchShader().setVec3f("pointLights[0].position", lX, 2.0f, 0.0f);
-    scene->getBatchShader().setVec3f("spotLights[1].position", camera->getPosition());
-    scene->getBatchShader().setVec3f("spotLights[1].direction", camera->getDirection());
+    scene->setGamma(gamma);
+    scene->setPointLight(0, {{lX, lY, lZ}});
 }
 
 void SampleGame::cleanup() {

@@ -1,3 +1,4 @@
+#include "modules/Mesh.hpp"
 #include "Shader.hpp"
 #include "engine/Config.hpp"
 #include "modules/Screenbuffer.hpp"
@@ -8,22 +9,13 @@
 
 using namespace syng;
 
-GLuint defaultWhiteTexture;
-
-void createDefaultWhiteTexture() {
-    unsigned char whitePixel[4] = { 255, 255, 255, 255 };
-
-    glGenTextures(1, &defaultWhiteTexture);
-    glBindTexture(GL_TEXTURE_2D, defaultWhiteTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, whitePixel);
+void createPlainTexture(unsigned int &TCB, unsigned char pixel[4]) {
+    glGenTextures(1, &TCB);
+    glBindTexture(GL_TEXTURE_2D, TCB);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-GLuint syng::getDefaultWhiteTexture() {
-    if (!defaultWhiteTexture) createDefaultWhiteTexture();
-    return defaultWhiteTexture;
 }
 
 Mesh::Mesh(std::vector<Vertex> vertices,
@@ -40,10 +32,24 @@ Mesh::~Mesh() {
     glDeleteBuffers(1, &EBO);
     glDeleteBuffers(1, &VBO);
     glDeleteVertexArrays(1, &VAO);
+    glDeleteTextures(1, &fallbackDiffuseTCB);
+    glDeleteTextures(1, &fallbackNormalTCB);
 }
 
 glm::mat4 Mesh::getParentToNodeTransform() {
     return parentToNodeTransform;
+}
+
+void Mesh::setFallBackDiffuseColor(unsigned char rgb[3]) {
+    unsigned char pixel[4] = {rgb[0], rgb[1], rgb[2], 255};
+    glDeleteTextures(1, &fallbackDiffuseTCB);
+    createPlainTexture(fallbackDiffuseTCB, pixel);
+}
+
+void Mesh::setFallBackNormalColor(unsigned char rgb[3]) {
+    unsigned char pixel[4] = {rgb[0], rgb[1], rgb[2], 255};
+    glDeleteTextures(1, &fallbackNormalTCB);
+    createPlainTexture(fallbackNormalTCB, pixel);
 }
 
 void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
@@ -67,15 +73,20 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
     unsigned int specularNr = 1;
     unsigned int normalNr = 1;
     unsigned int heightNr = 1;
+    unsigned int texUnit = 0;
 
-    if (textures.empty()) {
-        shader.setTexture("texture_diffuse", GL_TEXTURE_2D, 0, getDefaultWhiteTexture());
+    if (textures.empty() && !fallbackDiffuseTCB) {
+        unsigned char white[4] = {255, 255, 255, 255};
+        setFallBackDiffuseColor(white);
+    }
+    if (textures.empty() && fallbackDiffuseTCB) {
+        shader.setTexture("texture_diffuse1", GL_TEXTURE_2D, texUnit++, fallbackDiffuseTCB);
     }
 
-    for (unsigned int i = 0; i < textures.size(); i++) {
+    for (const auto& tex : textures) {
         std::string number;
-        std::string name = textures[i].type;
-        
+        std::string name = tex.type;
+
         if (name == "texture_diffuse")
             number = std::to_string(diffuseNr++);
         else if (name == "texture_specular")
@@ -85,14 +96,21 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
         else if (name == "texture_height")
             number = std::to_string(heightNr++);
 
-        shader.setTexture(name + number, GL_TEXTURE_2D, i, textures[i].id);
+        shader.setTexture(name + number, GL_TEXTURE_2D, texUnit++, tex.id);
+    }
+
+    if (normalNr == 1 && !fallbackNormalTCB) {
+        unsigned char zC[3] = {128, 128, 255};
+        setFallBackNormalColor(zC);
+    }
+    if (normalNr == 1 && fallbackNormalTCB) {
+        shader.setTexture("texture_normal1", GL_TEXTURE_2D, texUnit++, fallbackNormalTCB);
     }
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
     
     glBindVertexArray(0);
-    glActiveTexture(GL_TEXTURE0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

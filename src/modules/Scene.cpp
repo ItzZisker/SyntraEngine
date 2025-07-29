@@ -1,5 +1,6 @@
 #include "modules/Scene.hpp"
 #include "SDL3/SDL_video.h"
+#include "Scene.hpp"
 #include "Syngine.hpp"
 #include "engine/RenderTable.hpp"
 #include "modules/ShadowMapper.hpp"
@@ -8,6 +9,7 @@
 #include "world/WorldObject.hpp"
 #include "utils/GameUtils.hpp"
 #include <glm/gtc/matrix_transform.hpp>
+#include <string>
 #include "engine/Config.hpp"
 
 using namespace syng;
@@ -23,7 +25,6 @@ Scene::Scene(Camera* camera, GameWindow* window)
     glViewport(0, 0, screenWidth, screenHeight);
     aspectRatio = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
     updateProjection();
-    setupShaders();
 }
 
 Scene::Scene(Camera* camera, float FOVDegrees, float near, float far, int width, int height)
@@ -37,49 +38,41 @@ Scene::Scene(Camera* camera, float FOVDegrees, float near, float far, int width,
     glViewport(0, 0, screenWidth, screenHeight);
     aspectRatio = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
     updateProjection();
-    setupShaders();
 }
 
 void Scene::setDirectionalLight(DirLight light) {
     this->dirLight = light;
-    updateLights();
+    updateUniforms();
 }
 
-void Scene::setupShaders() {
-    screenShader.init();
-    screenShader.use();
-    screenShader.setVec2f("uv", screenWidth, screenHeight);
+void Scene::setPointLights(std::vector<PointLight> pointLights) {
+    this->pointLights = pointLights;
+    updateUniforms();
+}
 
-    batchShader.init({
-        {SHADER_BATCH_KEY_NR_POINT_LIGHTS, "1"},
-        {SHADER_BATCH_KEY_NR_SPOT_LIGHTS, "0"},
-        {SHADER_BATCH_KEY_HAS_SHADOWS, "0"}
+void Scene::setSpotLights(std::vector<SpotLight> spotLights) {
+    this->spotLights = spotLights;
+    updateUniforms();
+}
+
+void Scene::setPointLight(unsigned int num, PointLight pointLight) {
+    this->pointLights[num] = pointLight;
+    updateUniforms();
+}
+
+void Scene::setSpotLight(unsigned int num, SpotLight spotLight) {
+    this->spotLights[num] = spotLight;
+    updateUniforms();
+}
+
+void Scene::reloadShaders() {
+    screenShader.reloadProgram();
+    batchShader.reloadProgram({
+        {SHADER_BATCH_KEY_NR_POINT_LIGHTS, std::to_string(pointLights.size())},
+        {SHADER_BATCH_KEY_NR_SPOT_LIGHTS, std::to_string(spotLights.size())},
+        {SHADER_BATCH_KEY_HAS_SHADOWS, shadowMapper && shadowMapper->isCreated() ? SHADER_VAL_ON : SHADER_VAL_OFF}
     });
-    setDirectionalLight({});
-    batchShader.setVec3f("pointLights[0].ambient", 0.0f, 0.0f, 0.0f);
-    batchShader.setVec3f("pointLights[0].diffuse", 1.0f, 1.0f, 1.0f);
-    batchShader.setVec3f("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
-    batchShader.setFloat("pointLights[0].constant", 1.0f);
-    batchShader.setFloat("pointLights[0].linear", 0.09f);
-    batchShader.setFloat("pointLights[0].quadratic", 0.032f);
-
-    batchShader.setVec3f("spotLights[0].ambient", 0.0f, 0.0f, 0.0f);
-    batchShader.setVec3f("spotLights[0].diffuse", 1.0f, 1.0f, 1.0f);
-    batchShader.setVec3f("spotLights[0].specular", 1.0f, 1.0f, 1.0f);
-    batchShader.setFloat("spotLights[0].constant", 1.0f);
-    batchShader.setFloat("spotLights[0].linear", 0.09f);
-    batchShader.setFloat("spotLights[0].quadratic", 0.032f);
-    batchShader.setFloat("spotLights[0].cutOff", glm::cos(glm::radians(12.5f)));
-    batchShader.setFloat("spotLights[0].outerCutOff", glm::cos(glm::radians(15.0f)));
-
-    batchShader.setVec3f("spotLights[1].ambient", 0.0f, 0.0f, 0.0f);
-    batchShader.setVec3f("spotLights[1].diffuse", 1.0f, 1.0f, 1.0f);
-    batchShader.setVec3f("spotLights[1].specular", 1.0f, 1.0f, 1.0f);
-    batchShader.setFloat("spotLights[1].constant", 1.0f);
-    batchShader.setFloat("spotLights[1].linear", 0.09f);
-    batchShader.setFloat("spotLights[1].quadratic", 0.032f);
-    batchShader.setFloat("spotLights[1].cutOff", glm::cos(glm::radians(12.5f)));
-    batchShader.setFloat("spotLights[1].outerCutOff", glm::cos(glm::radians(15.0f)));
+    updateUniforms();
 }
 
 void Scene::render(Screenbuffer screen) {
@@ -104,14 +97,9 @@ void Scene::render(Screenbuffer screen) {
 }
 
 void Scene::withShadows(ShadowMapper* shadowMapper) {
-    if (!shadowMapper->isCreated()) return;
+    if (!shadowMapper || !shadowMapper->isCreated()) return;
     this->shadowMapper = shadowMapper;
-    batchShader.reloadProgram({
-        {SHADER_BATCH_KEY_NR_POINT_LIGHTS, "0"},
-        {SHADER_BATCH_KEY_NR_SPOT_LIGHTS, "0"},
-        {SHADER_BATCH_KEY_HAS_SHADOWS, SHADER_VAL_ON}
-    });
-    updateLights();
+    reloadShaders();
 }
 
 void Scene::onEvent(const SDL_Event& event) {
@@ -128,12 +116,44 @@ void Scene::updateProjection() {
     updateProjection(glm::perspective(glm::radians(fieldOfView), aspectRatio, near, far));
 }
 
-void Scene::updateLights() {
+void Scene::updateUniforms() {
+    screenShader.use();
+    screenShader.setVec2f("uv", screenWidth, screenHeight);
     batchShader.use();
     batchShader.setVec3f("dirLight.direction", dirLight.direction);
     batchShader.setVec3f("dirLight.ambient", dirLight.ambient);
     batchShader.setVec3f("dirLight.diffuse", dirLight.diffuse);
     batchShader.setVec3f("dirLight.specular", dirLight.specular);
+    for (unsigned int i = 0; i < pointLights.size(); i++) {
+        PointLight pointLight = pointLights[i];
+        std::string num = std::to_string(i);
+        batchShader.setVec3f("pointLights[" + num + "].position", pointLight.position);
+        batchShader.setVec3f("pointLights[" + num + "].ambient", pointLight.ambient);
+        batchShader.setVec3f("pointLights[" + num + "].diffuse", pointLight.diffuse);
+        batchShader.setVec3f("pointLights[" + num + "].specular", pointLight.specular);
+        batchShader.setFloat("pointLights[" + num + "].constant", pointLight.constant);
+        batchShader.setFloat("pointLights[" + num + "].linear", pointLight.linear);
+        batchShader.setFloat("pointLights[" + num + "].quadratic", pointLight.quadratic);
+    }
+    for (unsigned int i = 0; i < spotLights.size(); i++) {
+        SpotLight spotLight = spotLights[i];
+        std::string num = std::to_string(i);
+        batchShader.setVec3f("spotLights[" + num + "].position", spotLight.position);
+        batchShader.setVec3f("spotLights[" + num + "].direction", spotLight.direction);
+        batchShader.setVec3f("spotLights[" + num + "].ambient", spotLight.ambient);
+        batchShader.setVec3f("spotLights[" + num + "].diffuse", spotLight.diffuse);
+        batchShader.setVec3f("spotLights[" + num + "].specular", spotLight.specular);
+        batchShader.setFloat("spotLights[" + num + "].constant", spotLight.constant);
+        batchShader.setFloat("spotLights[" + num + "].linear", spotLight.linear);
+        batchShader.setFloat("spotLights[" + num + "].quadratic", spotLight.quadratic);
+        batchShader.setFloat("spotLights[" + num + "].cutOff", spotLight.cutOff);
+    }
+}
+
+void Scene::setGamma(float gamma) {
+    this->gamma = gamma;
+    screenShader.use();
+    screenShader.setFloat("gamma", gamma);
 }
 
 void Scene::updateProjection(glm::mat4 customPerspective) {
@@ -190,6 +210,26 @@ float Scene::getFieldOfViewDegrees() {
 
 float Scene::getAspectRatio() {
     return aspectRatio;
+}
+
+DirLight Scene::getDirectionalLight() {
+    return dirLight;
+}
+
+std::vector<PointLight> Scene::getPointLights() {
+    return pointLights;
+}
+
+std::vector<SpotLight> Scene::getSpotLights() {
+    return spotLights;
+}
+
+PointLight Scene::getPointLight(unsigned int num) {
+    return pointLights[num];
+}
+
+SpotLight Scene::getSpotLight(unsigned int num) {
+    return spotLights[num];
 }
 
 Scene_T Scene::getSnapshot() {

@@ -7,6 +7,7 @@
 #include "modules/Camera.hpp"
 #include "Shader.hpp"
 #include <glm/glm.hpp>
+#include <vector>
 
 namespace syng
 {
@@ -63,24 +64,32 @@ private:
 
     RenderTable<ShaderRenderable>* batchRenderTable = new RenderTable<ShaderRenderable>;
     Camera* camera;
-    DirLight dirLight;
 
+    DirLight dirLight;
+    std::vector<PointLight> pointLights;
+    std::vector<SpotLight> spotLights;
+    
     int screenWidth;
     int screenHeight;
     float near;
     float far;
     float fieldOfView;
     float aspectRatio;
+    float gamma = 1.1f;
 
     glm::mat4 projection;
-    
-    void setupShaders();
 
     void updateProjection();
 public:
     Scene(Camera* camera, GameWindow* window);
 
     Scene(Camera* camera, float FOVDegrees, float near, float far, int width, int height);
+    
+    void reloadShaders();
+
+    void setupShaders() {
+        reloadShaders();
+    }
 
     void render(Screenbuffer screen);
 
@@ -98,9 +107,19 @@ public:
 
     void updateProjection(glm::mat4 customPerspective);
 
-    void updateLights();
+    void updateUniforms();
+
+    void setGamma(float gamma);
 
     void setDirectionalLight(DirLight light);
+
+    void setPointLights(std::vector<PointLight> pointLights);
+
+    void setSpotLights(std::vector<SpotLight> spotLights);
+
+    void setPointLight(unsigned int index, PointLight light);
+
+    void setSpotLight(unsigned int index, SpotLight light);
 
     void setScreenLayout(int width, int height);
 
@@ -122,6 +141,16 @@ public:
 
     float getAspectRatio();
 
+    DirLight getDirectionalLight();
+
+    std::vector<PointLight> getPointLights();
+
+    std::vector<SpotLight> getSpotLights();
+
+    PointLight getPointLight(unsigned int index);
+
+    SpotLight getSpotLight(unsigned int index);
+
     Scene_T getSnapshot();
 
     ShadowMapper* getShadowMapper();
@@ -137,10 +166,5 @@ public:
     Shader getScreenShader();
 
     Shader getBatchShader();
-};
-
-struct WindowUserData {
-    Scene* scene = nullptr;
-    void* suffix = nullptr;
 };
 }

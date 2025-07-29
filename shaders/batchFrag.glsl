@@ -65,6 +65,7 @@ uniform float shadowBiasMin = 0.005;
 in vec3 normal;
 in vec3 fragPos;
 in vec2 texCoord;
+in mat3 TBN;
 
 out vec4 FragColor;
 
@@ -83,6 +84,11 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir);
 
 void main() {
     vec3 norm = normalize(normal);
+
+    norm = texture(texture_normal1, texCoord).rgb;
+    norm = norm * 2.0 - 1.0;   
+    norm = normalize(TBN * norm); 
+
     vec3 viewDir = normalize(cameraPos - fragPos);
     vec3 result = calculateDirectionalLight(dirLight, norm, viewDir);
 
@@ -101,7 +107,7 @@ void main() {
 }
 
 #if HAS_SHADOWS
-float calculateShadow(DirLight light, vec4 fragPosLightSpace)
+float calculateShadow(DirLight light, vec3 normal, vec4 fragPosLightSpace)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
@@ -171,7 +177,7 @@ vec3 calculateDirectionalLight(DirLight light, vec3 normal, vec3 viewDir) {
     vec3 specular = light.specular * spec * vec3(texture(texture_specular1, texCoord));
 
 #if HAS_SHADOWS
-    return (ambient + (1.0 - 0.5 * calculateShadow(light, fragPosLightSpace)) * (diffuse + specular));
+    return (ambient + (1.0 - 0.5 * calculateShadow(light, normal, fragPosLightSpace)) * (diffuse + specular));
 #else
     return (ambient + diffuse + specular);
 #endif
