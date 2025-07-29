@@ -99,6 +99,10 @@ void main() {
 
     if (parallax) {
         texCoords = calculateParallax(fs_in.TexCoords, normalize(fs_in.TBN * -viewDir));
+
+        if (texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0) {
+            discard;
+        }
     } else {
         texCoords = fs_in.TexCoords;
     }
