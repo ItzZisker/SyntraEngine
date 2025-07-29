@@ -4,8 +4,12 @@
 #include "engine/RenderTable.hpp"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"
+#include "modules/Mesh.hpp"
 #include "modules/Scene.hpp"
+#include <cmath>
+#include <filesystem>
 #include <iostream>
+#include <ostream>
 
 
 /* TODO:
@@ -28,7 +32,7 @@
  *   - [ ] SSAO (+ < Game Menu Option >)
  *   - [ ] Room to Room Lighting System (Affects lights only on visible neighboring faces using id Tech 4 method or Minecraft's Lighting System)
  *   - [ ] Anti-Aliasing
- *   - [-] Flame Particles ( ) | Gamma correction (*) -> HDR ( ) -> Bloom ( ) -> Normal Mapping ( ) -> PBR Textures ( )
+ *   - [-] Flame Particles ( ) | Gamma correction (*) -> HDR ( ) -> Bloom ( ) -> Normal Mapping (*) -> Parallax Mapping (*) -> PBR Textures ( )
  *   - [ ] Test/Load Sample GLTF Models by Standard
  *   - [ ] < Make format parser for mesh nodes name (Using gltf's custom properties + assimp) (ECH_: Entity Convex Hull, ETM_: Entity Triangle Mesh, PF_: FlameParticle, [B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh) >
  *   - [ ] < Serialize/Deserialize Game Data >
@@ -84,9 +88,21 @@ void SampleGame::createWindow(GameWindow *window) {
     appleEntity->load(false);
 
     sceneModel = new Model("models/wall/2o/wall2.obj");
-    std::cout << "boom1\n";
     sceneModel->loadModel(Sequential);
-    std::cout << "boom2\n";
+
+    std::string directory = std::filesystem::current_path().string();
+    std::cout << directory << std::endl;
+
+    std::string path = "models/wall/2o/bricks2_disp.jpg";
+    Texture bricks2disp;
+    bricks2disp.id = TextureFromFile(path.c_str(), directory);
+    bricks2disp.type = "texture_height";
+    bricks2disp.path = path.c_str();
+
+    std::cout << bricks2disp.id << std::endl;
+
+    sceneModel->meshes["Plane"]->textures.push_back(bricks2disp);
+
     sceneModelInstance = new ModelInstance(sceneModel);
     sceneModelInstance->getMeshInstances()->get("Cube")->getMesh()->material.opacity = 0.5f;
     sceneModelInstance->getMeshInstances()->sort(RT_SORT_OPACITY);
@@ -182,6 +198,8 @@ void SampleGame::renderImGUI() {
 void SampleGame::renderETC() {
     scene->setGamma(gamma);
     scene->setPointLight(0, {{lX, lY, lZ}});
+    static float dT = (float) window->getLastFrameTime();
+    sceneModelInstance->getMeshInstances()->get("Plane")->setDirection({sin(dT), 0.0f, cos(dT)});
 }
 
 void SampleGame::cleanup() {

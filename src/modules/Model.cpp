@@ -15,6 +15,7 @@ unsigned int syng::TextureFromFile(const char *path, const std::string &director
 Model::Model(std::string const &path, bool gamma) : gammaCorrection(gamma), path(path) {}
 
 Model::~Model() {
+    for (auto& texture : textures_loaded) glDeleteTextures(1, &texture.id);
     textures_loaded.clear();
     for (auto& mesh : meshes) delete mesh.second;
     meshes.clear();

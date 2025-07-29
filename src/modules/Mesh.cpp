@@ -27,6 +27,10 @@ Mesh::Mesh(std::vector<Vertex> vertices,
 Mesh::~Mesh() {
     vertices.clear();
     indices.clear();
+
+    for (auto& texture : textures) {
+        glDeleteTextures(1, &texture.id);
+    }
     textures.clear();
 
     glDeleteBuffers(1, &EBO);
@@ -98,7 +102,6 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
 
         shader.setTexture(name + number, GL_TEXTURE_2D, texUnit++, tex.id);
     }
-
     if (normalNr == 1 && !fallbackNormalTCB) {
         unsigned char zC[3] = {128, 128, 255};
         setFallBackNormalColor(zC);
@@ -106,6 +109,7 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
     if (normalNr == 1 && fallbackNormalTCB) {
         shader.setTexture("texture_normal1", GL_TEXTURE_2D, texUnit++, fallbackNormalTCB);
     }
+    shader.setBool("parallax", heightNr > 1);
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);

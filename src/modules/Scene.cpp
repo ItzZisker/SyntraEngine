@@ -85,7 +85,7 @@ void Scene::render(Screenbuffer screen) {
         batchShader.setFloat("shadowBiasMin", shadowMapper->biasMin);
         batchShader.setFloat("shadowBiasMax", shadowMapper->biasMax);
         batchShader.setFloat("shadowBias", shadowMapper->biasMax);
-        batchShader.setTexture("shadowMap", GL_TEXTURE_2D, 2, shadowMapper->getDepthMapTCB());
+        batchShader.setTexture("shadowMap", GL_TEXTURE_2D, 7, shadowMapper->getDepthMapTCB());
     }
     batchShader.use();
     batchShader.setMatrix4("view", camera->getViewMatrix(), 1, GL_FALSE);

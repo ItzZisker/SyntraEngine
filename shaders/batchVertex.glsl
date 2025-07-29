@@ -10,10 +10,18 @@ layout (location = 4) in vec3 aBiTangent;
 layout (location = 5) in int aBoneIds[4];
 layout (location = 6) in float aWeights[4];
 
-out vec3 normal;
-out vec3 fragPos;
-out vec2 texCoord;
-out mat3 TBN;
+out VS_OUT {
+    vec3 Normal;
+    vec3 FragPos;
+    vec2 TexCoords;
+    mat3 TBN;
+    vec3 T;
+    vec3 B;
+    vec3 N;
+#if HAS_SHADOWS
+    vec4 FragPosLightSpace;
+#endif
+} vs_out;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -26,16 +34,19 @@ uniform mat4 lightSpaceMatrix;
 
 void main()
 {
-    fragPos = vec3(model * vec4(aPos, 1.0));
-    normal = mat3(transpose(inverse(model))) * aNormal;  
-    texCoord = aTexCoord;
+    vs_out.FragPos = vec3(model * vec4(aPos, 1.0));
+    vs_out.Normal = mat3(transpose(inverse(model))) * aNormal;  
+    vs_out.TexCoords = aTexCoord;
 #if HAS_SHADOWS
-    fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
+    vs_out.FragPosLightSpace = lightSpaceMatrix * vec4(vs_out.FragPos, 1.0);
 #endif
     vec3 T = normalize(vec3(model * vec4(aTangent, 0.0)));
     vec3 B = normalize(vec3(model * vec4(aBiTangent, 0.0)));
     vec3 N = normalize(vec3(model * vec4(aNormal, 0.0)));
-    TBN = mat3(T, B, N);
-    
-    gl_Position = projection * view * vec4(fragPos, 1.0);
+    vs_out.TBN = mat3(T, B, N);
+    vs_out.T = T;
+    vs_out.B = B;
+    vs_out.N = N;
+
+    gl_Position = projection * view * vec4(vs_out.FragPos, 1.0);
 }
