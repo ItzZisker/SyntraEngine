@@ -42,7 +42,7 @@ public:
     MeshInstance *appleHMeshInstance, *appleMeshInstance;
 
     BT_EntityConvexHull* appleEntity;
-    BT_EntityTriangleMesh* sceneEntity;
+    //BT_EntityTriangleMesh* sceneEntity;
 
     int launch();
 private:

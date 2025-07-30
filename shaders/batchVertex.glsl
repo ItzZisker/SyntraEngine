@@ -15,9 +15,6 @@ out VS_OUT {
     vec3 FragPos;
     vec2 TexCoords;
     mat3 TBN;
-    vec3 T;
-    vec3 B;
-    vec3 N;
 #if HAS_SHADOWS
     vec4 FragPosLightSpace;
 #endif
@@ -44,9 +41,6 @@ void main()
     vec3 B = normalize(vec3(model * vec4(aBiTangent, 0.0)));
     vec3 N = normalize(vec3(model * vec4(aNormal, 0.0)));
     vs_out.TBN = mat3(T, B, N);
-    vs_out.T = T;
-    vs_out.B = B;
-    vs_out.N = N;
 
     gl_Position = projection * view * vec4(vs_out.FragPos, 1.0);
 }

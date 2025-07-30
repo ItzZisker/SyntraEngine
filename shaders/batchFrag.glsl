@@ -64,6 +64,7 @@ uniform float height_scale = 0.1;
 
 #if HAS_SHADOWS
 uniform sampler2D shadowMap;
+uniform float shadowStrength = 0.5;
 uniform float shadowBiasMax = 0.05;
 uniform float shadowBiasMin = 0.005;
 #endif
@@ -73,9 +74,6 @@ in VS_OUT {
     vec3 FragPos;
     vec2 TexCoords;
     mat3 TBN;
-    vec3 T;
-    vec3 B;
-    vec3 N;
 #if HAS_SHADOWS
     vec4 FragPosLightSpace;
 #endif
@@ -124,15 +122,7 @@ void main() {
     }
 #endif
 
-vec3 tangentColor = normalize(fs_in.TBN[0]); // Tangent (T)
-vec3 bitangentColor = normalize(fs_in.TBN[1]); // Bitangent (B)
-vec3 normalColor = normalize(fs_in.TBN[2]); // Normal (N)
-
-// if (parallax) {
-//     FragColor = vec4(tangentColor * 0.5 + 0.5, 1.0); // See T in color
-// } else {
     FragColor = vec4(result, opacity);
-// }
 }
 
 vec2 calculateParallax(vec2 texCoords, vec3 viewDir) { 
@@ -234,7 +224,7 @@ vec3 calculateDirectionalLight(DirLight light, vec3 normal, vec3 viewDir, vec2 t
     vec3 specular = light.specular * spec * vec3(texture(texture_specular1, texCoords));
 
 #if HAS_SHADOWS
-    return (ambient + (1.0 - 0.5 * calculateShadow(light, normal, fs_in.FragPosLightSpace)) * (diffuse + specular));
+    return (ambient + (1.0 - shadowStrength * calculateShadow(light, normal, fs_in.FragPosLightSpace)) * (diffuse + specular));
 #else
     return (ambient + diffuse + specular);
 #endif

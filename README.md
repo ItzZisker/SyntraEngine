@@ -4,6 +4,9 @@
 
 Syntra Engine is a lightweight, User Friendly, Beta (Work in progress) 3D game engine built with OpenGL. It’s designed to be optimized, modular, and easy to integrate into custom projects.
 
+## Sponza
+![Sponza](extra/Sponza.PNG)
+
 Goals:
 
 - An Engine Built for my horror/shooter games, a very basic. TODO in sample/sample.cpp

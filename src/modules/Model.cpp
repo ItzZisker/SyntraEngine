@@ -2,6 +2,7 @@
 #include "modules/Mesh.hpp"
 #include "assimp/matrix4x4.h"
 #include <modules/Model.hpp>
+#include <ostream>
 #include <utils/GameUtils.hpp>
 
 #include <iostream>
@@ -27,8 +28,11 @@ void Model::filterMesh(std::string meshName) {
 }
 
 void Model::loadModel(VRAM_Approach approach, const std::set<std::string>& meshNames, bool flipTextures) {
+    std::cout << "read\n";
     read(meshNames, flipTextures);
+    std::cout << "load\n";
     load(approach);
+    std::cout << "load done\n";
 }
 
 void Model::load(VRAM_Approach approach) {
@@ -48,6 +52,8 @@ void Model::read(const std::set<std::string>& meshNames, bool flipTextures, aiPo
         return;
     }
     directory = path.substr(0, path.find_last_of('/'));
+
+    std::cout << "boom:" << scene->mNumLights << std::endl;
 
     processNode(meshNames, scene->mRootNode, scene, aiMatrix4x4());
     loaded = true;

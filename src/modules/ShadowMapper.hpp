@@ -13,6 +13,7 @@ private:
     Shader depthShader = Shader("shaders/depthShaderVert.glsl", "shaders/depthShaderFrag.glsl");
     unsigned int depthMapFBO = 0, depthMapTCB = 0;
 public:
+    float strength = 0.5f;
     float biasMin = 0.001f, biasMax = 0.016f;
     unsigned int shadowWidth = 1024, shadowHeight = 1024;
     glm::mat4 lightProjection, lightView;

@@ -77,59 +77,76 @@ void SampleGame::createWindow(GameWindow *window) {
     appleModel->loadModel(Interleaved);
 
     appleHMeshInstance = new MeshInstance(appleModel->meshes["Hitbox"]);
-    appleHMeshInstance->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
+    appleHMeshInstance->setScale(glm::vec3(0.5f, 1.0f, 0.5f));
 
     appleMeshInstance = new MeshInstance(appleModel->meshes["Apple"]);
-    appleMeshInstance->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
+    appleMeshInstance->setScale(glm::vec3(0.5f, 1.0f, 0.5f));
 
     appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, appleHMeshInstance);
     appleEntity->setPosition(glm::vec3(0, 10, 0));
     appleEntity->bind("Apple", appleMeshInstance);
     appleEntity->load(false);
 
-    sceneModel = new Model("models/wall/2o/wall2.obj");
+    std::cout << "Sponza\n";
+    sceneModel = new Model("models/Sponza/glTF/Sponza.gltf");
     sceneModel->loadModel(Sequential);
+    std::cout << "Sponza done\n";
 
     std::string directory = std::filesystem::current_path().string();
     std::cout << directory << std::endl;
+    std::cout << "1\n";
 
     std::string path = "models/wall/2o/bricks2_disp.jpg";
     Texture bricks2disp;
     bricks2disp.id = TextureFromFile(path.c_str(), directory);
     bricks2disp.type = "texture_height";
     bricks2disp.path = path.c_str();
+    std::cout << "2\n";
 
     std::cout << bricks2disp.id << std::endl;
 
-    sceneModel->meshes["Plane"]->textures.push_back(bricks2disp);
+    //sceneModel->meshes["Plane"]->textures.push_back(bricks2disp);
 
     sceneModelInstance = new ModelInstance(sceneModel);
-    sceneModelInstance->getMeshInstances()->get("Cube")->getMesh()->material.opacity = 0.5f;
-    sceneModelInstance->getMeshInstances()->sort(RT_SORT_OPACITY);
+    sceneModelInstance->getMeshInstances()->forEach([](const std::string& key, MeshInstance* meshInstance){
+        meshInstance->setScale(glm::vec3(0.0075f));
+    });
+    std::cout << "3\n";
+    //sceneModelInstance->getMeshInstances()->get("Cube")->getMesh()->material.opacity = 0.5f;
+    //sceneModelInstance->getMeshInstances()->sort(RT_SORT_OPACITY);
 
-    sceneEntity = new BT_EntityTriangleMesh(overWorld, sceneModelInstance);
-    sceneEntity->load();
+    //sceneEntity = new BT_EntityTriangleMesh(overWorld, sceneModelInstance);
+    //sceneEntity->load();
+    std::cout << "4\n";
 
     scene = new Scene(camera, window);
-    shadowMapper = new ShadowMapper(2048);
+    scene->setZBufferLayout(0.1f, 100.0f);
+    shadowMapper = new ShadowMapper(8192);
+    shadowMapper->strength = 1.0f;
     shadowMapper->create();
     scene->withShadows(shadowMapper);
+    std::cout << "5\n";
 
     skybox = new Skybox(scene, {
-        "models/skybox/lightblue/right.png",
-        "models/skybox/lightblue/left.png",
-        "models/skybox/lightblue/top.png",
-        "models/skybox/lightblue/bot.png",
-        "models/skybox/lightblue/front.png",
-        "models/skybox/lightblue/back.png"
+        "models/skybox/daylight/right.bmp",
+        "models/skybox/daylight/left.bmp",
+        "models/skybox/daylight/top.bmp",
+        "models/skybox/daylight/bottom.bmp",
+        "models/skybox/daylight/front.bmp",
+        "models/skybox/daylight/back.bmp"
     });
     skybox->load();
     scene->getBatchRenderTable()->add("skybox", skybox);
     scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
     scene->getBatchRenderTable()->add("appleModel", appleMeshInstance);
-    scene->setPointLights({{}});
+    scene->setDirectionalLight({
+        {-0.86f, -1.0f, -0.97f},
+        {0.5f, 0.5f, 0.5f},
+        {0.75f, 0.75f, 0.5f},
+        {0.85f, 0.85f, 0.6f}
+    });
+    scene->setPointLights({});
     scene->reloadShaders();
-
     keyHandler = new SampleKeyHandler(this);
     mouseEventHandler = new SampleMouseEventHandler(this);
 
@@ -149,12 +166,14 @@ void SampleGame::createWindow(GameWindow *window) {
 
     window->getWindowRenderTable()->add("overWorld", overWorld);
     window->getWindowRenderTable()->add("appleEntity", appleEntity);
-    window->getWindowRenderTable()->add("sceneEntity", sceneEntity);
+    //window->getWindowRenderTable()->add("sceneEntity", sceneEntity);
     window->getWindowRenderTable()->add("framebuffer", framebuffer);
     window->getWindowRenderTable()->add("keyHandler", keyHandler);
 
     SDL_GL_SetSwapInterval(0);
     SDL_SetWindowRelativeMouseMode(window->getSDLWindowPtr(), true);
+
+    std::cout << "init done\n";
 }
 
 void SampleGame::renderImGUI() {
@@ -179,8 +198,8 @@ void SampleGame::renderImGUI() {
     ImGui::SliderFloat("IOR G", &appleMeshInstance->getMesh()->material.ior.y, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
     ImGui::SliderFloat("IOR B", &appleMeshInstance->getMesh()->material.ior.z, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
     ImGui::SliderFloat("F0", &appleMeshInstance->getMesh()->material.F0, 0.001f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-    ImGui::SliderFloat("Opacity (Scene)", &sceneModelInstance->getMeshInstances()->get("Cube")->getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
-    ImGui::SliderFloat("Opacity", &appleMeshInstance->getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
+    //ImGui::SliderFloat("Opacity (Scene)", &sceneModelInstance->getMeshInstances()->get("Cube")->getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
+    //ImGui::SliderFloat("Opacity", &appleMeshInstance->getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
     //ImGui::SliderFloat("FOV (Reflectives)", &cubemapFramebuffer->fieldOfView, 80.0f, 100.0f, "%.3f");
     ImGui::SliderFloat("Light X", &lX, -20.0f, 20.0f, "%.3f");
@@ -197,9 +216,9 @@ void SampleGame::renderImGUI() {
 
 void SampleGame::renderETC() {
     scene->setGamma(gamma);
-    scene->setPointLight(0, {{lX, lY, lZ}});
+    //scene->setPointLight(0, {{lX, lY, lZ}});
     static float dT = (float) window->getLastFrameTime();
-    sceneModelInstance->getMeshInstances()->get("Plane")->setDirection({sin(dT), 0.0f, cos(dT)});
+    //sceneModelInstance->getMeshInstances()->get("Plane")->setDirection({sin(dT), 0.0f, cos(dT)});
 }
 
 void SampleGame::cleanup() {
