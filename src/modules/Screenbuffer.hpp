@@ -2,7 +2,20 @@
 
 namespace syng
 {
-class Screenbuffer {
+class SetupObject {
+protected:
+    bool created = false;
+
+    void onCreate() {
+        this->created = true;
+    }
+public:
+    bool isCreated() {
+        return this->created;
+    }
+};
+
+class Screenbuffer : public SetupObject {
 protected:
     unsigned int FBO = 0;
     unsigned int width = 0, height = 0;

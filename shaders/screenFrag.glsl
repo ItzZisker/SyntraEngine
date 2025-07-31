@@ -1,53 +1,68 @@
 #version 330 core
 
 out vec4 FragColor;
-
 in vec2 TexCoords;
 
-uniform float gamma = 2.2f;
-uniform vec2 uv;
 uniform sampler2D screenTexture;
+uniform vec2 screenSize;
+uniform float gamma = 2.2;
 
-const float FINAL_BLUR_BIAS = 1.0;
-const float offset = 1.0 / 300.0;
+uniform bool fxaaEnabled = false;
+uniform float fxaaReduceMin = 1.0 / 128.0;
+uniform float fxaaReduceMul = 1.0 / 8.0;
+uniform float fxaaSpanMax = 8.0;
 
-vec4 Televisionfy(in vec4 pixel, const in vec2 uv)
-{
-    float vignette = pow(uv.x * (1.0 - uv.x) * uv.y * (1.0 - uv.y), 0.25) * 2.2;
-    return pixel * vignette;
+vec4 applyFXAA(vec2 texCoords) {
+    vec2 texel = 1.0 / screenSize;
+
+    vec3 rgbNW = texture(screenTexture, texCoords + texel * vec2(-1.0, -1.0)).rgb;
+    vec3 rgbNE = texture(screenTexture, texCoords + texel * vec2( 1.0, -1.0)).rgb;
+    vec3 rgbSW = texture(screenTexture, texCoords + texel * vec2(-1.0,  1.0)).rgb;
+    vec3 rgbSE = texture(screenTexture, texCoords + texel * vec2( 1.0,  1.0)).rgb;
+    vec3 rgbM  = texture(screenTexture, texCoords).rgb;
+
+    float lumaNW = dot(rgbNW, vec3(0.299, 0.587, 0.114));
+    float lumaNE = dot(rgbNE, vec3(0.299, 0.587, 0.114));
+    float lumaSW = dot(rgbSW, vec3(0.299, 0.587, 0.114));
+    float lumaSE = dot(rgbSE, vec3(0.299, 0.587, 0.114));
+    float lumaM  = dot(rgbM,  vec3(0.299, 0.587, 0.114));
+
+    float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
+    float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
+
+    vec2 dir;
+    dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
+    dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
+
+    float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) * (0.25 * fxaaReduceMul), fxaaReduceMin);
+    float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
+
+    dir = clamp(dir * rcpDirMin, -fxaaSpanMax, fxaaSpanMax) * texel;
+
+    vec3 rgbA = 0.5 * (
+        texture(screenTexture, texCoords + dir * (1.0 / 3.0 - 0.5)).rgb +
+        texture(screenTexture, texCoords + dir * (2.0 / 3.0 - 0.5)).rgb
+    );
+
+    vec3 rgbB = rgbA * 0.5 + 0.25 * (
+        texture(screenTexture, texCoords + dir * -0.5).rgb +
+        texture(screenTexture, texCoords + dir * 0.5).rgb
+    );
+
+    float lumaB = dot(rgbB, vec3(0.299, 0.587, 0.114));
+    if (lumaB < lumaMin || lumaB > lumaMax)
+        return vec4(rgbA, 1.0);
+    else
+        return vec4(rgbB, 1.0);
 }
 
-void main()
-{
-    vec2 offsets[9] = vec2[](
-        vec2(-offset,  offset), // top-left
-        vec2( 0.0f,    offset), // top-center
-        vec2( offset,  offset), // top-right
-        vec2(-offset,  0.0f),   // center-left
-        vec2( 0.0f,    0.0f),   // center-center
-        vec2( offset,  0.0f),   // center-right
-        vec2(-offset, -offset), // bottom-left
-        vec2( 0.0f,   -offset), // bottom-center
-        vec2( offset, -offset)  // bottom-right
-    );
+vec3 applyGamma(vec3 color) {
+    return pow(color.rgb, vec3(1.0 / gamma));
+}
 
-    float kernel[9] = float[](
-        -1, -1, -1,
-        -1,  9, -1,
-        -1, -1, -1
-    );
+void main() {
+    vec4 finalColor = fxaaEnabled ? applyFXAA(TexCoords) : texture(screenTexture, TexCoords);
 
-    vec3 sampleTex[9];
-    for (int i = 0; i < 9; i++) {
-        sampleTex[i] = vec3(texture(screenTexture, TexCoords + offsets[i]));
-    }
-
-    vec3 col = vec3(0.0);
-    for (int i = 0; i < 9; i++) {
-        col += sampleTex[i] * kernel[i];
-    }
-
-    //FragColor = Televisionfy(vec4(col, 1.0), TexCoords);
-    vec4 fragColor = Televisionfy(texture(screenTexture, TexCoords), TexCoords);
-    FragColor = vec4(pow(fragColor.rgb, vec3(1.0/gamma)), fragColor.w);
+    finalColor.rgb = applyGamma(finalColor.rgb);
+    FragColor = finalColor;
 }

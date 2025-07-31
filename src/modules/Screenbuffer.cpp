@@ -1,3 +1,4 @@
+#include "Screenbuffer.hpp"
 #include <modules/Screenbuffer.hpp>
 
 using namespace syng;
@@ -12,6 +13,7 @@ void Screenbuffer::onCreate(unsigned int width, unsigned int height, bool output
     this->height = height;
     this->outputToParent = outputToParent;
     this->FBO = FBO;
+    SetupObject::onCreate();
 }
 
 unsigned int Screenbuffer::getFBO() {

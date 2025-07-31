@@ -10,7 +10,18 @@
 
 using namespace syng;
 
-Framebuffer::Framebuffer(Scene* scene) : scene(scene) {}
+namespace syng {
+    const AntiAliasing AA_OFF = {NONE};
+    const AntiAliasing AA_FXAAx1 = {FXAA_1};
+    const AntiAliasing AA_FXAAx2 = {FXAA_2};
+    const AntiAliasing AA_FXAAx4 = {FXAA_4};
+    const AntiAliasing AA_MSAAx2 = {MSAA_2};
+    const AntiAliasing AA_MSAAx4 = {MSAA_4};
+}
+
+Framebuffer::Framebuffer(Scene* scene) : scene(scene), outputShader(scene->getScreenShader()) {}
+
+Framebuffer::Framebuffer(Scene* scene, Shader outputShader) : scene(scene), outputShader(outputShader) {}
 
 Framebuffer::~Framebuffer() {
     initTasks.clear();
@@ -34,22 +45,33 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
 
     glGenFramebuffers(1, &FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
+    if (AA.isMultiSample()) {
+        glGenTextures(1, &MS_TCB);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, MS_TCB);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, AA.getMultiSamples(), GL_RGB, width_, height_, GL_TRUE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, MS_TCB, 0); 
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+        glGenFramebuffers(1, &MSOUT_FBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, MSOUT_FBO);
+    }
     glGenTextures(1, &TCB);
     glBindTexture(GL_TEXTURE_2D, TCB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_, height_, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TCB, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
     glGenRenderbuffers(1, &RBO);
     glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width_, height_);
+    if (AA.isMultiSample()) {
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, AA.getMultiSamples(), GL_DEPTH24_STENCIL8, width_, height_);
+    } else {
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width_, height_);
+    }
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-    }
     for (auto& func : initTasks) {
         func(this);
     }
@@ -93,6 +115,16 @@ void Framebuffer::create(bool outputToScreenShader) {
     Framebuffer::create(scene->getScreenWidth(), scene->getScreenHeight(), outputToScreenShader);
 }
 
+void Framebuffer::setAntiAliasing(AntiAliasing AA) {
+    if (created) {
+        if (this->AA.isFastApproximate() && AA.isFastApproximate()) {
+            this->AA = AA;
+        }
+    } else {
+        this->AA = AA;
+    }
+}
+
 void Framebuffer::addInitTask(std::function<void(Framebuffer *)> task) {
     initTasks.push_back(task);
 }
@@ -113,6 +145,11 @@ void Framebuffer::render(Screenbuffer screen) {
     for (auto& func : renderTasks) {
         func(this);
     }
+    if (AA.isMultiSample()) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, MSOUT_FBO);
+        glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    }
     glBindFramebuffer(GL_FRAMEBUFFER, screen.getFBO());
 
     if (outputToParent) {
@@ -121,8 +158,18 @@ void Framebuffer::render(Screenbuffer screen) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        scene->getScreenShader().use();
-        scene->getScreenShader().setTexture("screenTexture", GL_TEXTURE_2D, 0, TCB);
+        outputShader.use();
+        outputShader.setTexture("screenTexture", GL_TEXTURE_2D, 0, TCB);
+        if (AA.isFastApproximate()) {
+            float reduceMin, reduceMul, spanMax;
+            AA.getFXAAVars(&reduceMin, &reduceMul, &spanMax);
+            outputShader.setBool("fxaaEnabled", true);
+            outputShader.setFloat("fxaaReduceMin", reduceMin);
+            outputShader.setFloat("fxaaReduceMul", reduceMul);
+            outputShader.setFloat("fxaaSpanMax", spanMax);
+        } else {
+            outputShader.setBool("fxaaEnabled", false);
+        }
 
         glBindVertexArray(quadVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -135,4 +182,8 @@ RenderTable<ShaderRenderable>* Framebuffer::getRenderTable() {
 
 unsigned int Framebuffer::getRBO() {
     return !this->RBO ? 0 : this->RBO;
+}
+
+AntiAliasing Framebuffer::getAntiAliasing() {
+    return this->AA;
 }

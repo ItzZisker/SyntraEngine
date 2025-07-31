@@ -4,6 +4,7 @@
 #include "engine/RenderTable.hpp"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"
+#include "modules/Framebuffer.hpp"
 #include "modules/Mesh.hpp"
 #include "modules/Scene.hpp"
 #include <cmath>
@@ -76,19 +77,27 @@ void SampleGame::createWindow(GameWindow *window) {
     appleModel->filterMesh("Apple");
     appleModel->loadModel(Interleaved);
 
+    std::cout << "A\n";
     appleHMeshInstance = new MeshInstance(appleModel->meshes["Hitbox"]);
     appleHMeshInstance->setScale(glm::vec3(0.5f, 1.0f, 0.5f));
 
+    std::cout << "B\n";
     appleMeshInstance = new MeshInstance(appleModel->meshes["Apple"]);
     appleMeshInstance->setScale(glm::vec3(0.5f, 1.0f, 0.5f));
 
+    std::cout << "C\n";
     appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, appleHMeshInstance);
+    std::cout << "D\n";
     appleEntity->setPosition(glm::vec3(0, 10, 0));
+    std::cout << "E\n";
     appleEntity->bind("Apple", appleMeshInstance);
+    std::cout << "F\n";
     appleEntity->load(false);
+    std::cout << "G\n";
 
     std::cout << "Sponza\n";
     sceneModel = new Model("models/Sponza/glTF/Sponza.gltf");
+    std::cout << "H\n";
     sceneModel->loadModel(Sequential);
     std::cout << "Sponza done\n";
 
@@ -159,9 +168,19 @@ void SampleGame::createWindow(GameWindow *window) {
 
     //shadowMapper->getDepthRenderTable()->add(cubemapFramebuffer->getRefractionRenderTable());
 
+    Shader vhsShader = {"shaders/vhsVertex.glsl", "shaders/vhsFrag.glsl"};
+    vhsShader.init();
+    framebuffer_VHS = new Framebuffer(scene, vhsShader);
+    framebuffer_VHS->getRenderTable()->add("scene", scene);
+    framebuffer_VHS->setAntiAliasing(AA_OFF);
+    framebuffer_VHS->create(1024, 768, true);
+
     framebuffer = new Framebuffer(scene);
-    framebuffer->getRenderTable()->add("scene", scene);
     //framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
+    framebuffer->setAntiAliasing(AA_FXAAx1);
+    framebuffer->addRenderTask([&](Framebuffer* buffer){
+        framebuffer_VHS->render(*buffer);
+    });
     framebuffer->create(1024, 768, true);
 
     window->getWindowRenderTable()->add("overWorld", overWorld);
@@ -208,6 +227,20 @@ void SampleGame::renderImGUI() {
     ImGui::SliderFloat("Shadow Bias Min", &shadowMapper->biasMin, 0.001f, 1.0f, "%.3f");
     ImGui::SliderFloat("Shadow Bias Max", &shadowMapper->biasMax, 0.001f, 1.0f, "%.3f");
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
+    if (ImGui::Checkbox("FXAA_1", &fxaa1)) {
+        framebuffer->setAntiAliasing(AA_FXAAx1);
+        fxaa2 = fxaa4 = false;
+    }
+    ImGui::SameLine();
+    if (ImGui::Checkbox("FXAA_2", &fxaa2)) {
+        framebuffer->setAntiAliasing(AA_FXAAx2);
+        fxaa1 = fxaa4 = false;
+    }
+    ImGui::SameLine();
+    if (ImGui::Checkbox("FXAA_4", &fxaa4)) {
+        framebuffer->setAntiAliasing(AA_FXAAx4);
+        fxaa2 = fxaa1 = false;
+    }
     ImGui::End();
     ImGui::Render();
 

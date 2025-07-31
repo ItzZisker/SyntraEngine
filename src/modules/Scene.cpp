@@ -118,7 +118,7 @@ void Scene::updateProjection() {
 
 void Scene::updateUniforms() {
     screenShader.use();
-    screenShader.setVec2f("uv", screenWidth, screenHeight);
+    screenShader.setVec2f("screenSize", screenWidth, screenHeight);
     batchShader.use();
     batchShader.setVec3f("dirLight.direction", dirLight.direction);
     batchShader.setVec3f("dirLight.ambient", dirLight.ambient);
@@ -168,7 +168,7 @@ void Scene::setScreenLayout(int width, int height) {
     screenHeight = height;
     aspectRatio = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
     screenShader.use();
-    screenShader.setVec2f("resolution", width, height);
+    screenShader.setVec2f("screenSize", width, height);
     updateProjection();
 }
 
