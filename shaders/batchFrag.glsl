@@ -105,6 +105,9 @@ void main() {
         texCoords = fs_in.TexCoords;
     }
 
+    vec4 texColor = texture(texture_diffuse1, texCoords);
+    if (texColor.a < 0.1) discard;
+
     normal = texture(texture_normal1, texCoords).rgb;
     normal = normal * 2.0 - 1.0;
     normal = normalize(fs_in.TBN * normal);
