@@ -62,13 +62,13 @@ void SampleKeyHandler::onKeysState(double lastFrameTime, const bool* state) {
         moving += dir;
     }
 
-    btRigidBody* body = game->appleEntity->getBody();
+    // btRigidBody* body = game->appleEntity->getBody();
 
-    body->activate();
-    if (body->getLinearVelocity().length2() <= 3 && moving.length() > 0.0f) {
-        moving *= (3.0f / moving.length());
-    }
-    body->applyCentralImpulse(GameUtils::toBulletVector(moving));
+    // body->activate();
+    // if (body->getLinearVelocity().length2() <= 3 && moving.length() > 0.0f) {
+    //     moving *= (3.0f / moving.length());
+    // }
+    // body->applyCentralImpulse(GameUtils::toBulletVector(moving));
 
     if (state[SDL_SCANCODE_W])
         cameraPos += cameraSpeed * horizontalDirection;

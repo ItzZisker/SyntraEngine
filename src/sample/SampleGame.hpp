@@ -28,7 +28,8 @@ public:
     float lX = 0.0f, lY = 2.0f, lZ = 0.0f;
     float gamma = 1.1f;
     float yaw = 0, pitch = 0;
-    bool fxaa1, fxaa2, fxaa4;
+    float hdrExposure = 0.036f;
+    float hdrSkyBoost = 40.0f;
     
     bool mouseCaptured = true;
     bool firstMouse;
@@ -42,7 +43,7 @@ public:
     ModelInstance *sceneModelInstance;
     MeshInstance *appleHMeshInstance, *appleMeshInstance;
 
-    BT_EntityConvexHull* appleEntity;
+    //BT_EntityConvexHull* appleEntity;
     //BT_EntityTriangleMesh* sceneEntity;
 
     int launch();

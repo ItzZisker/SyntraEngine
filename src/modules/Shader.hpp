@@ -59,5 +59,7 @@ public:
     const char *getFragmentPath() const { return fragmentPath; }
 
     unsigned int getProgramID() const { return ID; }
+
+    bool hasProgram() const { return static_cast<bool>(ID); }
 };
 }

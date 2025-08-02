@@ -23,6 +23,10 @@
 
 namespace syng
 {
+struct WindowSize {
+    int width, height;
+};
+
 class GameWindow : public Screenbuffer {
 private:
 	SDL_Window * sdlWindowPtr; 
@@ -37,15 +41,13 @@ private:
 
     std::vector<SDL_EventHandler*> eventHandlers;
     std::vector<SDL_Event> lastFrameEvents;
-
     std::string title;
-    int width, height;
 
     int sdlWindowStatus, glfwWindowStatus, gladLoadStatus;
     bool initialized, disposed;
 
 public:
-    GameWindow(std::string title, int width, int height);
+    GameWindow(std::string title, WindowSize initialSize);
 
     bool isInitialized();
 
@@ -80,5 +82,7 @@ public:
 	SDL_Window *getSDLWindowPtr();
 
     SDL_GLContext getGLContext();
+
+    WindowSize getSize();
 };
 }

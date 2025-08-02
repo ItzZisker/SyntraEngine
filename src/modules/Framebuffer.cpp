@@ -1,3 +1,4 @@
+#include "SDL3/SDL_timer.h"
 #include "engine/RenderTable.hpp"
 #include "modules/Screenbuffer.hpp"
 #include "modules/Shader.hpp"
@@ -9,15 +10,6 @@
 #include <ostream>
 
 using namespace syng;
-
-namespace syng {
-    const AntiAliasing AA_OFF = {NONE};
-    const AntiAliasing AA_FXAAx1 = {FXAA_1};
-    const AntiAliasing AA_FXAAx2 = {FXAA_2};
-    const AntiAliasing AA_FXAAx4 = {FXAA_4};
-    const AntiAliasing AA_MSAAx2 = {MSAA_2};
-    const AntiAliasing AA_MSAAx4 = {MSAA_4};
-}
 
 Framebuffer::Framebuffer(Scene* scene) : scene(scene), outputShader(scene->getScreenShader()) {}
 
@@ -43,12 +35,40 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
         return;
     }
 
+    GLenum TCBBaseFormat;
+
+    switch (TCBFormat) {
+        case GL_RGB:
+        case GL_RGB16:
+        case GL_RGB16F:
+        case GL_RGB16I:
+        case GL_RGB16UI:
+        case GL_RGB32F:
+        case GL_RGB32I:
+        case GL_RGB32UI:
+            TCBBaseFormat = GL_RGB;
+            break;
+        case GL_RGBA:
+        case GL_RGBA16:
+        case GL_RGBA16F:
+        case GL_RGBA16I:
+        case GL_RGBA16UI:
+        case GL_RGBA32F:
+        case GL_RGBA32I:
+        case GL_RGBA32UI:
+            TCBBaseFormat = GL_RGBA;
+            break;
+        default:
+            std::cerr << "ERROR::FRAMEBUFFER::Invalid Color Buffer Format: " << TCBFormat << std::endl;
+            return;
+    }
+
     glGenFramebuffers(1, &FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
     if (AA.isMultiSample()) {
         glGenTextures(1, &MS_TCB);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, MS_TCB);
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, AA.getMultiSamples(), GL_RGB, width_, height_, GL_TRUE);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, AA.getMultiSamples(), TCBFormat, width_, height_, GL_TRUE);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, MS_TCB, 0); 
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
         glGenFramebuffers(1, &MSOUT_FBO);
@@ -56,7 +76,7 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
     }
     glGenTextures(1, &TCB);
     glBindTexture(GL_TEXTURE_2D, TCB);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_, height_, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, TCBFormat, width_, height_, 0, TCBBaseFormat, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TCB, 0);
@@ -100,6 +120,10 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     }
+    if (!outputShader.hasProgram()) {
+        outputShader.init();
+    }
+
     onCreate(width_, height_, outputToScreenShader, FBO);
 
     RenderTable<ShaderRenderable>* renderTableCopy = renderTable;
@@ -123,6 +147,14 @@ void Framebuffer::setAntiAliasing(AntiAliasing AA) {
     } else {
         this->AA = AA;
     }
+}
+
+void Framebuffer::setTCBFormat(GLenum format) {
+    if (!created) TCBFormat = format;
+}
+
+void Framebuffer::setHDR(class HDR hdr) {
+    this->HDR = hdr;
 }
 
 void Framebuffer::addInitTask(std::function<void(Framebuffer *)> task) {
@@ -153,13 +185,18 @@ void Framebuffer::render(Screenbuffer screen) {
     glBindFramebuffer(GL_FRAMEBUFFER, screen.getFBO());
 
     if (outputToParent) {
-        glViewport(0, 0, scene->getScreenWidth(), scene->getScreenHeight());
+        glViewport(0, 0, screen.getWidth(), screen.getHeight());
         glDisable(GL_DEPTH_TEST);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         outputShader.use();
         outputShader.setTexture("screenTexture", GL_TEXTURE_2D, 0, TCB);
+
+        outputShader.setBool("hdrEnabled", HDR.isEnabled());
+        if (HDR.isEnabled()) {
+            outputShader.setFloat("hdrExposure", HDR.exposure);
+        }
         if (AA.isFastApproximate()) {
             float reduceMin, reduceMul, spanMax;
             AA.getFXAAVars(&reduceMin, &reduceMul, &spanMax);
@@ -180,10 +217,22 @@ RenderTable<ShaderRenderable>* Framebuffer::getRenderTable() {
     return this->renderTable;
 }
 
-unsigned int Framebuffer::getRBO() {
-    return !this->RBO ? 0 : this->RBO;
+Shader Framebuffer::getOutputShader() {
+    return this->outputShader;
 }
 
 AntiAliasing Framebuffer::getAntiAliasing() {
     return this->AA;
+}
+
+GLenum Framebuffer::getTCBFormat() {
+    return this->TCBFormat;
+}
+
+class HDR Framebuffer::getHDR() {
+    return this->HDR;
+}
+
+unsigned int Framebuffer::getRBO() {
+    return !this->RBO ? 0 : this->RBO;
 }

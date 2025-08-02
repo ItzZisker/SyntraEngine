@@ -76,6 +76,17 @@ void ShadowMapper::renderDepth(Screenbuffer screen, Scene *scene) {
     glViewport(0, 0, screen.getWidth(), screen.getHeight());
 }
 
+void ShadowMapper::pushUniforms(Shader batchShader) {
+    batchShader.use();
+    batchShader.setMatrix4("lightSpaceMatrix", getLightSpaceMatrix(), 1, GL_FALSE);
+    batchShader.setFloat("shadowStrength", strength);
+    batchShader.setFloat("shadowBiasMin", biasMin);
+    batchShader.setFloat("shadowBiasMax", biasMax);
+    batchShader.setFloat("shadowPCFScale", pcfScale);
+    batchShader.setInt("shadowPCFRadius", pcfRadius);
+    batchShader.setTexture("shadowMap", GL_TEXTURE_2D, 7, getDepthMapTCB());
+}
+
 unsigned int ShadowMapper::getDepthMapFBO() {
     return this->depthMapFBO;
 }

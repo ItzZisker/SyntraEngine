@@ -7,6 +7,9 @@ uniform sampler2D screenTexture;
 uniform vec2 screenSize;
 uniform float gamma = 2.2;
 
+uniform bool hdrEnabled = false;
+uniform float hdrExposure = 3.25;
+
 uniform bool fxaaEnabled = false;
 uniform float fxaaReduceMin = 1.0 / 128.0;
 uniform float fxaaReduceMul = 1.0 / 8.0;
@@ -60,9 +63,16 @@ vec3 applyGamma(vec3 color) {
     return pow(color.rgb, vec3(1.0 / gamma));
 }
 
+vec3 applyToneMapping(vec3 color) {
+    return vec3(1.0) - exp(-color * hdrExposure);
+}
+
 void main() {
     vec4 finalColor = fxaaEnabled ? applyFXAA(TexCoords) : texture(screenTexture, TexCoords);
 
+    if (hdrEnabled) {
+        finalColor.rgb = applyToneMapping(finalColor.rgb);
+    }
     finalColor.rgb = applyGamma(finalColor.rgb);
     FragColor = finalColor;
 }

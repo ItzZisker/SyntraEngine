@@ -10,10 +10,10 @@
 
 using namespace syng;
 
-GameWindow::GameWindow(std::string title, int initialWidth, int initialHeight) {
+GameWindow::GameWindow(std::string title, WindowSize initialSize) {
     this->title = title;
-    this->width = initialWidth;
-    this->height = initialHeight;
+    this->width = initialSize.width;
+    this->height = initialSize.height;
 
     attrib(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     attrib(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -58,6 +58,7 @@ int GameWindow::initLoop() {
         std::cerr << "Syngine: Failed to initialize SDL3: " << SDL_GetError() << std::endl;
         return -1;
     }
+
     SDL_Window *sdlWindow = SDL_CreateWindow(title.c_str(), width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (sdlWindow == NULL) {
         std::cerr << "Syngine: Failed to create SDL3 window: " << SDL_GetError() << std::endl;
@@ -96,8 +97,17 @@ int GameWindow::initLoop() {
             for (auto& handler : eventHandlers) {
                 handler->onEvent(event);
             }
-            if (event.type == SDL_EVENT_QUIT) {
-                closeWindow();
+            switch (event.type) {
+                case SDL_EVENT_QUIT:
+                    closeWindow();
+                break;
+                case SDL_EVENT_WINDOW_RESIZED:
+                    int width, height;
+                    SDL_Window* current = SDL_GetWindowFromID(event.window.windowID);
+                    SDL_GetWindowSize(current, &width, &height);
+                    this->width = width;
+                    this->height = height;
+                break;
             }
         }
     }
@@ -167,4 +177,10 @@ SDL_GLContext GameWindow::getGLContext() {
 
 RenderTable<WindowRenderable>* GameWindow::getWindowRenderTable() {
     return this->windowRenderTable;
+}
+
+WindowSize GameWindow::getSize() {
+    int width, height;
+    SDL_GetWindowSize(sdlWindowPtr, &width, &height);
+    return {width, height};
 }

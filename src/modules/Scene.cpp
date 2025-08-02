@@ -9,6 +9,8 @@
 #include "world/WorldObject.hpp"
 #include "utils/GameUtils.hpp"
 #include <glm/gtc/matrix_transform.hpp>
+#include <iostream>
+#include <ostream>
 #include <string>
 #include "engine/Config.hpp"
 
@@ -80,12 +82,7 @@ void Scene::render(Screenbuffer screen) {
 
     if (shadowMapper && shadowMapper->isCreated()) {
         shadowMapper->renderDepth(screen, this);
-        batchShader.use();
-        batchShader.setMatrix4("lightSpaceMatrix", shadowMapper->getLightSpaceMatrix(), 1, GL_FALSE);
-        batchShader.setFloat("shadowStrength", shadowMapper->strength);
-        batchShader.setFloat("shadowBiasMin", shadowMapper->biasMin);
-        batchShader.setFloat("shadowBiasMax", shadowMapper->biasMax);
-        batchShader.setTexture("shadowMap", GL_TEXTURE_2D, 7, shadowMapper->getDepthMapTCB());
+        shadowMapper->pushUniforms(batchShader);
     }
     batchShader.use();
     batchShader.setMatrix4("view", camera->getViewMatrix(), 1, GL_FALSE);
@@ -107,8 +104,10 @@ void Scene::onEvent(const SDL_Event& event) {
         int width, height;
         SDL_Window* current = SDL_GetWindowFromID(event.window.windowID);
         SDL_GetWindowSize(current, &width, &height);
-        if (width != 0 && height != 0)
-            setScreenLayout(width, height);
+        if (width != 0 && height != 0) {
+            std::cout << "resize: width=" << width << ", height=" << height <<std::endl;
+            setScreenLayout(width, height); 
+        }
     }
 }
 

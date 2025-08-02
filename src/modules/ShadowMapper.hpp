@@ -16,6 +16,8 @@ public:
     float strength = 0.5f;
     float biasMin = 0.001f, biasMax = 0.016f;
     unsigned int shadowWidth = 1024, shadowHeight = 1024;
+    unsigned int pcfRadius = 1;
+    float pcfScale = 1.0f;
     glm::mat4 lightProjection, lightView;
 
     ShadowMapper(unsigned int uv = 1024);
@@ -33,6 +35,8 @@ public:
     }
 
     void renderDepth(Screenbuffer screen, Scene *scene);
+
+    void pushUniforms(Shader batchShader);
 
     unsigned int getDepthMapFBO();
 

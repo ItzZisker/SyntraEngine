@@ -119,6 +119,7 @@ void Skybox::render(Screenbuffer screen) {
     shader.setMatrix4("view", glm::mat4(glm::mat3(scene->getCamera()->getViewMatrix())), 1, GL_FALSE);
     shader.setMatrix4("projection", scene->getProjection(), 1, GL_FALSE);
     shader.setTexture("skybox", GL_TEXTURE_CUBE_MAP, 0, cubemapTexture);
+    shader.setVec3f("hdrBoost", hdrBoost);
 
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_FALSE);

@@ -2,6 +2,8 @@
 
 #include "SampleCallbacks.hpp"
 #include "engine/RenderTable.hpp"
+#include "glm/fwd.hpp"
+#include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"
 #include "modules/Framebuffer.hpp"
@@ -45,7 +47,7 @@
  */ 
 
 int SampleGame::launch() {
-    window = new GameWindow("Sample", 1024, 768);
+    window = new GameWindow("Sample", {1024, 768});
     window->attrib(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
     window->addInitTask([&](GameWindow *window){ 
         createImGUI();
@@ -85,15 +87,17 @@ void SampleGame::createWindow(GameWindow *window) {
     appleMeshInstance = new MeshInstance(appleModel->meshes["Apple"]);
     appleMeshInstance->setScale(glm::vec3(0.5f, 1.0f, 0.5f));
 
-    std::cout << "C\n";
-    appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, appleHMeshInstance);
-    std::cout << "D\n";
-    appleEntity->setPosition(glm::vec3(0, 10, 0));
-    std::cout << "E\n";
-    appleEntity->bind("Apple", appleMeshInstance);
-    std::cout << "F\n";
-    appleEntity->load(false);
-    std::cout << "G\n";
+    // Crashing at "F" I have no clue whatsoever
+
+    // std::cout << "C\n";
+    // appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, appleHMeshInstance);
+    // std::cout << "D\n";
+    // appleEntity->setPosition(glm::vec3(0, 10, 0));
+    // std::cout << "E\n";
+    // appleEntity->bind("Apple", appleMeshInstance);
+    // std::cout << "F\n";
+    // appleEntity->load(false);
+    // std::cout << "G\n";
 
     std::cout << "Sponza\n";
     sceneModel = new Model("models/Sponza/glTF/Sponza.gltf");
@@ -132,6 +136,7 @@ void SampleGame::createWindow(GameWindow *window) {
     scene->setZBufferLayout(0.1f, 100.0f);
     shadowMapper = new ShadowMapper(8192);
     shadowMapper->strength = 1.0f;
+    shadowMapper->pcfRadius = 2;
     shadowMapper->create();
     scene->withShadows(shadowMapper);
     std::cout << "5\n";
@@ -144,16 +149,21 @@ void SampleGame::createWindow(GameWindow *window) {
         "models/skybox/daylight/front.bmp",
         "models/skybox/daylight/back.bmp"
     });
+    skybox->hdrBoost = glm::vec3(100.0f);
     skybox->load();
     scene->getBatchRenderTable()->add("skybox", skybox);
     scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
     scene->getBatchRenderTable()->add("appleModel", appleMeshInstance);
-    scene->setDirectionalLight({
+    DirLight light = {
         {-0.86f, -1.0f, -0.97f},
         {0.5f, 0.5f, 0.5f},
         {0.75f, 0.75f, 0.5f},
         {0.85f, 0.85f, 0.6f}
-    });
+    };
+    light.ambient *= 70.0f;
+    light.diffuse *= 100.0f;
+    light.specular *= 100.0f;
+    scene->setDirectionalLight(light);
     scene->setPointLights({});
     scene->reloadShaders();
     keyHandler = new SampleKeyHandler(this);
@@ -168,25 +178,31 @@ void SampleGame::createWindow(GameWindow *window) {
 
     //shadowMapper->getDepthRenderTable()->add(cubemapFramebuffer->getRefractionRenderTable());
 
-    Shader vhsShader = {"shaders/vhsVertex.glsl", "shaders/vhsFrag.glsl"};
-    vhsShader.init();
-    framebuffer_VHS = new Framebuffer(scene, vhsShader);
+    //framebuffer_VHS = new Framebuffer(scene, {"shaders/vhsVertex.glsl", "shaders/vhs2Frag.glsl"});
+    framebuffer_VHS = new Framebuffer(scene);
+    framebuffer_VHS->addRenderTask([&](Framebuffer* buffer){
+        Shader outputShader = buffer->getOutputShader();
+        outputShader.use();
+        outputShader.setFloat("time", SDL_GetTicks() / 1000.0f);
+    });
+    framebuffer_VHS->setTCBFormat(GL_RGBA16F);
+    framebuffer_VHS->setHDR({0.036f});
+    framebuffer_VHS->setAntiAliasing(AA_MSAAx4);
     framebuffer_VHS->getRenderTable()->add("scene", scene);
-    framebuffer_VHS->setAntiAliasing(AA_OFF);
     framebuffer_VHS->create(1024, 768, true);
 
     framebuffer = new Framebuffer(scene);
     //framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
-    framebuffer->setAntiAliasing(AA_FXAAx1);
+    framebuffer->setAntiAliasing(AA_OFF);
     framebuffer->addRenderTask([&](Framebuffer* buffer){
         framebuffer_VHS->render(*buffer);
     });
     framebuffer->create(1024, 768, true);
 
     window->getWindowRenderTable()->add("overWorld", overWorld);
-    window->getWindowRenderTable()->add("appleEntity", appleEntity);
+    //window->getWindowRenderTable()->add("appleEntity", appleEntity);
     //window->getWindowRenderTable()->add("sceneEntity", sceneEntity);
-    window->getWindowRenderTable()->add("framebuffer", framebuffer);
+    window->getWindowRenderTable()->add("framebuffer", framebuffer_VHS);
     window->getWindowRenderTable()->add("keyHandler", keyHandler);
 
     SDL_GL_SetSwapInterval(0);
@@ -205,14 +221,14 @@ void SampleGame::renderImGUI() {
     ImGui::Begin("Debug");
     ImGui::Text("FPS: %.0f", (window->getLastFrameTime() == 0) ? 999.0f : 1.0f / window->getLastFrameTime());
 
-    if (ImGui::Button("Reset")) {
-        window->getWindowRenderTable()->wipe("appleEntity");
+    // if (ImGui::Button("Reset")) {
+    //     window->getWindowRenderTable()->wipe("appleEntity");
 
-        appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, appleHMeshInstance);
-        appleEntity->load();
+    //     appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, appleHMeshInstance);
+    //     appleEntity->load();
 
-        window->getWindowRenderTable()->add("appleEntity", appleEntity);
-    }
+    //     window->getWindowRenderTable()->add("appleEntity", appleEntity);
+    // }
     ImGui::SliderFloat("IOR R", &appleMeshInstance->getMesh()->material.ior.x, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
     ImGui::SliderFloat("IOR G", &appleMeshInstance->getMesh()->material.ior.y, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
     ImGui::SliderFloat("IOR B", &appleMeshInstance->getMesh()->material.ior.z, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
@@ -224,23 +240,14 @@ void SampleGame::renderImGUI() {
     ImGui::SliderFloat("Light X", &lX, -20.0f, 20.0f, "%.3f");
     ImGui::SliderFloat("Light Y", &lY, -20.0f, 20.0f, "%.3f");
     ImGui::SliderFloat("Light Z", &lZ, -20.0f, 20.0f, "%.3f");
+    ImGui::SliderFloat("HDR Boost (Skybox)", &hdrSkyBoost, 0.0f, 100.0f, "%.3f");
+    ImGui::SliderFloat("HDR Exposure", &hdrExposure, 0.0f, 0.1f, "%.3f");
     ImGui::SliderFloat("Shadow Bias Min", &shadowMapper->biasMin, 0.001f, 1.0f, "%.3f");
     ImGui::SliderFloat("Shadow Bias Max", &shadowMapper->biasMax, 0.001f, 1.0f, "%.3f");
+    ImGui::SliderFloat("Shadow PCF Scale", &shadowMapper->pcfScale, 0.1f, 10.0f, "%.3f");
+    ImGui::SliderInt("Shadow PCF Radius", (int*) &shadowMapper->pcfRadius, 1, 10);
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
-    if (ImGui::Checkbox("FXAA_1", &fxaa1)) {
-        framebuffer->setAntiAliasing(AA_FXAAx1);
-        fxaa2 = fxaa4 = false;
-    }
-    ImGui::SameLine();
-    if (ImGui::Checkbox("FXAA_2", &fxaa2)) {
-        framebuffer->setAntiAliasing(AA_FXAAx2);
-        fxaa1 = fxaa4 = false;
-    }
-    ImGui::SameLine();
-    if (ImGui::Checkbox("FXAA_4", &fxaa4)) {
-        framebuffer->setAntiAliasing(AA_FXAAx4);
-        fxaa2 = fxaa1 = false;
-    }
+
     ImGui::End();
     ImGui::Render();
 
@@ -249,6 +256,8 @@ void SampleGame::renderImGUI() {
 
 void SampleGame::renderETC() {
     scene->setGamma(gamma);
+    skybox->hdrBoost = glm::vec3(hdrSkyBoost);
+    framebuffer_VHS->setHDR({hdrExposure});
     //scene->setPointLight(0, {{lX, lY, lZ}});
     static float dT = (float) window->getLastFrameTime();
     //sceneModelInstance->getMeshInstances()->get("Plane")->setDirection({sin(dT), 0.0f, cos(dT)});

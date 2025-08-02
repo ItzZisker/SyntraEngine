@@ -67,6 +67,8 @@ uniform sampler2D shadowMap;
 uniform float shadowStrength = 0.5;
 uniform float shadowBiasMax = 0.05;
 uniform float shadowBiasMin = 0.005;
+uniform float shadowPCFScale = 1.0;
+uniform int shadowPCFRadius = 10;
 #endif
 
 in VS_OUT {
@@ -169,15 +171,19 @@ float calculateShadow(DirLight light, vec3 normal, vec4 fragPosLightSpace)
 
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    vec2 offsetSize = texelSize * shadowPCFScale;
 
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
+    int samples = 0;
+    for (int x = -shadowPCFRadius; x <= shadowPCFRadius; ++x) {
+        for (int y = -shadowPCFRadius; y <= shadowPCFRadius; ++y) {
+            vec2 offset = vec2(x, y) * offsetSize;
             float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
             if (projCoords.z - bias > pcfDepth)
                 shadow += 1.0;
+            samples += 1;
         }
     }
-    shadow /= 9.0;
+    shadow /= float(samples);
 
     return shadow;
 }
