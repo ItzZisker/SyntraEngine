@@ -139,6 +139,22 @@ void Framebuffer::create(bool outputToScreenShader) {
     Framebuffer::create(scene->getScreenWidth(), scene->getScreenHeight(), outputToScreenShader);
 }
 
+void Framebuffer::appendTCB(int attachmentIndex, unsigned int TCB, GLenum textureTarget, GLuint layer) {
+    glBindTexture(textureTarget, TCB);
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER,
+        GL_COLOR_ATTACHMENT0 + attachmentIndex,
+        textureTarget,
+        TCB,
+        layer
+    );
+    glBindTexture(textureTarget, 0);
+}
+
+void Framebuffer::setOutputAttachments(std::vector<GLenum> GL_attachments) {
+    glDrawBuffers(GL_attachments.size(), GL_attachments.data());  
+}
+
 void Framebuffer::setAntiAliasing(AntiAliasing AA) {
     if (created) {
         if (this->AA.isFastApproximate() && AA.isFastApproximate()) {

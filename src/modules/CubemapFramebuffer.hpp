@@ -12,6 +12,7 @@
 
 #define SG_CUBEMAP_SIDES 6
 
+// TODO: Use only One Framebuffer, but multiple attachments, use glDrawBuffer(1, attachment) to render to the exact TCB
 /*
     Notes:
       - CubemapFramebuffer renders the scene into a dynamic cubemap (6 faces)

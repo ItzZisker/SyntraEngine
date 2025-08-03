@@ -42,6 +42,10 @@ public:
 
     void create(unsigned int width, unsigned int height, bool outputToScreenShader = true);
 
+    void appendTCB(int attachmentIndex, unsigned int TCB, GLenum textureTarget = GL_TEXTURE_2D, GLuint layer = 0);
+
+    void setOutputAttachments(std::vector<GLenum> GL_attachments);
+
     void setAntiAliasing(AntiAliasing AA);
 
     void setTCBFormat(GLenum format);
