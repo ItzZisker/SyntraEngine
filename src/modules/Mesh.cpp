@@ -44,10 +44,31 @@ glm::mat4 Mesh::getParentToNodeTransform() {
     return parentToNodeTransform;
 }
 
+void Mesh::setFallBackDiffuseTCB(unsigned int TCB) {
+    glDeleteTextures(1, &fallbackDiffuseTCB);
+    this->fallbackDiffuseTCB = TCB;
+}
+
+void Mesh::setFallBackSpecularTCB(unsigned int TCB) {
+    glDeleteTextures(1, &fallbackSpecularTCB);
+    this->fallbackSpecularTCB = TCB;
+}
+
+void Mesh::setFallBackNormalTCB(unsigned int TCB) {
+    glDeleteTextures(1, &fallbackNormalTCB);
+    this->fallbackNormalTCB = TCB;
+}
+
 void Mesh::setFallBackDiffuseColor(unsigned char rgb[3]) {
     unsigned char pixel[4] = {rgb[0], rgb[1], rgb[2], 255};
     glDeleteTextures(1, &fallbackDiffuseTCB);
     createPlainTexture(fallbackDiffuseTCB, pixel);
+}
+
+void Mesh::setFallBackSpecularColor(unsigned char rgb[3]) {
+    unsigned char pixel[4] = {rgb[0], rgb[1], rgb[2], 255};
+    glDeleteTextures(1, &fallbackSpecularTCB);
+    createPlainTexture(fallbackSpecularTCB, pixel);
 }
 
 void Mesh::setFallBackNormalColor(unsigned char rgb[3]) {
@@ -77,6 +98,7 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
     unsigned int specularNr = 1;
     unsigned int normalNr = 1;
     unsigned int heightNr = 1;
+    unsigned int roughNr = 1;
     unsigned int texUnit = 0;
 
     if (textures.empty() && !fallbackDiffuseTCB) {
@@ -99,8 +121,18 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
             number = std::to_string(normalNr++);
         else if (name == "texture_height")
             number = std::to_string(heightNr++);
+        else if (name == "texture_roughness")
+            number = std::to_string(roughNr++);
 
         shader.setTexture(name + number, GL_TEXTURE_2D, texUnit++, tex.id);
+    }
+    
+    if (specularNr == 1 && !fallbackSpecularTCB) {
+        unsigned char zC[3] = {255, 255, 255};
+        setFallBackSpecularColor(zC);
+    }
+    if (specularNr == 1 && fallbackSpecularTCB) {
+        shader.setTexture("texture_specular1", GL_TEXTURE_2D, texUnit++, fallbackSpecularTCB);
     }
     if (normalNr == 1 && !fallbackNormalTCB) {
         unsigned char zC[3] = {128, 128, 255};
@@ -109,7 +141,9 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
     if (normalNr == 1 && fallbackNormalTCB) {
         shader.setTexture("texture_normal1", GL_TEXTURE_2D, texUnit++, fallbackNormalTCB);
     }
-    shader.setBool("parallax", heightNr > 1);
+
+    shader.setBool("parallax", heightNr > 1  && hasDisplacement);
+    shader.setBool("roughness", roughNr > 1 && hasRoughness);
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);

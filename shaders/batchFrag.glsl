@@ -49,15 +49,19 @@ uniform DirLight dirLight;
 
 uniform vec3 cameraPos;
 
+uniform float roughnessConstrant = 4.0;
+uniform bool roughness = false;
+uniform bool parallax = false;
+
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_specular1;
 uniform sampler2D texture_normal1;
 uniform sampler2D texture_height1;
+uniform sampler2D texture_roughness1;
+
 uniform float opacity = 1.0;
 uniform float specularStrength = 1.0;
 uniform float shininess = 32.0;
-
-uniform bool parallax = false;
 uniform float parallaxMinLayers = 8.0;
 uniform float parallaxMaxLayers = 32.0;
 uniform float height_scale = 0.1;
@@ -86,6 +90,8 @@ out vec4 FragColor;
 #if HAS_SHADOWS
 float calculateShadow(DirLight light, vec4 fragPosLightSpace);
 #endif
+
+float sampleShininess(vec2 texCoords);
 
 vec2 calculateParallax(vec2 texCoords, vec3 viewDir);
 vec3 calculateDirectionalLight(DirLight light, vec3 normal, vec3 viewDir, vec2 texCoords);
@@ -128,6 +134,16 @@ void main() {
 #endif
 
     FragColor = vec4(result, opacity);
+}
+
+float sampleShininess(vec2 texCoords) {
+    if (roughness) { 
+        vec3 texColor = texture(texture_roughness1, texCoords).rgb;
+        float roughnessValue = dot(texColor, vec3(0.299, 0.587, 0.114));
+        return mix(8.0, 32.0, 1.0 - ((roughnessValue - 0.5) * max(roughnessConstrant, 0)) + 0.5);
+    } else {
+        return shininess;
+    }
 }
 
 vec2 calculateParallax(vec2 texCoords, vec3 viewDir) { 
@@ -200,7 +216,7 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir, vec2 texCoor
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = texture(texture_diffuse1, texCoords).rgb * diff * light.diffuse;
 
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), sampleShininess(texCoords));
     vec3 specular = texture(texture_specular1, texCoords).rgb * spec * light.specular;
 
     // spotlight (soft edges)
@@ -226,7 +242,7 @@ vec3 calculateDirectionalLight(DirLight light, vec3 normal, vec3 viewDir, vec2 t
     vec3 halfwayDir = normalize(lightDir + viewDir);
 
     float diff = max(dot(normal, lightDir), 0.0);
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), sampleShininess(texCoords));
     
     vec3 ambient = light.ambient * vec3(texture(texture_diffuse1, texCoords));
     vec3 diffuse = light.diffuse * diff * vec3(texture(texture_diffuse1, texCoords));
@@ -245,7 +261,7 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 viewDir, vec2 texCo
     vec3 halfwayDir = normalize(lightDir + viewDir);
 
     float diff = max(dot(normal, lightDir), 0.0);
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), sampleShininess(texCoords));
 
     float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));

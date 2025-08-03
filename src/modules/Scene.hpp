@@ -29,6 +29,12 @@ struct DirLight {
     glm::vec3 ambient = {0.05f, 0.05f, 0.05f};
     glm::vec3 diffuse = {0.4f, 0.4f, 0.4f};
     glm::vec3 specular = {0.5f, 0.5f, 0.5f};
+
+    void boost(float scl) {
+        ambient *= scl;
+        diffuse *= scl;
+        specular *= scl;
+    }
 };
 
 struct PointLight {
@@ -39,6 +45,12 @@ struct PointLight {
     float constant = 1.0f;
     float linear = 0.09f;
     float quadratic = 0.032f;
+
+    void boost(float scl) {
+        ambient *= scl;
+        diffuse *= scl;
+        specular *= scl;
+    }
 };
 
 struct SpotLight {
@@ -52,6 +64,12 @@ struct SpotLight {
     float quadratic = 0.032f;
     float cutOff = glm::cos(glm::radians(12.5f));
     float outerCutOff = glm::cos(glm::radians(15.0f));
+
+    void boost(float scl) {
+        ambient *= scl;
+        diffuse *= scl;
+        specular *= scl;
+    }
 };
 
 class Scene : public SDL_EventHandler, public DuplexRenderable

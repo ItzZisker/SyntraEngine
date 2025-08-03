@@ -1,6 +1,7 @@
 #include "assimp/postprocess.h"
 #include "modules/Mesh.hpp"
 #include "assimp/matrix4x4.h"
+#include <iterator>
 #include <modules/Model.hpp>
 #include <ostream>
 #include <utils/GameUtils.hpp>
@@ -151,6 +152,15 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& tr
     std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
+    std::vector<Texture> roughMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
+    std::cout << "[" << mesh->mName.C_Str() << "] rough count: " << roughMaps.size() << std::endl;
+    if (!roughMaps.empty()) {
+        for (auto& nig : roughMaps) {
+            std::cout << nig.path << std::endl;
+        }
+    }
+    textures.insert(textures.end(), roughMaps.begin(), roughMaps.end());
+
     MaterialProps props;
 
     float ior = 1.0f;
@@ -165,6 +175,8 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& tr
     }
 
     Mesh* res = new Mesh(vertices, indices, transform);
+    res->hasDisplacement = !heightMaps.empty();
+    res->hasRoughness = !roughMaps.empty();
     res->textures = textures;
     res->material = props;
 

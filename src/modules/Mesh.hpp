@@ -55,8 +55,15 @@ public:
     std::vector<Texture> textures;
 
     MaterialProps material;
-    unsigned int VAO, VBO, EBO;
-    unsigned int fallbackDiffuseTCB = 0, fallbackNormalTCB = 0;
+    GLuint VAO = 0, VBO = 0, EBO = 0;
+
+    GLuint fallbackDiffuseTCB = 0;
+    GLuint fallbackNormalTCB = 0;
+    GLuint fallbackSpecularTCB = 0;
+
+    bool hasDisplacement;
+    bool hasRoughness;
+
     bool loaded;
 
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, glm::mat4 parentToNodeTransform);
@@ -64,8 +71,16 @@ public:
     ~Mesh();
 
     glm::mat4 getParentToNodeTransform();
+    
+    void setFallBackDiffuseTCB(unsigned int TCB);
+    
+    void setFallBackSpecularTCB(unsigned int TCB);
+    
+    void setFallBackNormalTCB(unsigned int TCB);
 
     void setFallBackDiffuseColor(unsigned char rgb[3]);
+
+    void setFallBackSpecularColor(unsigned char rgb[3]);
 
     void setFallBackNormalColor(unsigned char rgb[3]);
 
