@@ -13,7 +13,7 @@
 using namespace syng;
 
 BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, ModelInstance* model) 
-    : BT_Entity(world), meshes(model->getMeshInstances()->asMap()), coords(model->getTransform()) {}
+    : BT_Entity(world), meshes(model->getMeshInstances()->asMap()) {}
 
 BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, std::unordered_map<std::string, MeshInstance*> meshes) 
     : BT_Entity(world), meshes(meshes) {}

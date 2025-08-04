@@ -32,6 +32,10 @@ void GameUtils::debugGLError(const std::string& comment) {
     }
 }
 
+bool GameUtils::str_contains(const std::string& target, const std::string& value) {
+    return target.find(value) != std::string::npos;
+}
+
 btVector3 GameUtils::toBulletVector(const glm::vec3& vec) {
     return btVector3(vec[0], vec[1], vec[2]);
 }

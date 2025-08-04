@@ -20,7 +20,9 @@
 
 namespace syng
 {
-unsigned int TextureFromFile(const char *path, const std::string &directory);
+unsigned int TCBFromFile(const char *path, const std::string &directory);
+
+Texture TextureFromFile(const char *path, const std::string &directory, const std::string &type);
 
 class Model
 {
@@ -53,6 +55,8 @@ public:
     void load(VRAM_Approach approach = Sequential);
 
     void loadModel(VRAM_Approach approach = Sequential, const std::set<std::string>& meshes = {}, bool flip = false);
+
+    void pushTexture(const std::string meshKey, Texture texture);
 private:
     std::string path;
 

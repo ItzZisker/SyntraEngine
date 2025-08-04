@@ -32,7 +32,7 @@ struct Vertex {
 };
 
 struct Texture {
-    unsigned int id;
+    unsigned int TCB;
     std::string type;
     std::string path;
 };

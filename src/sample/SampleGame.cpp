@@ -2,6 +2,7 @@
 
 #include "SampleCallbacks.hpp"
 #include "engine/RenderTable.hpp"
+#include "utils/GameUtils.hpp"
 #include "glm/fwd.hpp"
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
@@ -102,15 +103,28 @@ void SampleGame::createWindow(GameWindow *window) {
     std::cout << "scene\n";
     sceneModel = new Model("models/wall/2g/wall.gltf");
     std::cout << "H\n";
-    sceneModel->loadModel(Sequential);
+    sceneModel->loadModel(Interleaved);
     std::cout << "scene done\n";
+
+    std::string dir = std::filesystem::current_path().string();
+    for (auto& pair : sceneModel->meshes) {
+        Mesh* mesh = pair.second;
+        for (auto& tex : mesh->textures) {
+            if (GameUtils::str_contains(tex.path, "paper_0033")) {
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_height_1k.png", dir, "texture_height"));
+            }
+            if (GameUtils::str_contains(tex.path, "wood_table_001")) {
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_disp_1k.png", dir, "texture_height"));
+            }
+        }
+    }
 
     //sceneModel->meshes["Plane"]->textures.push_back(bricks2disp);
 
     sceneModelInstance = new ModelInstance(sceneModel);
-    // sceneModelInstance->getMeshInstances()->forEach([](const std::string& key, MeshInstance* meshInstance){
-    //     meshInstance->setScale(glm::vec3(0.0075f));
-    // });
+    sceneModelInstance->getMeshInstances()->forEach([](const std::string& key, MeshInstance* meshInstance){
+        std::cout << "IA: " << key << std::endl;
+    });
     std::cout << "3\n";
     //sceneModelInstance->getMeshInstances()->get("Cube")->getMesh()->material.opacity = 0.5f;
     //sceneModelInstance->getMeshInstances()->sort(RT_SORT_OPACITY);
@@ -265,7 +279,10 @@ void SampleGame::renderETC() {
     pl.boost(40.0f);
     scene->setPointLight(0, pl);
     static float dT = (float) window->getLastFrameTime();
-    //sceneModelInstance->getMeshInstances()->get("Plane")->setDirection({sin(dT), 0.0f, cos(dT)});
+    dT += window->getLastFrameTime();
+    sceneModelInstance->getMeshInstances()->get("Cube.001-0")->setDirection({sin(dT), 0.0f, cos(dT)});
+    sceneModelInstance->getMeshInstances()->get("Cube.001-1")->setDirection({sin(dT), 0.0f, cos(dT)});
+    sceneModelInstance->getMeshInstances()->get("Cube.001-2")->setDirection({sin(dT), 0.0f, cos(dT)});
 }
 
 void SampleGame::cleanup() {

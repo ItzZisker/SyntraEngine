@@ -14,12 +14,12 @@
 
 namespace syng
 {
-class ModelInstance : public Discardable, public Coordination, public ShaderRenderable {
+class ModelInstance : public Discardable, public ShaderRenderable {
 private:
     Model* model;
     RenderTable<MeshInstance>* meshInstances;
 public:
-    ModelInstance(Model* model, Coordination coords = Coordination());
+    ModelInstance(Model* model);
 
     ~ModelInstance();
 

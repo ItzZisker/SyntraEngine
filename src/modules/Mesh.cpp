@@ -4,7 +4,9 @@
 #include "modules/Screenbuffer.hpp"
 #include "modules/Shader.hpp"
 #include "glm/fwd.hpp"
+#include <iostream>
 #include <modules/Mesh.hpp>
+#include <ostream>
 #include <utils/GameUtils.hpp>
 
 using namespace syng;
@@ -29,7 +31,7 @@ Mesh::~Mesh() {
     indices.clear();
 
     for (auto& texture : textures) {
-        glDeleteTextures(1, &texture.id);
+        glDeleteTextures(1, &texture.TCB);
     }
     textures.clear();
 
@@ -124,7 +126,7 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
         else if (name == "texture_roughness")
             number = std::to_string(roughNr++);
 
-        shader.setTexture(name + number, GL_TEXTURE_2D, texUnit++, tex.id);
+        shader.setTexture(name + number, GL_TEXTURE_2D, texUnit++, tex.TCB);
     }
     
     if (specularNr == 1 && !fallbackSpecularTCB) {

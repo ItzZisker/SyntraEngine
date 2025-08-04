@@ -12,12 +12,14 @@
 
 using namespace syng;
 
-unsigned int syng::TextureFromFile(const char *path, const std::string &directory);
+unsigned int syng::TCBFromFile(const char *path, const std::string &directory);
+
+Texture syng::TextureFromFile(const char *path, const std::string &directory, const std::string &type);
 
 Model::Model(std::string const &path, bool gamma) : gammaCorrection(gamma), path(path) {}
 
 Model::~Model() {
-    for (auto& texture : textures_loaded) glDeleteTextures(1, &texture.id);
+    for (auto& texture : textures_loaded) glDeleteTextures(1, &texture.TCB);
     textures_loaded.clear();
     for (auto& mesh : meshes) delete mesh.second;
     meshes.clear();
@@ -72,6 +74,7 @@ glm::mat4 convertToGLMMatrix(const aiMatrix4x4& aiMat) {
 void Model::processNode(const std::set<std::string>& meshNames, aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform) {
     aiMatrix4x4 currentTransform = parentTransform * node->mTransformation;
 
+    std::cout << "G: " << node->mName.C_Str() << std::endl;
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
         glm::mat4 glmTransform = convertToGLMMatrix(currentTransform);
@@ -153,12 +156,6 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& tr
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
     std::vector<Texture> roughMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
-    std::cout << "[" << mesh->mName.C_Str() << "] rough count: " << roughMaps.size() << std::endl;
-    if (!roughMaps.empty()) {
-        for (auto& nig : roughMaps) {
-            std::cout << nig.path << std::endl;
-        }
-    }
     textures.insert(textures.end(), roughMaps.begin(), roughMaps.end());
 
     MaterialProps props;
@@ -197,10 +194,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType 
             }
         }
         if (!skip) {
-            Texture texture;
-            texture.id = TextureFromFile(str.C_Str(), this->directory);
-            texture.type = typeName;
-            texture.path = str.C_Str();
+            Texture texture = TextureFromFile(str.C_Str(), this->directory, typeName);
             textures.push_back(texture);
             textures_loaded.push_back(texture);
         }
@@ -208,7 +202,23 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType 
     return textures;
 }
 
-unsigned int syng::TextureFromFile(const char *path, const std::string &directory) {
+void Model::pushTexture(const std::string meshKey, Texture texture) {
+    auto pair = meshes.find(meshKey);
+    if (pair != meshes.end()) {
+        textures_loaded.push_back(texture);
+        pair->second->textures.push_back(texture);
+    }
+}
+
+Texture syng::TextureFromFile(const char *path, const std::string &directory, const std::string &type) {
+    Texture texture;
+    texture.TCB = TCBFromFile(path, directory);
+    texture.type = type;
+    texture.path = path;
+    return texture;
+}
+
+unsigned int syng::TCBFromFile(const char *path, const std::string &directory) {
     std::string filename = std::string(path);
     filename = directory + '/' + filename;
 

@@ -19,7 +19,7 @@ MeshInstance::MeshInstance(Mesh* mesh, Coordination coords) : mesh(mesh) {
         max = glm::max(max, vertex.position);
     }
     bounding = AABB(min, max);
-    setTransform(coords.getTransform());
+    setTransform(mesh->getParentToNodeTransform() * coords.getTransform());
 }
 
 void MeshInstance::render(Shader shader, Screenbuffer screen) {

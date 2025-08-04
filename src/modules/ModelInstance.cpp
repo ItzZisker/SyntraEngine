@@ -12,8 +12,7 @@
 
 using namespace syng;
 
-ModelInstance::ModelInstance(Model* model, Coordination coords) : model(model) {
-    setTransform(coords.getTransform());
+ModelInstance::ModelInstance(Model* model) : model(model) {
     meshInstances = new RenderTable<MeshInstance>();
     for (auto& pair : model->meshes) {
         meshInstances->add(pair.first, new MeshInstance(pair.second));
@@ -28,7 +27,7 @@ ModelInstance::~ModelInstance() {
 bool ModelInstance::shouldDiscard(Scene_T snapshot, const glm::mat4& transform) {
     bool shouldDiscard = true;
     meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance){
-        glm::mat4 worldTransform = transform * meshInstance->getTransform();
+        glm::mat4 worldTransform = meshInstance->getTransform() * transform;
         if (!meshInstance->shouldDiscard(snapshot, worldTransform)) {
             shouldDiscard = false;
         }
@@ -42,7 +41,7 @@ void ModelInstance::renderDV(Scene_T snapshot, Shader shader, Screenbuffer scree
     }
     if (model->renderable_meshes.empty()) {
         meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance) {
-            if (!meshInstance->shouldDiscard(snapshot, transform * meshInstance->getTransform())) {
+            if (!meshInstance->shouldDiscard(snapshot, meshInstance->getTransform())) {
                 meshInstance->render(shader, screen);
             }
         });
@@ -51,7 +50,7 @@ void ModelInstance::renderDV(Scene_T snapshot, Shader shader, Screenbuffer scree
     for (const std::string& meshName : model->renderable_meshes) {
         MeshInstance* meshInstance = meshInstances->get(meshName);
         if (meshInstance) {
-            if (!meshInstance->shouldDiscard(snapshot, transform * meshInstance->getTransform())) {
+            if (!meshInstance->shouldDiscard(snapshot, meshInstance->getTransform())) {
                 meshInstance->render(shader, screen);
             }
         }

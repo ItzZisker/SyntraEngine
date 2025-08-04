@@ -139,8 +139,8 @@ void main() {
 float sampleShininess(vec2 texCoords) {
     if (roughness) { 
         vec3 texColor = texture(texture_roughness1, texCoords).rgb;
-        float roughnessValue = dot(texColor, vec3(0.299, 0.587, 0.114));
-        return mix(8.0, 32.0, 1.0 - ((roughnessValue - 0.5) * max(roughnessConstrant, 0)) + 0.5);
+        //float roughnessValue = dot(texColor, vec3(0.299, 0.587, 0.114));
+        return mix(8.0, 32.0, 1.0 - ((texColor.r - 0.5) * max(roughnessConstrant, 0)) + 0.5);
     } else {
         return shininess;
     }
