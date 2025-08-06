@@ -19,7 +19,7 @@ BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, std::unordered_map
     : BT_Entity(world), meshes(meshes) {}
 
 BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, MeshInstance* mesh) 
-    : BT_Entity(world), meshes({{"", mesh}}) {}
+    : BT_Entity(world), meshes({{"ROOT", mesh}}) {}
 
 BT_EntityTriangleMesh::~BT_EntityTriangleMesh() {
     worldAsBT()->getDynamics()->removeRigidBody(body);
@@ -36,9 +36,19 @@ const glm::mat4 BT_EntityTriangleMesh::onMotionState() {
 void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
     for (const auto& it : meshes) {
         MeshInstance* instance = it.second;
-        if (!instance->getMesh()->loaded) {
-            std::cerr << "ERROR::Entity::<UNLOADED_MESH>" << std::endl;
-            return;
+        Mesh* self = instance->getSelf();
+        if (self) {
+            if (!self->loaded) {
+                std::cerr << "ERROR::Entity::<UNLOADED_MESH>::SELF::" << it.first << std::endl;
+                return;
+            }
+        } else {
+            instance->getChildren()->forEach([&](const std::string& key, MeshInstance* meshInstance){                
+                if (!meshInstance->getSelf()->loaded) {
+                    std::cerr << "ERROR::Entity::<UNLOADED_MESH>::" << key << std::endl;
+                    return;
+                }
+            });
         }
     }
     triangleMesh = new btTriangleMesh();
@@ -46,24 +56,45 @@ void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
 
     for (const auto& it : meshes) {
         MeshInstance* instance = it.second;
-        Mesh *mesh = instance->getMesh();
-    
-        glm::mat4 transform = mesh->getParentToNodeTransform();
+        Mesh* self = instance->getSelf();
+        if (self) {
+            glm::mat4 transform = instance->getTransform();
 
-        const auto& vertices = mesh->vertices;
-        const auto& indices = mesh->indices;
+            const auto& vertices = self->vertices;
+            const auto& indices = self->indices;
 
-        for (size_t i = 0; i < indices.size(); i += 3) {
-            glm::vec3 v0 = glm::vec3(transform * glm::vec4(vertices[indices[i]].position, 1.0f));
-            glm::vec3 v1 = glm::vec3(transform * glm::vec4(vertices[indices[i + 1]].position, 1.0f));
-            glm::vec3 v2 = glm::vec3(transform * glm::vec4(vertices[indices[i + 2]].position, 1.0f));
+            for (size_t i = 0; i < indices.size(); i += 3) {
+                glm::vec3 v0 = glm::vec3(transform * glm::vec4(vertices[indices[i]].position, 1.0f));
+                glm::vec3 v1 = glm::vec3(transform * glm::vec4(vertices[indices[i + 1]].position, 1.0f));
+                glm::vec3 v2 = glm::vec3(transform * glm::vec4(vertices[indices[i + 2]].position, 1.0f));
 
-            triangleMesh->addTriangle(
-                btVector3(v0.x, v0.y, v0.z),
-                btVector3(v1.x, v1.y, v1.z),
-                btVector3(v2.x, v2.y, v2.z),
-                true
-            );
+                triangleMesh->addTriangle(
+                    btVector3(v0.x, v0.y, v0.z),
+                    btVector3(v1.x, v1.y, v1.z),
+                    btVector3(v2.x, v2.y, v2.z),
+                    true
+                );
+            }
+        } else {
+            instance->getChildren()->forEach([&](const std::string& key, MeshInstance* child){     
+                glm::mat4 transform = instance->getTransform() * child->getTransform();
+
+                const auto& vertices = self->vertices;
+                const auto& indices = self->indices;
+
+                for (size_t i = 0; i < indices.size(); i += 3) {
+                    glm::vec3 v0 = glm::vec3(transform * glm::vec4(vertices[indices[i]].position, 1.0f));
+                    glm::vec3 v1 = glm::vec3(transform * glm::vec4(vertices[indices[i + 1]].position, 1.0f));
+                    glm::vec3 v2 = glm::vec3(transform * glm::vec4(vertices[indices[i + 2]].position, 1.0f));
+
+                    triangleMesh->addTriangle(
+                        btVector3(v0.x, v0.y, v0.z),
+                        btVector3(v1.x, v1.y, v1.z),
+                        btVector3(v2.x, v2.y, v2.z),
+                        true
+                    );
+                }
+            });
         }
     }
 

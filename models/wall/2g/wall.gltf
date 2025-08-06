@@ -404,6 +404,20 @@
 		},
 		{
 			"doubleSided":true,
+			"name":"laminate_floor_03",
+			"normalTexture":{
+				"index":18
+			},
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":19
+				},
+				"metallicFactor":0,
+				"roughnessFactor":0.5
+			}
+		},
+		{
+			"doubleSided":true,
 			"name":"White.001",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
@@ -420,15 +434,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.001",
 			"normalTexture":{
-				"index":18
+				"index":20
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":19
+					"index":21
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":20
+					"index":22
 				}
 			}
 		},
@@ -436,15 +450,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.001",
 			"normalTexture":{
-				"index":21
+				"index":23
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":22
+					"index":24
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":23
+					"index":25
 				}
 			}
 		},
@@ -466,15 +480,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.002",
 			"normalTexture":{
-				"index":24
+				"index":26
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":25
+					"index":27
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":26
+					"index":28
 				}
 			}
 		},
@@ -482,15 +496,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.002",
 			"normalTexture":{
-				"index":27
+				"index":29
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":28
+					"index":30
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":29
+					"index":31
 				}
 			}
 		},
@@ -512,15 +526,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.003",
 			"normalTexture":{
-				"index":30
+				"index":32
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":31
+					"index":33
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":32
+					"index":34
 				}
 			}
 		},
@@ -528,15 +542,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.003",
 			"normalTexture":{
-				"index":33
+				"index":35
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":34
+					"index":36
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":35
+					"index":37
 				}
 			}
 		},
@@ -558,15 +572,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.004",
 			"normalTexture":{
-				"index":36
+				"index":38
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":37
+					"index":39
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":38
+					"index":40
 				}
 			}
 		},
@@ -574,15 +588,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.004",
 			"normalTexture":{
-				"index":39
+				"index":41
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":40
+					"index":42
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":41
+					"index":43
 				}
 			}
 		},
@@ -604,15 +618,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.005",
 			"normalTexture":{
-				"index":42
+				"index":44
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":43
+					"index":45
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":44
+					"index":46
 				}
 			}
 		},
@@ -620,15 +634,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.005",
 			"normalTexture":{
-				"index":45
+				"index":47
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":46
+					"index":48
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":47
+					"index":49
 				}
 			}
 		},
@@ -650,15 +664,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.006",
 			"normalTexture":{
-				"index":48
+				"index":50
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":49
+					"index":51
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":50
+					"index":52
 				}
 			}
 		},
@@ -666,15 +680,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.006",
 			"normalTexture":{
-				"index":51
+				"index":53
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":52
+					"index":54
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":53
+					"index":55
 				}
 			}
 		},
@@ -696,15 +710,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.007",
 			"normalTexture":{
-				"index":54
+				"index":56
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":55
+					"index":57
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":56
+					"index":58
 				}
 			}
 		},
@@ -712,15 +726,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.007",
 			"normalTexture":{
-				"index":57
+				"index":59
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":58
+					"index":60
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":59
+					"index":61
 				}
 			}
 		},
@@ -742,15 +756,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.008",
 			"normalTexture":{
-				"index":60
+				"index":62
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":61
+					"index":63
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":62
+					"index":64
 				}
 			}
 		},
@@ -758,15 +772,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.008",
 			"normalTexture":{
-				"index":63
+				"index":65
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":64
+					"index":66
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":65
+					"index":67
 				}
 			}
 		},
@@ -788,15 +802,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.009",
 			"normalTexture":{
-				"index":66
+				"index":68
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":67
+					"index":69
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":68
+					"index":70
 				}
 			}
 		},
@@ -804,15 +818,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.009",
 			"normalTexture":{
-				"index":69
+				"index":71
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":70
+					"index":72
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":71
+					"index":73
 				}
 			}
 		},
@@ -834,15 +848,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.010",
 			"normalTexture":{
-				"index":72
+				"index":74
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":73
+					"index":75
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":74
+					"index":76
 				}
 			}
 		},
@@ -850,15 +864,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.010",
 			"normalTexture":{
-				"index":75
+				"index":77
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":76
+					"index":78
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":77
+					"index":79
 				}
 			}
 		},
@@ -880,15 +894,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.012",
 			"normalTexture":{
-				"index":78
+				"index":80
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":79
+					"index":81
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":80
+					"index":82
 				}
 			}
 		},
@@ -896,15 +910,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.012",
 			"normalTexture":{
-				"index":81
+				"index":83
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":82
+					"index":84
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":83
+					"index":85
 				}
 			}
 		},
@@ -926,15 +940,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.015",
 			"normalTexture":{
-				"index":84
+				"index":86
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":85
+					"index":87
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":86
+					"index":88
 				}
 			}
 		},
@@ -942,15 +956,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.015",
 			"normalTexture":{
-				"index":87
+				"index":89
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":88
+					"index":90
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":89
+					"index":91
 				}
 			}
 		},
@@ -972,15 +986,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.016",
 			"normalTexture":{
-				"index":90
+				"index":92
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":91
+					"index":93
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":92
+					"index":94
 				}
 			}
 		},
@@ -988,15 +1002,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.016",
 			"normalTexture":{
-				"index":93
+				"index":95
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":94
+					"index":96
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":95
+					"index":97
 				}
 			}
 		},
@@ -1018,15 +1032,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.017",
 			"normalTexture":{
-				"index":96
+				"index":98
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":97
+					"index":99
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":98
+					"index":100
 				}
 			}
 		},
@@ -1034,15 +1048,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.017",
 			"normalTexture":{
-				"index":99
+				"index":101
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":100
+					"index":102
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":101
+					"index":103
 				}
 			}
 		},
@@ -1064,15 +1078,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.018",
 			"normalTexture":{
-				"index":102
+				"index":104
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":103
+					"index":105
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":104
+					"index":106
 				}
 			}
 		},
@@ -1080,15 +1094,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.018",
 			"normalTexture":{
-				"index":105
+				"index":107
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":106
+					"index":108
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":107
+					"index":109
 				}
 			}
 		},
@@ -1110,15 +1124,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.019",
 			"normalTexture":{
-				"index":108
+				"index":110
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":109
+					"index":111
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":110
+					"index":112
 				}
 			}
 		},
@@ -1126,15 +1140,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.019",
 			"normalTexture":{
-				"index":111
+				"index":113
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":112
+					"index":114
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":113
+					"index":115
 				}
 			}
 		},
@@ -1156,15 +1170,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.020",
 			"normalTexture":{
-				"index":114
+				"index":116
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":115
+					"index":117
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":116
+					"index":118
 				}
 			}
 		},
@@ -1172,15 +1186,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.020",
 			"normalTexture":{
-				"index":117
+				"index":119
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":118
+					"index":120
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":119
+					"index":121
 				}
 			}
 		},
@@ -1202,15 +1216,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.021",
 			"normalTexture":{
-				"index":120
+				"index":122
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":121
+					"index":123
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":122
+					"index":124
 				}
 			}
 		},
@@ -1218,15 +1232,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.021",
 			"normalTexture":{
-				"index":123
+				"index":125
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":124
+					"index":126
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":125
+					"index":127
 				}
 			}
 		},
@@ -1248,15 +1262,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.022",
 			"normalTexture":{
-				"index":126
+				"index":128
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":127
+					"index":129
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":128
+					"index":130
 				}
 			}
 		},
@@ -1264,15 +1278,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.022",
 			"normalTexture":{
-				"index":129
+				"index":131
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":130
+					"index":132
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":131
+					"index":133
 				}
 			}
 		},
@@ -1294,15 +1308,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.023",
 			"normalTexture":{
-				"index":132
+				"index":134
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":133
+					"index":135
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":134
+					"index":136
 				}
 			}
 		},
@@ -1310,15 +1324,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.023",
 			"normalTexture":{
-				"index":135
+				"index":137
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":136
+					"index":138
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":137
+					"index":139
 				}
 			}
 		},
@@ -1340,15 +1354,15 @@
 			"doubleSided":true,
 			"name":"wood_table_001.024",
 			"normalTexture":{
-				"index":138
+				"index":140
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":139
+					"index":141
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":140
+					"index":142
 				}
 			}
 		},
@@ -1356,15 +1370,15 @@
 			"doubleSided":true,
 			"name":"paper_0033.024",
 			"normalTexture":{
-				"index":141
+				"index":143
 			},
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
-					"index":142
+					"index":144
 				},
 				"metallicFactor":0,
 				"metallicRoughnessTexture":{
-					"index":143
+					"index":145
 				}
 			}
 		}
@@ -1475,7 +1489,8 @@
 						"NORMAL":31,
 						"TEXCOORD_0":32
 					},
-					"indices":33
+					"indices":33,
+					"material":9
 				}
 			]
 		},
@@ -1489,7 +1504,7 @@
 						"TEXCOORD_0":36
 					},
 					"indices":3,
-					"material":9
+					"material":10
 				},
 				{
 					"attributes":{
@@ -1498,7 +1513,7 @@
 						"TEXCOORD_0":39
 					},
 					"indices":7,
-					"material":10
+					"material":11
 				},
 				{
 					"attributes":{
@@ -1507,7 +1522,7 @@
 						"TEXCOORD_0":42
 					},
 					"indices":11,
-					"material":11
+					"material":12
 				}
 			]
 		},
@@ -1521,7 +1536,7 @@
 						"TEXCOORD_0":45
 					},
 					"indices":3,
-					"material":12
+					"material":13
 				},
 				{
 					"attributes":{
@@ -1530,7 +1545,7 @@
 						"TEXCOORD_0":48
 					},
 					"indices":7,
-					"material":13
+					"material":14
 				},
 				{
 					"attributes":{
@@ -1539,7 +1554,7 @@
 						"TEXCOORD_0":51
 					},
 					"indices":11,
-					"material":14
+					"material":15
 				}
 			]
 		},
@@ -1553,7 +1568,7 @@
 						"TEXCOORD_0":54
 					},
 					"indices":55,
-					"material":15
+					"material":16
 				},
 				{
 					"attributes":{
@@ -1562,7 +1577,7 @@
 						"TEXCOORD_0":58
 					},
 					"indices":59,
-					"material":16
+					"material":17
 				},
 				{
 					"attributes":{
@@ -1571,7 +1586,7 @@
 						"TEXCOORD_0":62
 					},
 					"indices":63,
-					"material":17
+					"material":18
 				}
 			]
 		},
@@ -1585,7 +1600,7 @@
 						"TEXCOORD_0":66
 					},
 					"indices":67,
-					"material":18
+					"material":19
 				},
 				{
 					"attributes":{
@@ -1594,7 +1609,7 @@
 						"TEXCOORD_0":70
 					},
 					"indices":71,
-					"material":19
+					"material":20
 				},
 				{
 					"attributes":{
@@ -1603,7 +1618,7 @@
 						"TEXCOORD_0":74
 					},
 					"indices":11,
-					"material":20
+					"material":21
 				}
 			]
 		},
@@ -1617,7 +1632,7 @@
 						"TEXCOORD_0":77
 					},
 					"indices":78,
-					"material":21
+					"material":22
 				},
 				{
 					"attributes":{
@@ -1626,7 +1641,7 @@
 						"TEXCOORD_0":81
 					},
 					"indices":82,
-					"material":22
+					"material":23
 				},
 				{
 					"attributes":{
@@ -1635,7 +1650,7 @@
 						"TEXCOORD_0":85
 					},
 					"indices":86,
-					"material":23
+					"material":24
 				}
 			]
 		},
@@ -1649,7 +1664,7 @@
 						"TEXCOORD_0":89
 					},
 					"indices":67,
-					"material":24
+					"material":25
 				},
 				{
 					"attributes":{
@@ -1658,7 +1673,7 @@
 						"TEXCOORD_0":92
 					},
 					"indices":71,
-					"material":25
+					"material":26
 				},
 				{
 					"attributes":{
@@ -1667,7 +1682,7 @@
 						"TEXCOORD_0":95
 					},
 					"indices":11,
-					"material":26
+					"material":27
 				}
 			]
 		},
@@ -1681,7 +1696,7 @@
 						"TEXCOORD_0":98
 					},
 					"indices":67,
-					"material":27
+					"material":28
 				},
 				{
 					"attributes":{
@@ -1690,7 +1705,7 @@
 						"TEXCOORD_0":101
 					},
 					"indices":71,
-					"material":28
+					"material":29
 				},
 				{
 					"attributes":{
@@ -1699,7 +1714,7 @@
 						"TEXCOORD_0":104
 					},
 					"indices":11,
-					"material":29
+					"material":30
 				}
 			]
 		},
@@ -1713,7 +1728,7 @@
 						"TEXCOORD_0":107
 					},
 					"indices":67,
-					"material":30
+					"material":31
 				},
 				{
 					"attributes":{
@@ -1722,7 +1737,7 @@
 						"TEXCOORD_0":110
 					},
 					"indices":71,
-					"material":31
+					"material":32
 				},
 				{
 					"attributes":{
@@ -1731,7 +1746,7 @@
 						"TEXCOORD_0":113
 					},
 					"indices":11,
-					"material":32
+					"material":33
 				}
 			]
 		},
@@ -1745,7 +1760,7 @@
 						"TEXCOORD_0":116
 					},
 					"indices":67,
-					"material":33
+					"material":34
 				},
 				{
 					"attributes":{
@@ -1754,7 +1769,7 @@
 						"TEXCOORD_0":119
 					},
 					"indices":71,
-					"material":34
+					"material":35
 				},
 				{
 					"attributes":{
@@ -1763,7 +1778,7 @@
 						"TEXCOORD_0":122
 					},
 					"indices":11,
-					"material":35
+					"material":36
 				}
 			]
 		},
@@ -1777,7 +1792,7 @@
 						"TEXCOORD_0":125
 					},
 					"indices":3,
-					"material":36
+					"material":37
 				},
 				{
 					"attributes":{
@@ -1786,7 +1801,7 @@
 						"TEXCOORD_0":128
 					},
 					"indices":7,
-					"material":37
+					"material":38
 				},
 				{
 					"attributes":{
@@ -1795,7 +1810,7 @@
 						"TEXCOORD_0":131
 					},
 					"indices":11,
-					"material":38
+					"material":39
 				}
 			]
 		},
@@ -1809,7 +1824,7 @@
 						"TEXCOORD_0":134
 					},
 					"indices":3,
-					"material":39
+					"material":40
 				},
 				{
 					"attributes":{
@@ -1818,7 +1833,7 @@
 						"TEXCOORD_0":137
 					},
 					"indices":7,
-					"material":40
+					"material":41
 				},
 				{
 					"attributes":{
@@ -1827,7 +1842,7 @@
 						"TEXCOORD_0":140
 					},
 					"indices":11,
-					"material":41
+					"material":42
 				}
 			]
 		},
@@ -1841,7 +1856,7 @@
 						"TEXCOORD_0":143
 					},
 					"indices":3,
-					"material":42
+					"material":43
 				},
 				{
 					"attributes":{
@@ -1850,7 +1865,7 @@
 						"TEXCOORD_0":146
 					},
 					"indices":7,
-					"material":43
+					"material":44
 				},
 				{
 					"attributes":{
@@ -1859,7 +1874,7 @@
 						"TEXCOORD_0":149
 					},
 					"indices":11,
-					"material":44
+					"material":45
 				}
 			]
 		},
@@ -1873,7 +1888,7 @@
 						"TEXCOORD_0":152
 					},
 					"indices":3,
-					"material":45
+					"material":46
 				},
 				{
 					"attributes":{
@@ -1882,7 +1897,7 @@
 						"TEXCOORD_0":155
 					},
 					"indices":7,
-					"material":46
+					"material":47
 				},
 				{
 					"attributes":{
@@ -1891,7 +1906,7 @@
 						"TEXCOORD_0":158
 					},
 					"indices":11,
-					"material":47
+					"material":48
 				}
 			]
 		},
@@ -1905,7 +1920,7 @@
 						"TEXCOORD_0":161
 					},
 					"indices":3,
-					"material":48
+					"material":49
 				},
 				{
 					"attributes":{
@@ -1914,7 +1929,7 @@
 						"TEXCOORD_0":164
 					},
 					"indices":7,
-					"material":49
+					"material":50
 				},
 				{
 					"attributes":{
@@ -1923,7 +1938,7 @@
 						"TEXCOORD_0":167
 					},
 					"indices":11,
-					"material":50
+					"material":51
 				}
 			]
 		},
@@ -1937,7 +1952,7 @@
 						"TEXCOORD_0":170
 					},
 					"indices":78,
-					"material":51
+					"material":52
 				},
 				{
 					"attributes":{
@@ -1946,7 +1961,7 @@
 						"TEXCOORD_0":173
 					},
 					"indices":82,
-					"material":52
+					"material":53
 				},
 				{
 					"attributes":{
@@ -1955,7 +1970,7 @@
 						"TEXCOORD_0":176
 					},
 					"indices":86,
-					"material":53
+					"material":54
 				}
 			]
 		},
@@ -1969,7 +1984,7 @@
 						"TEXCOORD_0":179
 					},
 					"indices":180,
-					"material":54
+					"material":55
 				},
 				{
 					"attributes":{
@@ -1978,7 +1993,7 @@
 						"TEXCOORD_0":183
 					},
 					"indices":59,
-					"material":55
+					"material":56
 				},
 				{
 					"attributes":{
@@ -1987,7 +2002,7 @@
 						"TEXCOORD_0":186
 					},
 					"indices":63,
-					"material":56
+					"material":57
 				}
 			]
 		},
@@ -2001,7 +2016,7 @@
 						"TEXCOORD_0":189
 					},
 					"indices":67,
-					"material":57
+					"material":58
 				},
 				{
 					"attributes":{
@@ -2010,7 +2025,7 @@
 						"TEXCOORD_0":192
 					},
 					"indices":71,
-					"material":58
+					"material":59
 				},
 				{
 					"attributes":{
@@ -2019,7 +2034,7 @@
 						"TEXCOORD_0":195
 					},
 					"indices":11,
-					"material":59
+					"material":60
 				}
 			]
 		},
@@ -2033,7 +2048,7 @@
 						"TEXCOORD_0":198
 					},
 					"indices":67,
-					"material":60
+					"material":61
 				},
 				{
 					"attributes":{
@@ -2042,7 +2057,7 @@
 						"TEXCOORD_0":201
 					},
 					"indices":71,
-					"material":61
+					"material":62
 				},
 				{
 					"attributes":{
@@ -2051,7 +2066,7 @@
 						"TEXCOORD_0":204
 					},
 					"indices":11,
-					"material":62
+					"material":63
 				}
 			]
 		},
@@ -2065,7 +2080,7 @@
 						"TEXCOORD_0":207
 					},
 					"indices":67,
-					"material":63
+					"material":64
 				},
 				{
 					"attributes":{
@@ -2074,7 +2089,7 @@
 						"TEXCOORD_0":210
 					},
 					"indices":71,
-					"material":64
+					"material":65
 				},
 				{
 					"attributes":{
@@ -2083,7 +2098,7 @@
 						"TEXCOORD_0":213
 					},
 					"indices":11,
-					"material":65
+					"material":66
 				}
 			]
 		},
@@ -2097,7 +2112,7 @@
 						"TEXCOORD_0":216
 					},
 					"indices":67,
-					"material":66
+					"material":67
 				},
 				{
 					"attributes":{
@@ -2106,7 +2121,7 @@
 						"TEXCOORD_0":219
 					},
 					"indices":71,
-					"material":67
+					"material":68
 				},
 				{
 					"attributes":{
@@ -2115,7 +2130,7 @@
 						"TEXCOORD_0":222
 					},
 					"indices":11,
-					"material":68
+					"material":69
 				}
 			]
 		},
@@ -2129,7 +2144,7 @@
 						"TEXCOORD_0":225
 					},
 					"indices":67,
-					"material":69
+					"material":70
 				},
 				{
 					"attributes":{
@@ -2138,7 +2153,7 @@
 						"TEXCOORD_0":228
 					},
 					"indices":71,
-					"material":70
+					"material":71
 				},
 				{
 					"attributes":{
@@ -2147,7 +2162,7 @@
 						"TEXCOORD_0":231
 					},
 					"indices":11,
-					"material":71
+					"material":72
 				}
 			]
 		}
@@ -2224,6 +2239,14 @@
 		{
 			"sampler":0,
 			"source":5
+		},
+		{
+			"sampler":0,
+			"source":6
+		},
+		{
+			"sampler":0,
+			"source":7
 		},
 		{
 			"sampler":0,
@@ -2760,6 +2783,16 @@
 			"mimeType":"image/png",
 			"name":"paper_0033_roughness_1k",
 			"uri":"paper_0033_roughness_1k.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"laminate_floor_03_nor_gl_1k",
+			"uri":"laminate_floor_03_nor_gl_1k.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"laminate_floor_03_diff_1k",
+			"uri":"laminate_floor_03_diff_1k.png"
 		}
 	],
 	"accessors":[

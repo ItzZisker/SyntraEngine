@@ -29,9 +29,8 @@ public:
     float gamma = 1.1f;
     float yaw = 0, pitch = 0;
     float hdrExposure = 0.036f;
-    float hdrSkyBoost = 40.0f;
+    float hdrSkyBoost = 5.0f;
     float roughnessConstrant = 1.0f;
-    bool roughness = true;
     bool mouseCaptured = true;
     bool firstMouse;
 

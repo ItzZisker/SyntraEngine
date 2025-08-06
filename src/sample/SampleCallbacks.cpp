@@ -29,7 +29,7 @@ void SampleMouseEventHandler::onEvent(const SDL_Event& event) {
 SampleKeyHandler::SampleKeyHandler(SampleGame *game) : game(game) {}
 
 void SampleKeyHandler::onKeysState(double lastFrameTime, const bool* state) {
-    const float cameraSpeed = 1.5f * lastFrameTime;
+    const float cameraSpeed = 8.5f * lastFrameTime;
 
     glm::vec3 horizontalDirection(0.0f);
 

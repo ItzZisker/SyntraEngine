@@ -110,11 +110,17 @@ void SampleGame::createWindow(GameWindow *window) {
     for (auto& pair : sceneModel->meshes) {
         Mesh* mesh = pair.second;
         for (auto& tex : mesh->textures) {
+            if (GameUtils::str_contains(tex.path, "laminate_floor_03")) {
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_nor_gl_1k.png", dir, "texture_normal"));
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_disp_1k.png", dir, "texture_height"));
+            }
             if (GameUtils::str_contains(tex.path, "paper_0033")) {
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_height_1k.png", dir, "texture_height"));
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_normal_opengl_1k.png", dir, "texture_normal"));
+                //sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_height_1k.png", dir, "texture_height"));
             }
             if (GameUtils::str_contains(tex.path, "wood_table_001")) {
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_disp_1k.png", dir, "texture_height"));
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_nor_gl_1k.png", dir, "texture_normal"));
+                //sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_disp_1k.png", dir, "texture_height"));
             }
         }
     }
@@ -150,7 +156,7 @@ void SampleGame::createWindow(GameWindow *window) {
         "models/skybox/lightblue/front.png",
         "models/skybox/lightblue/back.png"
     });
-    skybox->hdrBoost = glm::vec3(25.0f);
+    skybox->hdrBoost = glm::vec3(hdrSkyBoost);
     skybox->load();
     scene->getBatchRenderTable()->add("skybox", skybox);
     scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
@@ -170,9 +176,9 @@ void SampleGame::createWindow(GameWindow *window) {
         {0.5f, 0.5f, 0.75f},
         {0.6f, 0.6f, 0.85f}
     };
-    nightlight.ambient *= 25.0f * 0.25f;
-    nightlight.diffuse *= 35.0f * 0.25f;
-    nightlight.specular *= 60.0f * 0.25f;
+    nightlight.ambient *= 25.0f * (hdrSkyBoost / 100.0f);
+    nightlight.diffuse *= 35.0f * (hdrSkyBoost / 100.0f);
+    nightlight.specular *= 60.0f * (hdrSkyBoost / 100.0f);
     scene->setDirectionalLight(nightlight);
     scene->setPointLights({{{lX, lY, lZ}}});
     scene->reloadShaders();
@@ -258,7 +264,6 @@ void SampleGame::renderImGUI() {
     ImGui::SliderFloat("Shadow PCF Scale", &shadowMapper->pcfScale, 0.1f, 10.0f, "%.3f");
     ImGui::SliderInt("Shadow PCF Radius", (int*) &shadowMapper->pcfRadius, 1, 10);
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
-    ImGui::Checkbox("Roughness", &roughness);
 
     ImGui::End();
     ImGui::Render();
@@ -272,17 +277,15 @@ void SampleGame::renderETC() {
     scene->getBatchShader().use();
     scene->getBatchShader().setFloat("roughnessConstrant", roughnessConstrant);
     framebuffer_VHS->setHDR({hdrExposure});
-    sceneModel->meshes["Cube.041-2"]->hasRoughness = roughness;
-    sceneModel->meshes["Cube.043-2"]->hasRoughness = roughness;
-    sceneModel->meshes["Cube.044-2"]->hasRoughness = roughness;
     PointLight pl = {{lX, lY, lZ}};
-    pl.boost(40.0f);
+    pl.ambient = {0.05f, 0.05f, 0.05f};
+    pl.diffuse = {0.8f, 0.8f, 0.5f};
+    pl.specular = {1.0f, 1.0f, 0.6f};
+    pl.boost(18.0f);
     scene->setPointLight(0, pl);
     static float dT = (float) window->getLastFrameTime();
     dT += window->getLastFrameTime();
-    sceneModelInstance->getMeshInstances()->get("Cube.001-0")->setDirection({sin(dT), 0.0f, cos(dT)});
-    sceneModelInstance->getMeshInstances()->get("Cube.001-1")->setDirection({sin(dT), 0.0f, cos(dT)});
-    sceneModelInstance->getMeshInstances()->get("Cube.001-2")->setDirection({sin(dT), 0.0f, cos(dT)});
+    sceneModelInstance->getMeshInstances()->get("Cube.001")->setDirection({sin(dT), 0.0f, cos(dT)});
 }
 
 void SampleGame::cleanup() {

@@ -13,6 +13,7 @@
 #include <Syngine.hpp>
 #include <modules/Mesh.hpp>
 #include <modules/Shader.hpp>
+#include <unordered_map>
 #include <world/WorldObject.hpp>
 
 #include <string>
@@ -29,7 +30,8 @@ class Model
 public:
     std::set<std::string> renderable_meshes;
     std::vector<Texture> textures_loaded;
-    std::map<std::string, Mesh*> meshes;
+    std::unordered_map<std::string, Mesh*> meshes;
+    std::unordered_map<std::string, std::unordered_map<std::string, Mesh*>> meshGroups;
     std::string directory;
     bool loaded, gammaCorrection;
     
@@ -55,6 +57,8 @@ public:
     void load(VRAM_Approach approach = Sequential);
 
     void loadModel(VRAM_Approach approach = Sequential, const std::set<std::string>& meshes = {}, bool flip = false);
+
+    void groupMeshes();
 
     void pushTexture(const std::string meshKey, Texture texture);
 private:

@@ -44,6 +44,8 @@ struct MaterialProps {
     float opacity = 1.0f;
     float F0 = 0.04f;
     bool isTransparent = false;
+    bool hasDisplacement = true;
+    bool hasRoughness = true;
 };
 
 class Mesh {
@@ -60,9 +62,6 @@ public:
     GLuint fallbackDiffuseTCB = 0;
     GLuint fallbackNormalTCB = 0;
     GLuint fallbackSpecularTCB = 0;
-
-    bool hasDisplacement;
-    bool hasRoughness;
 
     bool loaded;
 

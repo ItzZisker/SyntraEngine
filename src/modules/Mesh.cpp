@@ -144,8 +144,8 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
         shader.setTexture("texture_normal1", GL_TEXTURE_2D, texUnit++, fallbackNormalTCB);
     }
 
-    shader.setBool("parallax", heightNr > 1  && hasDisplacement);
-    shader.setBool("roughness", roughNr > 1 && hasRoughness);
+    shader.setBool("parallax", heightNr > 1  && material.hasDisplacement);
+    shader.setBool("roughness", roughNr > 1 && material.hasRoughness);
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);

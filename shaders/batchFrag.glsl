@@ -64,7 +64,7 @@ uniform float specularStrength = 1.0;
 uniform float shininess = 32.0;
 uniform float parallaxMinLayers = 8.0;
 uniform float parallaxMaxLayers = 32.0;
-uniform float height_scale = 0.1;
+uniform float height_scale = 0.05;
 
 #if HAS_SHADOWS
 uniform sampler2D shadowMap;
@@ -106,9 +106,9 @@ void main() {
     if (parallax) {
         texCoords = calculateParallax(fs_in.TexCoords, normalize(fs_in.TBN * -viewDir));
 
-        if (texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0) {
-            discard;
-        }
+        // if (texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0) {
+        //     discard;
+        // }
     } else {
         texCoords = fs_in.TexCoords;
     }
@@ -133,7 +133,11 @@ void main() {
     }
 #endif
 
-    FragColor = vec4(result, opacity);
+    // if (parallax) {
+    //     FragColor = vec4(100.0, 0.0, 0.0, opacity);
+    // } else {
+        FragColor = vec4(result, opacity);
+    // }
 }
 
 float sampleShininess(vec2 texCoords) {

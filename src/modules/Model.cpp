@@ -4,6 +4,7 @@
 #include <iterator>
 #include <modules/Model.hpp>
 #include <ostream>
+#include <regex>
 #include <utils/GameUtils.hpp>
 
 #include <iostream>
@@ -21,6 +22,7 @@ Model::Model(std::string const &path, bool gamma) : gammaCorrection(gamma), path
 Model::~Model() {
     for (auto& texture : textures_loaded) glDeleteTextures(1, &texture.TCB);
     textures_loaded.clear();
+    meshGroups.clear();
     for (auto& mesh : meshes) delete mesh.second;
     meshes.clear();
     loaded = false;
@@ -31,11 +33,24 @@ void Model::filterMesh(std::string meshName) {
 }
 
 void Model::loadModel(VRAM_Approach approach, const std::set<std::string>& meshNames, bool flipTextures) {
-    std::cout << "read\n";
     read(meshNames, flipTextures);
-    std::cout << "load\n";
     load(approach);
-    std::cout << "load done\n";
+    groupMeshes();
+}
+
+void Model::groupMeshes() {
+    meshGroups.clear();
+    std::regex baseNameRegex(R"(^(.*)-\d+$)");
+
+    for (const auto& [name, meshPtr] : meshes) {
+        std::smatch match;
+        std::string baseName = name;
+
+        if (std::regex_match(name, match, baseNameRegex) && match.size() == 2) {
+            baseName = match[1]; // Extract "Cube.042" from "Cube.042-0"
+        }
+        meshGroups[baseName][name] = meshPtr;
+    }
 }
 
 void Model::load(VRAM_Approach approach) {
@@ -170,10 +185,10 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& tr
         props.opacity = opacity;
         props.isTransparent = (opacity < 1.0f);
     }
+    props.hasDisplacement = !heightMaps.empty();
+    props.hasRoughness = !roughMaps.empty();
 
     Mesh* res = new Mesh(vertices, indices, transform);
-    res->hasDisplacement = !heightMaps.empty();
-    res->hasRoughness = !roughMaps.empty();
     res->textures = textures;
     res->material = props;
 
@@ -205,8 +220,15 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType 
 void Model::pushTexture(const std::string meshKey, Texture texture) {
     auto pair = meshes.find(meshKey);
     if (pair != meshes.end()) {
+        Mesh *mesh = pair->second;
         textures_loaded.push_back(texture);
-        pair->second->textures.push_back(texture);
+        mesh->textures.push_back(texture);
+        if (texture.type == "texture_height") {
+            mesh->material.hasDisplacement = true;
+        }
+        if (texture.type == "texture_roughness") {
+            mesh->material.hasRoughness = true;
+        }
     }
 }
 

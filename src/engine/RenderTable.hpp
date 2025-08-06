@@ -11,8 +11,10 @@ namespace syng
 {
 class GameWindow;
 class MeshInstance;
+class Mesh;
 
-bool RT_SORT_OPACITY(MeshInstance* a, MeshInstance* b);
+bool RT_SORT_OPACITY_SUB_MESH(Mesh* a, Mesh* b);
+bool RT_SORT_OPACITY_GROUP_MESH(MeshInstance* a, MeshInstance* b);
 
 class WindowRenderable
 {
@@ -37,15 +39,15 @@ public:
 
 template<typename R>
 class RenderTable {
-    static_assert(
-        std::is_base_of<ShaderRenderable, R>::value ||
-        std::is_base_of<WindowRenderable, R>::value,
-        "ERROR::ASSERT<RenderableType must inherit from ShaderRenderable, WindowRenderable or FramebufferRenderable>"
-    );
-
     std::unordered_map<std::string, R*> objects;
     std::vector<std::string> insertionOrder;
 public:
+    void addAll(std::unordered_map<std::string, R*> map) {
+        for (auto& pair : map) {
+            add(pair.first, pair.second);
+        }
+    }
+
     void add(const std::string& key, R* renderable) {
         if (objects.find(key) == objects.end()) {
             insertionOrder.push_back(key);

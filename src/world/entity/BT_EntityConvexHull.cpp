@@ -12,13 +12,10 @@
 using namespace syng;
 
 BT_EntityConvexHull::BT_EntityConvexHull(BT_World* world, float mass, MeshInstance* mesh) 
-    : BT_Entity(world), mass(mass), meshes({{"", mesh}}) {}
+    : BT_Entity(world), mass(mass), meshes({{"ROOT", mesh}}) {}
 
 BT_EntityConvexHull::BT_EntityConvexHull(BT_World* world, float mass, ModelInstance* model) 
     : BT_Entity(world), mass(mass), meshes(model->getMeshInstances()->asMap()) {}
-
-BT_EntityConvexHull::BT_EntityConvexHull(BT_World* world, float mass, std::unordered_map<std::string, MeshInstance*> meshes) 
-    : BT_Entity(world), mass(mass), meshes(meshes) {}
 
 BT_EntityConvexHull::~BT_EntityConvexHull() {
     worldAsBT()->getDynamics()->removeRigidBody(body);
@@ -35,16 +32,33 @@ const glm::mat4 BT_EntityConvexHull::onMotionState() {
 void BT_EntityConvexHull::load(bool enablePolyhedral) {
     for (const auto& it : meshes) {
         MeshInstance* instance = it.second;
-        if (!instance->getMesh()->loaded) {
-            std::cerr << "ERROR::Entity::<UNLOADED_MESH>" << std::endl;
-            return;
+        Mesh* self = instance->getSelf();
+        if (self) {
+            if (!self->loaded) {
+                std::cerr << "ERROR::Entity::<UNLOADED_MESH>::SELF::" << it.first << std::endl;
+                return;
+            }
+        } else {
+            instance->getChildren()->forEach([&](const std::string& key, MeshInstance* meshInstance){                
+                if (!meshInstance->getSelf()->loaded) {
+                    std::cerr << "ERROR::Entity::<UNLOADED_MESH>::" << key << std::endl;
+                    return;
+                }
+            });
         }
     }
 
     int numPoints = 0;
     for (const auto& it : meshes) {
         MeshInstance* instance = it.second;
-        numPoints += instance->getMesh()->vertices.size();
+        Mesh* self = instance->getSelf();
+        if (self) {
+            numPoints += self->vertices.size();
+        } else {
+            instance->getChildren()->forEach([&](const std::string& key, MeshInstance *child){
+                numPoints += child->getSelf()->vertices.size();
+            });
+        }
     }
 
     float* points = new float[3 * numPoints];
@@ -52,13 +66,24 @@ void BT_EntityConvexHull::load(bool enablePolyhedral) {
     int i = 0;
     for (const auto& it : meshes) {
         MeshInstance* instance = it.second;
-        Mesh *mesh = instance->getMesh();
-
-        for (const Vertex& vertex : mesh->vertices) {
-            glm::vec4 vec = glm::vec4(vertex.position, 1.0f) * mesh->getParentToNodeTransform() * instance->getTransform();
-            points[i++] = vec[0];
-            points[i++] = vec[1];
-            points[i++] = vec[2];
+        Mesh* self = instance->getSelf();
+        if (self) {
+            for (const Vertex& vertex : self->vertices) {
+                glm::vec4 vec = glm::vec4(vertex.position, 1.0f) * instance->getTransform();
+                points[i++] = vec[0];
+                points[i++] = vec[1];
+                points[i++] = vec[2];
+            }
+        } else {
+            instance->getChildren()->forEach([&](const std::string& key, MeshInstance *child){
+                Mesh* mesh = child->getSelf();
+                for (const Vertex& vertex : mesh->vertices) {
+                    glm::vec4 vec = glm::vec4(vertex.position, 1.0f) * instance->getTransform() * child->getTransform();
+                    points[i++] = vec[0];
+                    points[i++] = vec[1];
+                    points[i++] = vec[2];
+                }
+            });
         }
     }
     shape = new btConvexHullShape(points, numPoints, 3 * sizeof(float));   

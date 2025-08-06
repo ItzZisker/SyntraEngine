@@ -32,8 +32,6 @@ public:
 
     BT_EntityConvexHull(BT_World* world, float mass, MeshInstance* mesh);
 
-    BT_EntityConvexHull(BT_World* world, float mass, std::unordered_map<std::string, MeshInstance*> meshes);
-
     ~BT_EntityConvexHull();
 
     const glm::mat4 onMotionState() override;
