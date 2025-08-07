@@ -110,6 +110,10 @@ void SampleGame::createWindow(GameWindow *window) {
     for (auto& pair : sceneModel->meshes) {
         Mesh* mesh = pair.second;
         for (auto& tex : mesh->textures) {
+            if (GameUtils::str_contains(tex.path, "beige_wall_001")) {
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/beige_wall_001_nor_gl_1k.jpg", dir, "texture_normal"));
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/beige_wall_001_disp_1k.png", dir, "texture_height"));
+            }
             if (GameUtils::str_contains(tex.path, "laminate_floor_03")) {
                 sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_nor_gl_1k.png", dir, "texture_normal"));
                 sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_disp_1k.png", dir, "texture_height"));
@@ -141,11 +145,11 @@ void SampleGame::createWindow(GameWindow *window) {
 
     scene = new Scene(camera, window);
     scene->setZBufferLayout(0.1f, 100.0f);
-    shadowMapper = new ShadowMapper(2048);
-    shadowMapper->strength = 1.0f;
-    shadowMapper->pcfRadius = 2;
-    shadowMapper->create();
-    scene->withShadows(shadowMapper);
+    // shadowMapper = new ShadowMapper(2048);
+    // shadowMapper->strength = 1.0f;
+    // shadowMapper->pcfRadius = 2;
+    // shadowMapper->create();
+    // scene->withShadows(shadowMapper);
     std::cout << "5\n";
 
     skybox = new Skybox(scene, {
@@ -253,16 +257,16 @@ void SampleGame::renderImGUI() {
     //ImGui::SliderFloat("Opacity", &appleMeshInstance->getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
     //ImGui::SliderFloat("FOV (Reflectives)", &cubemapFramebuffer->fieldOfView, 80.0f, 100.0f, "%.3f");
-    ImGui::SliderFloat("Light X", &lX, -20.0f, 20.0f, "%.3f");
-    ImGui::SliderFloat("Light Y", &lY, -20.0f, 20.0f, "%.3f");
-    ImGui::SliderFloat("Light Z", &lZ, -20.0f, 20.0f, "%.3f");
+    // ImGui::SliderFloat("Light X", &lX, -20.0f, 20.0f, "%.3f");
+    // ImGui::SliderFloat("Light Y", &lY, -20.0f, 20.0f, "%.3f");
+    // ImGui::SliderFloat("Light Z", &lZ, -20.0f, 20.0f, "%.3f");
     ImGui::SliderFloat("HDR Boost (Skybox)", &hdrSkyBoost, 0.0f, 100.0f, "%.3f");
     ImGui::SliderFloat("HDR Exposure", &hdrExposure, 0.0f, 0.1f, "%.3f");
     ImGui::SliderFloat("Roughness Constrant", &roughnessConstrant, 0.1f, 10.0f, "%.3f");
-    ImGui::SliderFloat("Shadow Bias Min", &shadowMapper->biasMin, 0.001f, 1.0f, "%.3f");
-    ImGui::SliderFloat("Shadow Bias Max", &shadowMapper->biasMax, 0.001f, 1.0f, "%.3f");
-    ImGui::SliderFloat("Shadow PCF Scale", &shadowMapper->pcfScale, 0.1f, 10.0f, "%.3f");
-    ImGui::SliderInt("Shadow PCF Radius", (int*) &shadowMapper->pcfRadius, 1, 10);
+    // ImGui::SliderFloat("Shadow Bias Min", &shadowMapper->biasMin, 0.001f, 1.0f, "%.3f");
+    // ImGui::SliderFloat("Shadow Bias Max", &shadowMapper->biasMax, 0.001f, 1.0f, "%.3f");
+    // ImGui::SliderFloat("Shadow PCF Scale", &shadowMapper->pcfScale, 0.1f, 10.0f, "%.3f");
+    // ImGui::SliderInt("Shadow PCF Radius", (int*) &shadowMapper->pcfRadius, 1, 10);
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
 
     ImGui::End();
@@ -277,15 +281,15 @@ void SampleGame::renderETC() {
     scene->getBatchShader().use();
     scene->getBatchShader().setFloat("roughnessConstrant", roughnessConstrant);
     framebuffer_VHS->setHDR({hdrExposure});
-    PointLight pl = {{lX, lY, lZ}};
+    PointLight pl = {camera->getPosition()};
     pl.ambient = {0.05f, 0.05f, 0.05f};
     pl.diffuse = {0.8f, 0.8f, 0.5f};
     pl.specular = {1.0f, 1.0f, 0.6f};
     pl.boost(18.0f);
     scene->setPointLight(0, pl);
-    static float dT = (float) window->getLastFrameTime();
-    dT += window->getLastFrameTime();
-    sceneModelInstance->getMeshInstances()->get("Cube.001")->setDirection({sin(dT), 0.0f, cos(dT)});
+    //static float dT = (float) window->getLastFrameTime();
+    //dT += window->getLastFrameTime();
+    //sceneModelInstance->getMeshInstances()->get("Cube.001")->setDirection({sin(dT), 0.0f, cos(dT)});
 }
 
 void SampleGame::cleanup() {

@@ -4,9 +4,8 @@
 #include "modules/Screenbuffer.hpp"
 #include "modules/Shader.hpp"
 #include "glm/fwd.hpp"
-#include <iostream>
+#include "world/WorldObject.hpp"
 #include <modules/Mesh.hpp>
-#include <ostream>
 #include <utils/GameUtils.hpp>
 
 using namespace syng;
@@ -43,7 +42,11 @@ Mesh::~Mesh() {
 }
 
 glm::mat4 Mesh::getParentToNodeTransform() {
-    return parentToNodeTransform;
+    return this->parentToNodeTransform;
+}
+
+Coordination Mesh::getParentToNodeCoords() {
+    return {getParentToNodeTransform()};
 }
 
 void Mesh::setFallBackDiffuseTCB(unsigned int TCB) {

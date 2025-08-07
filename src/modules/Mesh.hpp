@@ -2,6 +2,7 @@
 
 #include "modules/Screenbuffer.hpp"
 #include "glm/fwd.hpp"
+#include "world/WorldObject.hpp"
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
@@ -70,6 +71,8 @@ public:
     ~Mesh();
 
     glm::mat4 getParentToNodeTransform();
+
+    Coordination getParentToNodeCoords();
     
     void setFallBackDiffuseTCB(unsigned int TCB);
     

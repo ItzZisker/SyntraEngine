@@ -77,6 +77,7 @@ public:
 class Coordination {
 protected:
     glm::mat4 transform = glm::mat4(1.0f);
+    glm::vec3 origin = glm::vec3(0.0f);
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 direction = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -84,28 +85,50 @@ protected:
 
     void updateTransform() {
         glm::vec3 forward = glm::normalize(direction);
-        glm::vec3 right = glm::normalize(glm::cross(up, forward));
-        glm::vec3 correctedUp = glm::normalize(glm::cross(forward, right));
-        glm::mat4 rotation(1.0f);
+        glm::vec3 right = glm::normalize(glm::cross(forward, up));
+        glm::vec3 correctedUp = glm::normalize(glm::cross(right, forward));
 
+        glm::mat4 rotation(1.0f);
         rotation[0] = glm::vec4(right, 0.0f);
         rotation[1] = glm::vec4(correctedUp, 0.0f);
         rotation[2] = glm::vec4(-forward, 0.0f);
-        rotation[3] = glm::vec4(position, 1.0f);
+        rotation[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-        this->transform = rotation * glm::scale(glm::mat4(1.0f), scale);
+        glm::mat4 S = glm::scale(glm::mat4(1.0f), scale);
+        glm::mat4 T = glm::translate(glm::mat4(1.0f), position);
+        glm::mat4 O = glm::translate(glm::mat4(1.0f), -origin);
+
+        this->transform = T * rotation * S * O;
+    }
+private:
+    void decompose(const glm::mat4& transform) {
+        this->transform = transform;
+
+        glm::vec3 position = glm::vec3(transform[3]);
+        glm::vec3 right = glm::vec3(transform[0]);
+        glm::vec3 upVec = glm::vec3(transform[1]);
+        glm::vec3 forward = -glm::vec3(transform[2]);
+
+        this->scale.x = glm::length(right);
+        this->scale.y = glm::length(upVec);
+        this->scale.z = glm::length(forward);
+
+        this->position = position;
+        this->direction = glm::normalize(forward);
+        this->up = glm::normalize(upVec);
+
+        updateTransform();
     }
 public:
     Coordination(glm::mat4 transform = glm::mat4(1.0f)) {
-        this->transform = transform;
-        this->position = glm::vec3(transform[3]);
-        this->direction = getDirection();
-        this->up = getUp();
-        this->scale = glm::vec3(1.0f);
+        decompose(transform);
     }
 
-    Coordination(const glm::vec3& position, const glm::vec3& direction, const glm::vec3 up)
-        : position(position), direction(direction), up(up), scale(1.0f) {
+    Coordination(const glm::mat4& transform, const glm::vec3& origin) : origin(origin) {
+        decompose(transform);
+    }
+
+    Coordination(const glm::vec3& position, const glm::vec3& direction, const glm::vec3 up) : position(position), direction(direction), up(up), scale(1.0f) {
         updateTransform();
     }
 
@@ -142,16 +165,26 @@ public:
         return this->transform;
     }
 
+    virtual glm::vec3 getOrigin() const {
+        return this->origin;
+    }
+
     virtual void setTransform(const glm::mat4& transform) {
-        this->transform = transform;
-        this->position = glm::vec3(transform[3]);
-        this->direction = getDirection();
-        this->up = getUp();
-        this->scale = glm::vec3(1.0f);
+        decompose(transform);
+    }
+
+    virtual void setOrigin(const glm::vec3& newOrigin) {
+        this->origin = newOrigin;
+        updateTransform();
     }
 
     virtual void setPosition(const glm::vec3& pos) {
         this->position = pos;
+        updateTransform();
+    }
+
+    virtual void addPosition(const glm::vec3& pos) {
+        this->position += pos;
         updateTransform();
     }
 
