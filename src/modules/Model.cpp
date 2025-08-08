@@ -34,8 +34,11 @@ void Model::filterMesh(std::string meshName) {
 
 void Model::loadModel(VRAM_Approach approach, const std::set<std::string>& meshNames, bool flipTextures) {
     read(meshNames, flipTextures);
+    std::cout << "BLA\n";
     load(approach);
+    std::cout << "BLA1\n";
     groupMeshes();
+    std::cout << "BLA2\n";
 }
 
 void Model::groupMeshes() {
@@ -71,8 +74,6 @@ void Model::read(const std::set<std::string>& meshNames, bool flipTextures, aiPo
     }
     directory = path.substr(0, path.find_last_of('/'));
 
-    std::cout << "boom:" << scene->mNumLights << std::endl;
-
     processNode(meshNames, scene->mRootNode, scene, aiMatrix4x4());
     loaded = true;
 }
@@ -89,8 +90,9 @@ glm::mat4 convertToGLMMatrix(const aiMatrix4x4& aiMat) {
 void Model::processNode(const std::set<std::string>& meshNames, aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform) {
     aiMatrix4x4 currentTransform = parentTransform * node->mTransformation;
 
-    std::cout << "G: " << node->mName.C_Str() << std::endl;
+    std::cout << "SG: " << node->mName.C_Str() << ": " << node->mNumMeshes << std::endl;
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
+        std::cout << "SSG: " << i << std::endl;
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
         glm::mat4 glmTransform = convertToGLMMatrix(currentTransform);
         std::string meshName(mesh->mName.C_Str());
@@ -99,6 +101,7 @@ void Model::processNode(const std::set<std::string>& meshNames, aiNode *node, co
             meshes.insert({meshName, processMesh(mesh, scene, glmTransform)});
         }
     }
+    std::cout << "DG: " << node->mName.C_Str() << std::endl;
 
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
         processNode(meshNames, node->mChildren[i], scene, currentTransform);
@@ -217,17 +220,53 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType 
     return textures;
 }
 
-void Model::pushTexture(const std::string meshKey, Texture texture) {
+void Model::pushTexture(const std::string& meshKey, Texture texture) {
     auto pair = meshes.find(meshKey);
+    Texture& texRef = texture;
     if (pair != meshes.end()) {
         Mesh *mesh = pair->second;
-        textures_loaded.push_back(texture);
-        mesh->textures.push_back(texture);
-        if (texture.type == "texture_height") {
+        textures_loaded.push_back(texRef);
+        mesh->textures.push_back(texRef);
+        if (texRef.type == "texture_height") {
             mesh->material.hasDisplacement = true;
         }
-        if (texture.type == "texture_roughness") {
+        if (texRef.type == "texture_roughness") {
             mesh->material.hasRoughness = true;
+        }
+    }
+}
+
+void Model::pullTexture(const std::string& meshKey, const std::string& path) {
+    auto it = std::find_if(textures_loaded.begin(), textures_loaded.end(),
+        [&](const Texture& tex) {
+            return tex.path == path;
+        });
+
+    Texture texRef;
+    bool foundInGlobal = false;
+
+    if (it != textures_loaded.end()) {
+        texRef = *it;
+        textures_loaded.erase(it);
+        foundInGlobal = true;
+    }
+
+    auto meshIt = meshes.find(meshKey);
+    if (meshIt != meshes.end()) {
+        Mesh* mesh = meshIt->second;
+        auto& meshTextures = mesh->textures;
+        meshTextures.erase(
+            std::remove_if(meshTextures.begin(), meshTextures.end(),
+                [&](const Texture& tex) {
+                    return tex.path == path;
+                }),
+            meshTextures.end()
+        );
+        if (texRef.type == "texture_height") {
+            mesh->material.hasDisplacement = false;
+        }
+        if (texRef.type == "texture_roughness") {
+            mesh->material.hasRoughness = false;
         }
     }
 }

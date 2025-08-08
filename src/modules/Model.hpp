@@ -60,7 +60,9 @@ public:
 
     void groupMeshes();
 
-    void pushTexture(const std::string meshKey, Texture texture);
+    void pushTexture(const std::string& meshKey, Texture texture);
+
+    void pullTexture(const std::string& meshKey, const std::string& path);
 private:
     std::string path;
 
