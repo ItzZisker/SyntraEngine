@@ -103,35 +103,42 @@ void SampleGame::createWindow(GameWindow *window) {
     std::cout << "scene\n";
     sceneModel = new Model("models/wall/2g/wall.gltf");
     std::cout << "H\n";
-    sceneModel->loadModel(Interleaved);
+    sceneModel->loadModel(syng::Sequential);
     std::cout << "scene done\n";
 
     std::string dir = std::filesystem::current_path().string();
     for (auto& pair : sceneModel->meshes) {
+        std::cout << "texture start: " << pair.first << std::endl;
         Mesh* mesh = pair.second;
-        for (auto& tex : mesh->textures) {
+        for (auto& tex : mesh->getTextures()) {
+            std::cout << "texture path: " << tex.path << std::endl;
             if (GameUtils::str_contains(tex.path, "beige_wall_001")) {
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/beige_wall_001_nor_gl_1k.jpg", dir, "texture_normal"));
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/beige_wall_001_disp_1k.png", dir, "texture_height"));
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/beige_wall_001_nor_gl_1k.jpg", dir, Texture_Normal));
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/beige_wall_001_disp_1k.png", dir, Texture_Height));
             }
             if (GameUtils::str_contains(tex.path, "laminate_floor_03")) {
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_nor_gl_1k.png", dir, "texture_normal"));
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_disp_1k.png", dir, "texture_height"));
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_nor_gl_1k.png", dir, Texture_Normal));
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_disp_1k.png", dir, Texture_Height));
             }
             if (GameUtils::str_contains(tex.path, "paper_0033")) {
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_normal_opengl_1k.png", dir, "texture_normal"));
-                //sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_height_1k.png", dir, "texture_height"));
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_normal_opengl_1k.png", dir, Texture_Normal));
+                //sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_height_1k.png", dir, Texture_Height));
             }
             if (GameUtils::str_contains(tex.path, "wood_table_001")) {
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_nor_gl_1k.png", dir, "texture_normal"));
-                //sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_disp_1k.png", dir, "texture_height"));
+                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_nor_gl_1k.png", dir, Texture_Normal));
+                //sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_disp_1k.png", dir, Texture_Height));
             }
         }
+        std::cout << "texture end: " << pair.first << std::endl;
     }
+    std::cout << "textures done\n";
 
     //sceneModel->meshes["Plane"]->textures.push_back(bricks2disp);
 
     sceneModelInstance = new ModelInstance(sceneModel);
+    std::cout << "haha1\n";
+    sceneModelInstance->setDiscard("LIGHT", true);
+    std::cout << "haha2\n";
     sceneModelInstance->getMeshInstances()->forEach([](const std::string& key, MeshInstance* meshInstance){
         std::cout << "IA: " << key << std::endl;
     });

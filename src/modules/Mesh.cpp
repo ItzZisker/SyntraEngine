@@ -1,11 +1,13 @@
 #include "modules/Mesh.hpp"
 #include "Shader.hpp"
 #include "engine/Config.hpp"
+#include "modules/GLObjects.hpp"
 #include "modules/Screenbuffer.hpp"
 #include "modules/Shader.hpp"
 #include "glm/fwd.hpp"
 #include "world/WorldObject.hpp"
 #include <modules/Mesh.hpp>
+#include <string>
 #include <utils/GameUtils.hpp>
 
 using namespace syng;
@@ -19,11 +21,8 @@ void createPlainTexture(unsigned int &TCB, unsigned char pixel[4]) {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-Mesh::Mesh(std::vector<Vertex> vertices,
-           std::vector<unsigned int> indices,
-           glm::mat4 parenToNodeTransform)
-    : vertices(vertices), indices(indices), parentToNodeTransform(parenToNodeTransform) {
-}
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, glm::mat4 parenToNodeTransform)
+    : GLVertexEelement<Vertex>(vertices, indices), parentToNodeTransform(parenToNodeTransform) {}
 
 Mesh::~Mesh() {
     vertices.clear();
@@ -34,11 +33,9 @@ Mesh::~Mesh() {
     }
     textures.clear();
 
-    glDeleteBuffers(1, &EBO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteTextures(1, &fallbackDiffuseTCB);
-    glDeleteTextures(1, &fallbackNormalTCB);
+    for (auto& pair : textures_fallback) {
+        glDeleteTextures(1, &pair.second);
+    }
 }
 
 glm::mat4 Mesh::getParentToNodeTransform() {
@@ -49,41 +46,27 @@ Coordination Mesh::getParentToNodeCoords() {
     return {getParentToNodeTransform()};
 }
 
-void Mesh::setFallBackDiffuseTCB(unsigned int TCB) {
-    glDeleteTextures(1, &fallbackDiffuseTCB);
-    this->fallbackDiffuseTCB = TCB;
+bool Mesh::hasFallback(Texture_T texType) {
+    return textures_fallback.find(texType) != textures_fallback.end();
 }
 
-void Mesh::setFallBackSpecularTCB(unsigned int TCB) {
-    glDeleteTextures(1, &fallbackSpecularTCB);
-    this->fallbackSpecularTCB = TCB;
+void Mesh::setFallbackTCB(Texture_T texType, GLuint TCB) {
+    auto last = textures_fallback.find(texType);
+    if (last != textures_fallback.end()) {
+        glDeleteTextures(1, &(last->second));
+        textures_fallback.erase(last);
+    }
+    textures_fallback.emplace(texType, TCB);
 }
 
-void Mesh::setFallBackNormalTCB(unsigned int TCB) {
-    glDeleteTextures(1, &fallbackNormalTCB);
-    this->fallbackNormalTCB = TCB;
-}
-
-void Mesh::setFallBackDiffuseColor(unsigned char rgb[3]) {
-    unsigned char pixel[4] = {rgb[0], rgb[1], rgb[2], 255};
-    glDeleteTextures(1, &fallbackDiffuseTCB);
-    createPlainTexture(fallbackDiffuseTCB, pixel);
-}
-
-void Mesh::setFallBackSpecularColor(unsigned char rgb[3]) {
-    unsigned char pixel[4] = {rgb[0], rgb[1], rgb[2], 255};
-    glDeleteTextures(1, &fallbackSpecularTCB);
-    createPlainTexture(fallbackSpecularTCB, pixel);
-}
-
-void Mesh::setFallBackNormalColor(unsigned char rgb[3]) {
-    unsigned char pixel[4] = {rgb[0], rgb[1], rgb[2], 255};
-    glDeleteTextures(1, &fallbackNormalTCB);
-    createPlainTexture(fallbackNormalTCB, pixel);
+void Mesh::setFallbackColor(Texture_T texType, GLubyte pixel[4]) {
+    GLuint TCB = 0;
+    createPlainTexture(TCB, pixel);
+    setFallbackTCB(texType, TCB);
 }
 
 void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
-    if (!loaded) return;
+    if (!isLoaded()) return;
     glBindFramebuffer(GL_FRAMEBUFFER, screen.getFBO());
 
     shader.use();
@@ -106,95 +89,68 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
     unsigned int roughNr = 1;
     unsigned int texUnit = 0;
 
-    if (textures.empty() && !fallbackDiffuseTCB) {
+    if (textures.empty() && !hasFallback(Texture_Diffuse)) {
         unsigned char white[4] = {255, 255, 255, 255};
-        setFallBackDiffuseColor(white);
+        setFallbackColor(Texture_Diffuse, white);
     }
-    if (textures.empty() && fallbackDiffuseTCB) {
-        shader.setTexture("texture_diffuse1", GL_TEXTURE_2D, texUnit++, fallbackDiffuseTCB);
+    if (textures.empty() && hasFallback(Texture_Diffuse)) {
+        shader.setTexture("texture_diffuse1", GL_TEXTURE_2D, texUnit++, textures_fallback[Texture_Diffuse]);
     }
 
     for (const auto& tex : textures) {
         std::string number;
-        std::string name = tex.type;
 
-        if (name == "texture_diffuse")
-            number = std::to_string(diffuseNr++);
-        else if (name == "texture_specular")
-            number = std::to_string(specularNr++);
-        else if (name == "texture_normal")
-            number = std::to_string(normalNr++);
-        else if (name == "texture_height")
-            number = std::to_string(heightNr++);
-        else if (name == "texture_roughness")
-            number = std::to_string(roughNr++);
+        switch (tex.type) {
+            case Texture_Diffuse: number = std::to_string(diffuseNr++); break;
+            case Texture_Specular: number = std::to_string(specularNr++); break;
+            case Texture_Normal: number = std::to_string(normalNr++); break;
+            case Texture_Height: number = std::to_string(heightNr++); break;
+            case Texture_Rough: number = std::to_string(roughNr++); break;
+        }
 
-        shader.setTexture(name + number, GL_TEXTURE_2D, texUnit++, tex.TCB);
+        shader.setTexture(TEXTURE_NAME(tex.type) + number, GL_TEXTURE_2D, texUnit++, tex.TCB);
     }
     
-    if (specularNr == 1 && !fallbackSpecularTCB) {
+    if (specularNr == 1 && !hasFallback(Texture_Specular)) {
         unsigned char zC[3] = {255, 255, 255};
-        setFallBackSpecularColor(zC);
+        setFallbackColor(Texture_Specular, zC);
     }
-    if (specularNr == 1 && fallbackSpecularTCB) {
-        shader.setTexture("texture_specular1", GL_TEXTURE_2D, texUnit++, fallbackSpecularTCB);
+    if (specularNr == 1 && hasFallback(Texture_Specular)) {
+        shader.setTexture("texture_specular1", GL_TEXTURE_2D, texUnit++, textures_fallback[Texture_Specular]);
     }
-    if (normalNr == 1 && !fallbackNormalTCB) {
+    if (normalNr == 1 && !hasFallback(Texture_Normal)) {
         unsigned char zC[3] = {128, 128, 255};
-        setFallBackNormalColor(zC);
+        setFallbackColor(Texture_Normal, zC);
     }
-    if (normalNr == 1 && fallbackNormalTCB) {
-        shader.setTexture("texture_normal1", GL_TEXTURE_2D, texUnit++, fallbackNormalTCB);
+    if (normalNr == 1 && hasFallback(Texture_Normal)) {
+        shader.setTexture("texture_normal1", GL_TEXTURE_2D, texUnit++, textures_fallback[Texture_Normal]);
     }
 
     shader.setBool("parallax", heightNr > 1  && material.hasDisplacement);
     shader.setBool("roughness", roughNr > 1 && material.hasRoughness);
 
-    glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
+    GLVertexEelement::draw();
+    // glBindVertexArray(VAO);
+    // glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
     
-    glBindVertexArray(0);
+    // glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Mesh::init(VRAM_Approach approach) {
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-    glBindVertexArray(VAO);
+    if (isLoaded()) return;
 
     switch (approach) {
         case Sequential:
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
-
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, normal));
-
-            glEnableVertexAttribArray(2);
-            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, texCoords));
-
-            glEnableVertexAttribArray(3);
-            glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, tangent));
-
-            glEnableVertexAttribArray(4);
-            glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, bitangent));
-
-            glEnableVertexAttribArray(5);
-            glVertexAttribIPointer(5, MAX_BONE_INFLUENCE, GL_INT, sizeof(Vertex), (void *)offsetof(Vertex, m_BoneIDs));
-
-            glEnableVertexAttribArray(6);
-            glVertexAttribPointer(6, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, m_Weights));
-            glBindVertexArray(0);
+            attribute({0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) 0});
+            attribute({1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal)});
+            attribute({2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoords)});
+            attribute({3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, tangent)});
+            attribute({4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, bitangent)});
+            attribute({5, MAX_BONE_INFLUENCE, GL_INT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, m_BoneIDs), GLPointer_Int32});
+            attribute({6, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, m_Weights)});
         break;
-        case Interleaved:
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        
+        case Interleaved:        
             size_t count = vertices.size();
         
             int vec2fLength   = 2 * count;
@@ -208,14 +164,6 @@ void Mesh::init(VRAM_Approach approach) {
             float* biTangents  = new float[vec3fLength];
             float* m_Weights   = new float[boneLength];
             int* m_BoneIDs     = new int[boneLength];
-        
-            size_t totalSize =
-                vec3fLength * sizeof(float) * 3 +
-                vec2fLength * sizeof(float) +
-                boneLength * sizeof(int) +
-                boneLength * sizeof(float);
-
-            glBufferData(GL_ARRAY_BUFFER, totalSize, nullptr, GL_STATIC_DRAW);
 
             for (size_t i = 0; i < count; ++i) {
                 const Vertex& v = vertices[i];
@@ -247,58 +195,36 @@ void Mesh::init(VRAM_Approach approach) {
 
             GLintptr offset = 0;
 
-            glBufferSubData(GL_ARRAY_BUFFER, offset, vec3fLength * sizeof(float), positions);
+            dataSub({offset, vec3fLength * sizeof(float), positions});
             offset += vec3fLength * sizeof(float);
-
-            glBufferSubData(GL_ARRAY_BUFFER, offset, vec3fLength * sizeof(float), normals);
+            dataSub({offset, vec3fLength * sizeof(float), normals});
             offset += vec3fLength * sizeof(float);
-
-            glBufferSubData(GL_ARRAY_BUFFER, offset, vec2fLength * sizeof(float), texCoords);
+            dataSub({offset, vec2fLength * sizeof(float), texCoords});
             offset += vec2fLength * sizeof(float);
-            
-            glBufferSubData(GL_ARRAY_BUFFER, offset, vec3fLength * sizeof(float), tangents);
+            dataSub({offset, vec3fLength * sizeof(float), tangents});
             offset += vec3fLength * sizeof(float);
-
-            glBufferSubData(GL_ARRAY_BUFFER, offset, vec3fLength * sizeof(float), biTangents);
+            dataSub({offset, vec3fLength * sizeof(float), biTangents});
             offset += vec3fLength * sizeof(float);
-
-            glBufferSubData(GL_ARRAY_BUFFER, offset, boneLength * sizeof(int), m_BoneIDs);
+            dataSub({offset, boneLength * sizeof(int), m_BoneIDs});
             offset += boneLength * sizeof(int);
-
-            glBufferSubData(GL_ARRAY_BUFFER, offset, boneLength * sizeof(float), m_Weights);
+            dataSub({offset, boneLength * sizeof(float), m_Weights});
 
             GLuint attribIndex = 0;
             offset = 0;
 
-            glVertexAttribPointer(attribIndex, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset));
-            glEnableVertexAttribArray(attribIndex++);
+            attribute({attribIndex++, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
             offset += vec3fLength * sizeof(float);
-           
-            glVertexAttribPointer(attribIndex, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset));
-            glEnableVertexAttribArray(attribIndex++);
+            attribute({attribIndex++, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
             offset += vec3fLength * sizeof(float);
-           
-            glVertexAttribPointer(attribIndex, 2, GL_FLOAT, GL_FALSE, 0, (void*)(offset));
-            glEnableVertexAttribArray(attribIndex++);
+            attribute({attribIndex++, 2, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
             offset += vec2fLength * sizeof(float);
-
-            glVertexAttribPointer(attribIndex, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset));
-            glEnableVertexAttribArray(attribIndex++);
+            attribute({attribIndex++, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
             offset += vec3fLength * sizeof(float);
-
-            glVertexAttribPointer(attribIndex, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset));
-            glEnableVertexAttribArray(attribIndex++);
+            attribute({attribIndex++, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
             offset += vec3fLength * sizeof(float);
-
-            glVertexAttribIPointer(attribIndex, MAX_BONE_INFLUENCE, GL_INT, 0, (void*)(offset));
-            glEnableVertexAttribArray(attribIndex++);
+            attribute({attribIndex++, MAX_BONE_INFLUENCE, GL_INT, GL_FALSE, 0, (void*)(offset)});
             offset += boneLength * sizeof(int);
-
-            glVertexAttribPointer(attribIndex, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, 0, (void*)(offset));
-            glEnableVertexAttribArray(attribIndex++);
-            
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+            attribute({attribIndex++, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
 
             delete[] positions;
             delete[] normals;
@@ -309,6 +235,5 @@ void Mesh::init(VRAM_Approach approach) {
             delete[] m_BoneIDs;
         break;
     }
-
-    loaded = true;
+    GLVertexEelement::reserve();
 }

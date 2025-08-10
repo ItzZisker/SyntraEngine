@@ -167,6 +167,7 @@ add_library(Syngine SHARED
 
     src/engine/RenderTable.cpp
 
+    src/modules/GLObjects.cpp
     src/modules/ShadowMapper.cpp
     src/modules/Screenbuffer.cpp
     src/modules/CubemapFramebuffer.cpp

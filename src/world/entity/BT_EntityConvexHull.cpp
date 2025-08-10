@@ -32,15 +32,14 @@ const glm::mat4 BT_EntityConvexHull::onMotionState() {
 void BT_EntityConvexHull::load(bool enablePolyhedral) {
     for (const auto& it : meshes) {
         MeshInstance* instance = it.second;
-        Mesh* self = instance->getSelf();
-        if (self) {
-            if (!self->loaded) {
+        if (instance->getSelf()) {
+            if (!instance->getSelf()->isLoaded()) {
                 std::cerr << "ERROR::Entity::<UNLOADED_MESH>::SELF::" << it.first << std::endl;
                 return;
             }
         } else {
             instance->getChildren()->forEach([&](const std::string& key, MeshInstance* meshInstance){                
-                if (!meshInstance->getSelf()->loaded) {
+                if (!meshInstance->getSelf()->isLoaded()) {
                     std::cerr << "ERROR::Entity::<UNLOADED_MESH>::" << key << std::endl;
                     return;
                 }
@@ -51,38 +50,34 @@ void BT_EntityConvexHull::load(bool enablePolyhedral) {
     int numPoints = 0;
     for (const auto& it : meshes) {
         MeshInstance* instance = it.second;
-        Mesh* self = instance->getSelf();
-        if (self) {
-            numPoints += self->vertices.size();
+        if (instance->getSelf()) {
+            numPoints += instance->getSelf()->getVertices().size();
         } else {
             instance->getChildren()->forEach([&](const std::string& key, MeshInstance *child){
-                numPoints += child->getSelf()->vertices.size();
+                numPoints += child->getSelf()->getVertices().size();
             });
         }
     }
 
     float* points = new float[3 * numPoints];
-
     int i = 0;
+
+    auto emplaceFunc = [&](glm::mat4 transform, std::vector<Vertex>& vertices) {
+        for (const Vertex& vertex : vertices) {
+            glm::vec4 vec = glm::vec4(vertex.position, 1.0f) * transform;
+            points[i++] = vec[0];
+            points[i++] = vec[1];
+            points[i++] = vec[2];
+        }
+    };
+
     for (const auto& it : meshes) {
         MeshInstance* instance = it.second;
-        Mesh* self = instance->getSelf();
-        if (self) {
-            for (const Vertex& vertex : self->vertices) {
-                glm::vec4 vec = glm::vec4(vertex.position, 1.0f) * instance->getTransform();
-                points[i++] = vec[0];
-                points[i++] = vec[1];
-                points[i++] = vec[2];
-            }
+        if (instance->getSelf()) {
+            emplaceFunc(instance->getTransform(), instance->getSelf()->getVertices());
         } else {
             instance->getChildren()->forEach([&](const std::string& key, MeshInstance *child){
-                Mesh* mesh = child->getSelf();
-                for (const Vertex& vertex : mesh->vertices) {
-                    glm::vec4 vec = glm::vec4(vertex.position, 1.0f) * instance->getTransform() * child->getTransform();
-                    points[i++] = vec[0];
-                    points[i++] = vec[1];
-                    points[i++] = vec[2];
-                }
+                emplaceFunc(instance->getTransform() * child->getTransform(), child->getSelf()->getVertices());
             });
         }
     }

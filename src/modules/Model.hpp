@@ -23,12 +23,11 @@ namespace syng
 {
 unsigned int TCBFromFile(const char *path, const std::string &directory);
 
-Texture TextureFromFile(const char *path, const std::string &directory, const std::string &type);
+Texture TextureFromFile(const char *path, const std::string &directory, const Texture_T &type);
 
 class Model
 {
 public:
-    std::set<std::string> renderable_meshes;
     std::vector<Texture> textures_loaded;
     std::unordered_map<std::string, Mesh*> meshes;
     std::unordered_map<std::string, std::unordered_map<std::string, Mesh*>> meshGroups;
@@ -38,8 +37,6 @@ public:
     Model(std::string const &path, bool gamma = false);
 
     ~Model();
-
-    void filterMesh(std::string meshName);
 
     void draw(Shader &shader);
 
@@ -70,6 +67,6 @@ private:
 
     Mesh* processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& transform);
 
-    std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName);
+    std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, const Texture_T& texType);
 };
 }

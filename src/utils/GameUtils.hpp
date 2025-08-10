@@ -2,7 +2,6 @@
 #include "LinearMath/btTransform.h"
 #include "LinearMath/btVector3.h"
 #include "engine/RenderTable.hpp"
-#include "modules/Mesh.hpp"
 #include "modules/Scene.hpp"
 #include "modules/Screenbuffer.hpp"
 #include "modules/Shader.hpp"
@@ -18,8 +17,6 @@ namespace syng::GameUtils
     void debugGLError();
 
     void debugGLError(const std::string& comment);
-
-    Texture loadTexture(const std::string& path, const std::string& type);
 
     bool str_contains(const std::string& target, const std::string& value);
 

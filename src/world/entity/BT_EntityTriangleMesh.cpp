@@ -1,7 +1,9 @@
 #include <modules/Mesh.hpp>
+#include <vector>
 #include <world/entity/BT_EntityTriangleMesh.hpp>
 #include "modules/MeshInstance.hpp"
 #include "modules/ModelInstance.hpp"
+#include "modules/Shader.hpp"
 #include "utils/GameUtils.hpp"
 #include <LinearMath/btVector3.h>
 #include <BulletCollision/CollisionDispatch/btInternalEdgeUtility.h>
@@ -36,15 +38,14 @@ const glm::mat4 BT_EntityTriangleMesh::onMotionState() {
 void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
     for (const auto& it : meshes) {
         MeshInstance* instance = it.second;
-        Mesh* self = instance->getSelf();
-        if (self) {
-            if (!self->loaded) {
+        if (instance->getSelf()) {
+            if (!instance->getSelf()->isLoaded()) {
                 std::cerr << "ERROR::Entity::<UNLOADED_MESH>::SELF::" << it.first << std::endl;
                 return;
             }
         } else {
             instance->getChildren()->forEach([&](const std::string& key, MeshInstance* meshInstance){                
-                if (!meshInstance->getSelf()->loaded) {
+                if (!meshInstance->getSelf()->isLoaded()) {
                     std::cerr << "ERROR::Entity::<UNLOADED_MESH>::" << key << std::endl;
                     return;
                 }
@@ -54,46 +55,30 @@ void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
     triangleMesh = new btTriangleMesh();
     triangleInfoMap = new btTriangleInfoMap();
 
+    auto emplaceFunc = [&](glm::mat4 transform, std::vector<Vertex>& vertices, std::vector<GLuint>& indices) {
+        for (size_t i = 0; i < indices.size(); i += 3) {
+            glm::vec3 v0 = glm::vec3(transform * glm::vec4(vertices[indices[i]].position, 1.0f));
+            glm::vec3 v1 = glm::vec3(transform * glm::vec4(vertices[indices[i + 1]].position, 1.0f));
+            glm::vec3 v2 = glm::vec3(transform * glm::vec4(vertices[indices[i + 2]].position, 1.0f));
+
+            triangleMesh->addTriangle(
+                btVector3(v0.x, v0.y, v0.z),
+                btVector3(v1.x, v1.y, v1.z),
+                btVector3(v2.x, v2.y, v2.z),
+                true
+            );
+        }
+    };
+
     for (const auto& it : meshes) {
         MeshInstance* instance = it.second;
         Mesh* self = instance->getSelf();
         if (self) {
-            glm::mat4 transform = instance->getTransform();
-
-            const auto& vertices = self->vertices;
-            const auto& indices = self->indices;
-
-            for (size_t i = 0; i < indices.size(); i += 3) {
-                glm::vec3 v0 = glm::vec3(transform * glm::vec4(vertices[indices[i]].position, 1.0f));
-                glm::vec3 v1 = glm::vec3(transform * glm::vec4(vertices[indices[i + 1]].position, 1.0f));
-                glm::vec3 v2 = glm::vec3(transform * glm::vec4(vertices[indices[i + 2]].position, 1.0f));
-
-                triangleMesh->addTriangle(
-                    btVector3(v0.x, v0.y, v0.z),
-                    btVector3(v1.x, v1.y, v1.z),
-                    btVector3(v2.x, v2.y, v2.z),
-                    true
-                );
-            }
+            emplaceFunc(instance->getTransform(), self->getVertices(), self->getIndices());
         } else {
-            instance->getChildren()->forEach([&](const std::string& key, MeshInstance* child){     
-                glm::mat4 transform = instance->getTransform() * child->getTransform();
-
-                const auto& vertices = self->vertices;
-                const auto& indices = self->indices;
-
-                for (size_t i = 0; i < indices.size(); i += 3) {
-                    glm::vec3 v0 = glm::vec3(transform * glm::vec4(vertices[indices[i]].position, 1.0f));
-                    glm::vec3 v1 = glm::vec3(transform * glm::vec4(vertices[indices[i + 1]].position, 1.0f));
-                    glm::vec3 v2 = glm::vec3(transform * glm::vec4(vertices[indices[i + 2]].position, 1.0f));
-
-                    triangleMesh->addTriangle(
-                        btVector3(v0.x, v0.y, v0.z),
-                        btVector3(v1.x, v1.y, v1.z),
-                        btVector3(v2.x, v2.y, v2.z),
-                        true
-                    );
-                }
+            instance->getChildren()->forEach([&](const std::string& key, MeshInstance* child){
+                Mesh* self = child->getSelf();
+                emplaceFunc(instance->getTransform() * child->getTransform(), self->getVertices(), self->getIndices());
             });
         }
     }

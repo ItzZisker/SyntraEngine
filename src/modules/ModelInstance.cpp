@@ -32,9 +32,8 @@ ModelInstance::~ModelInstance() {
 bool ModelInstance::shouldDiscard(Scene_T snapshot, const glm::mat4& transform) {
     bool shouldDiscard = true;
     meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance){
-        Mesh* self = meshInstance->getSelf();
-        if (self) {
-            if (!meshInstance->shouldDiscard(snapshot, self->getParentToNodeTransform() * transform)) {
+        if (meshInstance->getSelf()) {
+            if (!meshInstance->shouldDiscard(snapshot, meshInstance->getSelf()->getParentToNodeTransform() * transform)) {
                 shouldDiscard = false;
             }
         } else {
@@ -47,8 +46,7 @@ bool ModelInstance::shouldDiscard(Scene_T snapshot, const glm::mat4& transform) 
 }
 
 void renderNonDiscardable(MeshInstance* meshInstance, Shader shader, Scene_T snapshot, Screenbuffer screen, glm::mat4 parentTransform = glm::mat4(1.0f)) {
-    Mesh* self = meshInstance->getSelf();
-    if (self) {
+    if (meshInstance->getSelf()) {
         if (!meshInstance->shouldDiscard(snapshot, meshInstance->getTransform())) {
             meshInstance->render(shader, screen, parentTransform);
         }
@@ -60,39 +58,28 @@ void renderNonDiscardable(MeshInstance* meshInstance, Shader shader, Scene_T sna
 }
 
 void ModelInstance::renderDV(Scene_T snapshot, Shader shader, Screenbuffer screen) {
-    if (!model->loaded) {
-        return;
-    }
-    if (model->renderable_meshes.empty()) {
+    if (model->loaded) {
         meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance) {
-            renderNonDiscardable(meshInstance, shader, snapshot, screen);
+            if (!shouldDiscard(key)) renderNonDiscardable(meshInstance, shader, snapshot, screen);
         });
-        return;
-    }
-    for (const std::string& meshName : model->renderable_meshes) {
-        MeshInstance* meshInstance = meshInstances->get(meshName);
-        if (meshInstance) {
-            renderNonDiscardable(meshInstance, shader, snapshot, screen);
-        }
     }
 }
 
 void ModelInstance::render(Shader shader, Screenbuffer screen) {
-    if (!model->loaded) {
-        return;
-    }
-    if (model->renderable_meshes.empty()) {
+    if (model->loaded) {
         meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance) {
-            meshInstance->render(shader, screen);
+            if (!shouldDiscard(key)) meshInstance->render(shader, screen);
         });
-        return;
     }
-    for (const std::string& meshName : model->renderable_meshes) {
-        MeshInstance* meshInstance = meshInstances->get(meshName);
-        if (meshInstance) {
-            meshInstance->render(shader, screen);
-        }
-    }
+}
+
+void ModelInstance::setDiscard(std::string mIKey, bool shouldDiscard) {
+    discardedInstances[mIKey] = shouldDiscard;
+}
+
+bool ModelInstance::shouldDiscard(std::string mIKey) {
+    auto p = discardedInstances.find(mIKey);
+    return p != discardedInstances.end() && p->second;
 }
 
 RenderTable<MeshInstance>* ModelInstance::getMeshInstances() {

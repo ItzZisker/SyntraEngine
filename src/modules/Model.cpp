@@ -1,7 +1,6 @@
 #include "assimp/postprocess.h"
 #include "modules/Mesh.hpp"
 #include "assimp/matrix4x4.h"
-#include <iterator>
 #include <modules/Model.hpp>
 #include <ostream>
 #include <regex>
@@ -14,8 +13,7 @@
 using namespace syng;
 
 unsigned int syng::TCBFromFile(const char *path, const std::string &directory);
-
-Texture syng::TextureFromFile(const char *path, const std::string &directory, const std::string &type);
+Texture syng::TextureFromFile(const char *path, const std::string &directory, const Texture_T &texType);
 
 Model::Model(std::string const &path, bool gamma) : gammaCorrection(gamma), path(path) {}
 
@@ -28,17 +26,10 @@ Model::~Model() {
     loaded = false;
 }
 
-void Model::filterMesh(std::string meshName) {
-    renderable_meshes.insert(meshName);
-}
-
 void Model::loadModel(VRAM_Approach approach, const std::set<std::string>& meshNames, bool flipTextures) {
     read(meshNames, flipTextures);
-    std::cout << "BLA\n";
     load(approach);
-    std::cout << "BLA1\n";
     groupMeshes();
-    std::cout << "BLA2\n";
 }
 
 void Model::groupMeshes() {
@@ -90,9 +81,7 @@ glm::mat4 convertToGLMMatrix(const aiMatrix4x4& aiMat) {
 void Model::processNode(const std::set<std::string>& meshNames, aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform) {
     aiMatrix4x4 currentTransform = parentTransform * node->mTransformation;
 
-    std::cout << "SG: " << node->mName.C_Str() << ": " << node->mNumMeshes << std::endl;
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
-        std::cout << "SSG: " << i << std::endl;
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
         glm::mat4 glmTransform = convertToGLMMatrix(currentTransform);
         std::string meshName(mesh->mName.C_Str());
@@ -101,7 +90,6 @@ void Model::processNode(const std::set<std::string>& meshNames, aiNode *node, co
             meshes.insert({meshName, processMesh(mesh, scene, glmTransform)});
         }
     }
-    std::cout << "DG: " << node->mName.C_Str() << std::endl;
 
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
         processNode(meshNames, node->mChildren[i], scene, currentTransform);
@@ -110,7 +98,7 @@ void Model::processNode(const std::set<std::string>& meshNames, aiNode *node, co
 
 Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& transform) {
     std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
+    std::vector<GLuint> indices;
     std::vector<Texture> textures;
 
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
@@ -161,19 +149,19 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& tr
 
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
 
-    std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+    std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, Texture_Diffuse);
     textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-    std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+    std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, Texture_Specular);
     textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-    std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+    std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, Texture_Normal);
     textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
-    std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
+    std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, Texture_Height);
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
-    std::vector<Texture> roughMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
+    std::vector<Texture> roughMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, Texture_Rough);
     textures.insert(textures.end(), roughMaps.begin(), roughMaps.end());
 
     MaterialProps props;
@@ -192,13 +180,13 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& tr
     props.hasRoughness = !roughMaps.empty();
 
     Mesh* res = new Mesh(vertices, indices, transform);
-    res->textures = textures;
+    for (auto& tex : textures) res->getTextures().push_back(tex);
     res->material = props;
 
     return res;
 }
 
-std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName) {
+std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, const Texture_T &texType) {
     std::vector<Texture> textures;
     for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
         aiString str;
@@ -212,7 +200,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType 
             }
         }
         if (!skip) {
-            Texture texture = TextureFromFile(str.C_Str(), this->directory, typeName);
+            Texture texture = TextureFromFile(str.C_Str(), this->directory, texType);
             textures.push_back(texture);
             textures_loaded.push_back(texture);
         }
@@ -226,11 +214,11 @@ void Model::pushTexture(const std::string& meshKey, Texture texture) {
     if (pair != meshes.end()) {
         Mesh *mesh = pair->second;
         textures_loaded.push_back(texRef);
-        mesh->textures.push_back(texRef);
-        if (texRef.type == "texture_height") {
+        mesh->getTextures().push_back(texRef);
+        if (texRef.type == Texture_Height) {
             mesh->material.hasDisplacement = true;
         }
-        if (texRef.type == "texture_roughness") {
+        if (texRef.type == Texture_Rough) {
             mesh->material.hasRoughness = true;
         }
     }
@@ -254,7 +242,7 @@ void Model::pullTexture(const std::string& meshKey, const std::string& path) {
     auto meshIt = meshes.find(meshKey);
     if (meshIt != meshes.end()) {
         Mesh* mesh = meshIt->second;
-        auto& meshTextures = mesh->textures;
+        auto& meshTextures = mesh->getTextures();
         meshTextures.erase(
             std::remove_if(meshTextures.begin(), meshTextures.end(),
                 [&](const Texture& tex) {
@@ -262,16 +250,16 @@ void Model::pullTexture(const std::string& meshKey, const std::string& path) {
                 }),
             meshTextures.end()
         );
-        if (texRef.type == "texture_height") {
+        if (texRef.type == Texture_Height) {
             mesh->material.hasDisplacement = false;
         }
-        if (texRef.type == "texture_roughness") {
+        if (texRef.type == Texture_Rough) {
             mesh->material.hasRoughness = false;
         }
     }
 }
 
-Texture syng::TextureFromFile(const char *path, const std::string &directory, const std::string &type) {
+Texture syng::TextureFromFile(const char *path, const std::string &directory, const Texture_T &type) {
     Texture texture;
     texture.TCB = TCBFromFile(path, directory);
     texture.type = type;

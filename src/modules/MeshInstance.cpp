@@ -40,9 +40,8 @@ MeshInstance::~MeshInstance() {
 }
 
 void MeshInstance::handle(MeshInstance* meshInstance, glm::vec3& min, glm::vec3& max, bool& unset) {
-    Mesh* root = meshInstance->mesh;
-    if (root) {
-        for (const auto& vertex : root->vertices) {
+    if (meshInstance->getSelf()) {
+        for (const auto& vertex : meshInstance->getSelf()->getVertices()) {
             if (unset) {
                 min = max = vertex.position;
                 unset = false;

@@ -2,17 +2,33 @@
 
 #include "Syngine.hpp"
 #include "SampleCallbacks.hpp"
+#include "engine/RenderTable.hpp"
 #include "modules/CubemapFramebuffer.hpp"
 #include "modules/Framebuffer.hpp"
 #include "modules/Model.hpp"
 #include "modules/ModelInstance.hpp"
 #include "modules/Scene.hpp"
+#include "modules/Screenbuffer.hpp"
+#include "modules/Shader.hpp"
 #include "modules/ShadowMapper.hpp"
 #include "modules/Skybox.hpp"
 #include "world/entity/BT_EntityConvexHull.hpp"
 #include "world/entity/BT_EntityTriangleMesh.hpp"
+#include <vector>
 
 using namespace syng;
+
+class SampleLightRenderer : ShaderRenderable {
+public:
+    Shader shader = {"shaders/lightBulbVertex.glsl", "shaders/lightBulbFrag.glsl"};
+    std::vector<MeshInstance*> lightBulbs;
+
+    void render(Shader shader, Screenbuffer screen = {}) override {
+        for (MeshInstance* bulb : lightBulbs) {
+            bulb->render(this->shader, screen);
+        }
+    }
+};
 
 class SampleGame {
 public:
