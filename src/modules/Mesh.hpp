@@ -117,6 +117,34 @@ public:
 // - Unfolded Spherical One-Pass Shadow Maps
 class Mesh2D : public GLVertexEelement<Vertex2D> {
 private:
+    glm::mat4 parentToNodeTransform;
+    GLuint texture_fallback;
+    Texture texture;
+public:
+    Mesh2D(std::vector<Vertex2D> vertices, std::vector<GLuint> indices, glm::mat4 parentToNodeTransform);
 
+    ~Mesh2D();
+
+    glm::mat4 getParentToNodeTransform();
+
+    Coordination getParentToNodeCoords();
+
+    void setFallbackTCB(GLuint TCB);
+
+    void setFallbackColor(GLubyte pixel[4]);
+
+    void setTexture(Texture texture);
+
+    void render(Shader shader, Screenbuffer screen, glm::mat4 transform);
+
+    void init(VRAM_Approach = Sequential);
+
+    Texture& getTexture() { return this->texture; }
 };
+
+namespace Presets2D
+{
+    Mesh2D* newQuad(Vertex2D corners[4], std::string pathToTexel = "");
+    Mesh2D* newQuad(Vertex2D corners[4], GLuint TCB);
+}
 }

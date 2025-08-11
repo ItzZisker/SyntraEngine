@@ -1,4 +1,5 @@
 #include "modules/Mesh.hpp"
+#include "Model.hpp"
 #include "Shader.hpp"
 #include "engine/Config.hpp"
 #include "modules/GLObjects.hpp"
@@ -6,9 +7,11 @@
 #include "modules/Shader.hpp"
 #include "glm/fwd.hpp"
 #include "world/WorldObject.hpp"
+#include <filesystem>
 #include <modules/Mesh.hpp>
 #include <string>
 #include <utils/GameUtils.hpp>
+#include <vector>
 
 using namespace syng;
 
@@ -19,6 +22,53 @@ void createPlainTexture(unsigned int &TCB, unsigned char pixel[4]) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+Mesh2D* Presets2D_newQuad(Vertex2D corners[4], Texture texture) { // TODO: Move these onto separate header-file/cpp, + Mesh2D, Rename modules -> modules_3D, and move these onto modules_2D directory
+    Vertex2D topLeft, topRight, bottomLeft, bottomRight;
+
+    float maxY = corners[0].position.y;
+    float minY = corners[0].position.y;
+    float maxX = corners[0].position.x;
+    float minX = corners[0].position.x;
+
+    for (int i = 1; i < 4; i++) {
+        if (corners[i].position.y > maxY) maxY = corners[i].position.y;
+        if (corners[i].position.y < minY) minY = corners[i].position.y;
+        if (corners[i].position.x > maxX) maxX = corners[i].position.x;
+        if (corners[i].position.x < minX) minX = corners[i].position.x;
+    }
+
+    for (int i = 0; i < 4; i++) {
+        auto& v = corners[i];
+        if (v.position.y == maxY && v.position.x == minX) topLeft = v;
+        else if (v.position.y == maxY && v.position.x == maxX) topRight = v;
+        else if (v.position.y == minY && v.position.x == minX) bottomLeft = v;
+        else if (v.position.y == minY && v.position.x == maxX) bottomRight = v;
+    }
+
+    std::vector<Vertex2D> orderedVertices = {
+        topRight,
+        bottomRight,
+        bottomLeft,
+        topLeft
+    };
+    std::vector<GLuint> indices = {
+        0, 1, 3,
+        1, 2, 3
+    };
+    Mesh2D* res = new Mesh2D(orderedVertices, indices, glm::mat4(1.0f));
+    res->setTexture(texture);
+
+    return res;
+}
+
+Mesh2D* Presets2D::newQuad(Vertex2D corners[4], std::string pathToTexel) {
+    return Presets2D_newQuad(corners, TextureFromFile(pathToTexel.c_str(), std::filesystem::current_path().string(), Texture_Diffuse));
+}
+
+Mesh2D* Presets2D::newQuad(Vertex2D corners[4], GLuint TCB) {
+    return Presets2D_newQuad(corners, {TCB, Texture_Diffuse, ""});
 }
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, glm::mat4 parenToNodeTransform)
