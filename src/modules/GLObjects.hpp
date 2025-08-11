@@ -1,6 +1,9 @@
 #pragma once
 
 #include "modules/Shader.hpp"
+#include <cstddef>
+#include <iostream>
+#include <ostream>
 #include <stdexcept>
 #include <vector>
 #include "utils/GameUtils.hpp"
@@ -25,7 +28,7 @@ struct GLVertexAttribute {
 
 struct GLDataSub {
     GLintptr offset;
-    size_t size;
+    GLsizeiptr size;
     void* data = (void*) 0;
 };
 

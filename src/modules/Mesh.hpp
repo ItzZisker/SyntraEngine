@@ -110,12 +110,13 @@ public:
     std::vector<Texture>& getTextures() { return this->textures; };
 };
 
+// TODO: This
+// - Replace all messy vertex arrays in all modules with new GLVertex and GLVertexElement
+// - Text is also an implementation of Mesh2D which could have font, animations, etc
+// - Mesh2D could be sprite, quads, menu buttons, animated, or any 2D object
+// - Unfolded Spherical One-Pass Shadow Maps
 class Mesh2D : public GLVertexEelement<Vertex2D> {
 private:
-    // TODO: This
-    // - Replace all messy vertex arrays in all modules with new GLVertex and GLVertexElement
-    // - Text is implementation of Mesh2D which could have font, animations, etc
-    // - Mesh2D could be sprite, quads, menu buttons, animated, or any 2D object
-    // - Unfolded Spherical One-Pass Shadow Maps
+
 };
 }

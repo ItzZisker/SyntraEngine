@@ -149,6 +149,7 @@ void Mesh::init(VRAM_Approach approach) {
             attribute({4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, bitangent)});
             attribute({5, MAX_BONE_INFLUENCE, GL_INT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, m_BoneIDs), GLPointer_Int32});
             attribute({6, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, m_Weights)});
+            reserve();
         break;
         case Interleaved:        
             size_t count = vertices.size();
@@ -195,19 +196,19 @@ void Mesh::init(VRAM_Approach approach) {
 
             GLintptr offset = 0;
 
-            dataSub({offset, vec3fLength * sizeof(float), positions});
+            dataSub({offset, static_cast<GLsizeiptr>(vec3fLength * sizeof(float)), positions});
             offset += vec3fLength * sizeof(float);
-            dataSub({offset, vec3fLength * sizeof(float), normals});
+            dataSub({offset, static_cast<GLsizeiptr>(vec3fLength * sizeof(float)), normals});
             offset += vec3fLength * sizeof(float);
-            dataSub({offset, vec2fLength * sizeof(float), texCoords});
+            dataSub({offset, static_cast<GLsizeiptr>(vec2fLength * sizeof(float)), texCoords});
             offset += vec2fLength * sizeof(float);
-            dataSub({offset, vec3fLength * sizeof(float), tangents});
+            dataSub({offset, static_cast<GLsizeiptr>(vec3fLength * sizeof(float)), tangents});
             offset += vec3fLength * sizeof(float);
-            dataSub({offset, vec3fLength * sizeof(float), biTangents});
+            dataSub({offset, static_cast<GLsizeiptr>(vec3fLength * sizeof(float)), biTangents});
             offset += vec3fLength * sizeof(float);
-            dataSub({offset, boneLength * sizeof(int), m_BoneIDs});
+            dataSub({offset, static_cast<GLsizeiptr>(boneLength * sizeof(int)), m_BoneIDs});
             offset += boneLength * sizeof(int);
-            dataSub({offset, boneLength * sizeof(float), m_Weights});
+            dataSub({offset, static_cast<GLsizeiptr>(boneLength * sizeof(float)), m_Weights});
 
             GLuint attribIndex = 0;
             offset = 0;
@@ -222,9 +223,11 @@ void Mesh::init(VRAM_Approach approach) {
             offset += vec3fLength * sizeof(float);
             attribute({attribIndex++, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
             offset += vec3fLength * sizeof(float);
-            attribute({attribIndex++, MAX_BONE_INFLUENCE, GL_INT, GL_FALSE, 0, (void*)(offset)});
+            attribute({attribIndex++, MAX_BONE_INFLUENCE, GL_INT, GL_FALSE, 0, (void*)(offset), GLPointer_Int32});
             offset += boneLength * sizeof(int);
             attribute({attribIndex++, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
+
+            reserve();
 
             delete[] positions;
             delete[] normals;
@@ -235,5 +238,4 @@ void Mesh::init(VRAM_Approach approach) {
             delete[] m_BoneIDs;
         break;
     }
-    GLVertexEelement::reserve();
 }

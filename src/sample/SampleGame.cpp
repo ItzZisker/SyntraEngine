@@ -30,20 +30,22 @@
  *   - [*] Rename Bullet-dependent Classes Starting with "BT_" and PhysX with "PX_"
  *   - [*] Opacity Support + Blending Objects (Supports both Skybox & Objects behind)
  *   - [*] Rebuild Bullet linked all in one libBullet3.dll (Impossible, linked them statically, much more cleaner)
+ *   - [*] GLVertex, GLVertexElement, GLObjects, cleaner vertex read/write to GPU
+ *   - [-] Scene2D, Mesh2D
  *   - [ ] Deferred Shading
- *   - [ ] Merge Point Shadow Mapping into "development" branch
+ *   - [ ] Unfolded one-pass spherical Point Shadow Maps
  *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows (*) -> Cascaded Shadow Mapping ( )
  *   - [ ] SSAO (+ < Game Menu Option >)
- *   - [ ] Room to Room Lighting System (Affects lights only on visible neighboring faces using id Tech 4 method or Minecraft's Lighting System)
  *   - [ ] Anti-Aliasing
- *   - [-] Flame Particles ( ) | Gamma correction (*) -> HDR ( ) -> Bloom ( ) -> Normal Mapping (*) -> Parallax Mapping (*) -> PBR Textures ( )
+ *   - [-] Flame Particles ( ) | Gamma correction (*) -> HDR (*) -> Bloom ( ) -> Normal Mapping (*) -> Parallax Mapping (*) -> PBR Textures ( )
  *   - [ ] Test/Load Sample GLTF Models by Standard
  *   - [ ] < Make format parser for mesh nodes name (Using gltf's custom properties + assimp) (ECH_: Entity Convex Hull, ETM_: Entity Triangle Mesh, PF_: FlameParticle, [B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh) >
+ *   - [ ] < Room to Room Lighting System > (Filter lights for specific meshes in a room, so meshes behind the walls won't get lit, Only usable for static pointlights)
  *   - [ ] < Serialize/Deserialize Game Data >
  *   - [ ] < Review https://github.com/kcat/openal-soft for 3D Audio >
  *   - [ ] < Game Modeling + Design (Low Poly? High Constrast colors?) >
  *   - [ ] < Game UI (VHS Style Menus? idk) >
- *   - [ ] < Networking (via Facebook Wangle) + ANSI Server >
+ *   - [ ] < Networking (via ASIO) + ANSI Server >
  *   - [ ] < Produce (Demo via itch.io, Paid on Steam) >
  */ 
 
@@ -103,7 +105,7 @@ void SampleGame::createWindow(GameWindow *window) {
     std::cout << "scene\n";
     sceneModel = new Model("models/wall/2g/wall.gltf");
     std::cout << "H\n";
-    sceneModel->loadModel(syng::Sequential);
+    sceneModel->loadModel(syng::Interleaved);
     std::cout << "scene done\n";
 
     std::string dir = std::filesystem::current_path().string();
@@ -116,18 +118,22 @@ void SampleGame::createWindow(GameWindow *window) {
                 sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/beige_wall_001_nor_gl_1k.jpg", dir, Texture_Normal));
                 sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/beige_wall_001_disp_1k.png", dir, Texture_Height));
             }
+            std::cout << "ellionat1\n";
             if (GameUtils::str_contains(tex.path, "laminate_floor_03")) {
                 sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_nor_gl_1k.png", dir, Texture_Normal));
                 sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_disp_1k.png", dir, Texture_Height));
             }
+            std::cout << "ellionat2\n";
             if (GameUtils::str_contains(tex.path, "paper_0033")) {
                 sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_normal_opengl_1k.png", dir, Texture_Normal));
                 //sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_height_1k.png", dir, Texture_Height));
             }
+            std::cout << "ellionat3\n";
             if (GameUtils::str_contains(tex.path, "wood_table_001")) {
                 sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_nor_gl_1k.png", dir, Texture_Normal));
                 //sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_disp_1k.png", dir, Texture_Height));
             }
+            std::cout << "ellionat4\n";
         }
         std::cout << "texture end: " << pair.first << std::endl;
     }

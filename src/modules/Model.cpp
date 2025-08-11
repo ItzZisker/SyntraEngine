@@ -209,18 +209,26 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType 
 }
 
 void Model::pushTexture(const std::string& meshKey, Texture texture) {
+    std::cout << "boom1: " << texture.path << std::endl;
     auto pair = meshes.find(meshKey);
+    std::cout << "boom2\n";
     Texture& texRef = texture;
+    std::cout << "boom3\n";
     if (pair != meshes.end()) {
+        std::cout << "boom4\n";
         Mesh *mesh = pair->second;
+        std::cout << "boom5\n";
         textures_loaded.push_back(texRef);
+        std::cout << "boom6\n";
         mesh->getTextures().push_back(texRef);
+        std::cout << "boom7\n";
         if (texRef.type == Texture_Height) {
             mesh->material.hasDisplacement = true;
         }
         if (texRef.type == Texture_Rough) {
             mesh->material.hasRoughness = true;
         }
+        std::cout << "boom8\n";
     }
 }
 
