@@ -31,7 +31,7 @@
  *   - [*] Opacity Support + Blending Objects (Supports both Skybox & Objects behind)
  *   - [*] Rebuild Bullet linked all in one libBullet3.dll (Impossible, linked them statically, much more cleaner)
  *   - [*] GLVertex, GLVertexElement, GLObjects, cleaner vertex read/write to GPU
- *   - [-] Scene2D, Mesh2D
+ *   - [-] Scene2D ( ), Mesh2D (*)
  *   - [ ] Deferred Shading
  *   - [ ] Unfolded one-pass spherical Point Shadow Maps
  *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows (*) -> Cascaded Shadow Mapping ( )

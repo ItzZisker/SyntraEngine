@@ -11,7 +11,6 @@ public:
     virtual ~SDL_EventHandler() = default;
 
     virtual void onEvent(const SDL_Event& event) = 0;
-
     virtual void onEvents(std::vector<SDL_Event> events) {
         for (auto& event : events) {
             onEvent(event);

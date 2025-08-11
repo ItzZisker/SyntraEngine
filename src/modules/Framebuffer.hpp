@@ -3,6 +3,7 @@
 #include "Shader.hpp"
 #include "Syngine.hpp"
 #include "engine/RenderTable.hpp"
+#include "modules/Mesh.hpp"
 #include "modules/Screenbuffer.hpp"
 #include "modules/Scene.hpp"
 #include "modules/Shader.hpp"
@@ -27,47 +28,36 @@ private:
     GLenum TCBFormat = GL_RGB;
     AntiAliasing AA = AA_OFF;
     HDR HDR = HDR_OFF;
+    Mesh2D* quad;
 
     unsigned int MSOUT_FBO = 0, MS_TCB = 0;
-    unsigned int quadVAO = 0, quadVBO = 0;
     unsigned int RBO = 0, TCB = 0; // Texture Color Buffer
 public:
     Framebuffer(Scene* scene);
-
     Framebuffer(Scene* scene, Shader outputShader);
-
     ~Framebuffer();
 
     void create(bool outputToScreenShader = true);
-
     void create(unsigned int width, unsigned int height, bool outputToScreenShader = true);
 
     void appendTCB(int attachmentIndex, unsigned int TCB, GLenum textureTarget = GL_TEXTURE_2D, GLuint layer = 0);
 
     void setOutputAttachments(std::vector<GLenum> GL_attachments);
-
     void setAntiAliasing(AntiAliasing AA);
-
     void setTCBFormat(GLenum format);
-
     void setHDR(class HDR hdr);
 
     void addInitTask(std::function<void(Framebuffer *)> task);
-
     void addRenderTask(std::function<void(Framebuffer *)> task);
 
     void render(Screenbuffer screen);
-
     void render(GameWindow* window) override {
         render(*window);
     }
 
     RenderTable<ShaderRenderable>* getRenderTable();
-
     Shader getOutputShader();
-
     AntiAliasing getAntiAliasing();
-
     GLenum getTCBFormat();
 
     class HDR getHDR();

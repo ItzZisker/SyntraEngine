@@ -52,19 +52,16 @@ public:
     );
 
     void load(VRAM_Approach approach = Sequential);
-
     void loadModel(VRAM_Approach approach = Sequential, const std::set<std::string>& meshes = {}, bool flip = false);
 
     void groupMeshes();
 
     void pushTexture(const std::string& meshKey, Texture texture);
-
     void pullTexture(const std::string& meshKey, const std::string& path);
 private:
     std::string path;
 
     void processNode(const std::set<std::string>& meshNames, aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform);
-
     Mesh* processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& transform);
 
     std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, const Texture_T& texType);

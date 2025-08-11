@@ -124,65 +124,45 @@ public:
     void withShadows(ShadowMapper* shadowMapper);
 
     void updateProjection(glm::mat4 customPerspective);
-
     void updateUniforms();
-
     void setGamma(float gamma);
 
     void setDirectionalLight(DirLight light);
-
     void setPointLights(std::vector<PointLight> pointLights);
-
     void setSpotLights(std::vector<SpotLight> spotLights);
-
     void setPointLight(unsigned int index, PointLight light);
-
     void setSpotLight(unsigned int index, SpotLight light);
 
     void setScreenLayout(int width, int height);
-
     void setZBufferLayout(float near, float far);
-
     void setAspectRatio(float aspectRatio);
-
     void setFieldOfView(float FOVDegrees);
 
     float getScreenWidth();
-
     float getScreenHeight();
-
     float getZNear();
-
     float getZFar();
-
     float getFieldOfViewDegrees();
-
     float getAspectRatio();
 
-    DirLight getDirectionalLight();
-
     std::vector<PointLight> getPointLights();
-
     std::vector<SpotLight> getSpotLights();
 
+    DirLight getDirectionalLight();
     PointLight getPointLight(unsigned int index);
-
     SpotLight getSpotLight(unsigned int index);
-
-    Scene_T getSnapshot();
 
     ShadowMapper* getShadowMapper();
 
     Camera* getCamera();
+    Scene_T getSnapshot();
 
     glm::mat4 getProjection();
-
     glm::mat4 getViewMatrix();
 
-    RenderTable<ShaderRenderable>* getBatchRenderTable();
-
     Shader getScreenShader();
-
     Shader getBatchShader();
+
+    RenderTable<ShaderRenderable>* getBatchRenderTable();
 };
 }

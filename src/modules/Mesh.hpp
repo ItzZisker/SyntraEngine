@@ -81,7 +81,7 @@ constexpr const char* TEXTURE_NAME(Texture_T type) {
 
 Texture loadTexture(const std::string& path, const std::string& type);
 
-class Mesh : public GLVertexEelement<Vertex> {
+class Mesh : public GLVertexElement<Vertex> {
 private:
     glm::mat4 parentToNodeTransform;
     std::unordered_map<Texture_T, GLuint> textures_fallback;
@@ -90,21 +90,16 @@ public:
     MaterialProps material;
 
     Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, glm::mat4 parentToNodeTransform);
-
     ~Mesh();
 
     glm::mat4 getParentToNodeTransform();
-
     Coordination getParentToNodeCoords();
 
     bool hasFallback(Texture_T texType);
-
     void setFallbackTCB(Texture_T texType, GLuint TCB);
-
     void setFallbackColor(Texture_T texType, GLubyte pixel[4]);
 
     void render(Shader shader, Screenbuffer screen, glm::mat4 transform);
-
     void init(VRAM_Approach = Sequential);
 
     std::vector<Texture>& getTextures() { return this->textures; };
@@ -115,36 +110,26 @@ public:
 // - Text is also an implementation of Mesh2D which could have font, animations, etc
 // - Mesh2D could be sprite, quads, menu buttons, animated, or any 2D object
 // - Unfolded Spherical One-Pass Shadow Maps
-class Mesh2D : public GLVertexEelement<Vertex2D> {
+class Mesh2D : public GLVertexElement<Vertex2D> {
 private:
-    glm::mat4 parentToNodeTransform;
-    GLuint texture_fallback;
-    Texture texture;
+    glm::mat4 parentToNodeTransform = glm::mat4(1.0f);
+    GLuint texture_fallback = 0;
+    Texture texture = {0};
 public:
     Mesh2D(std::vector<Vertex2D> vertices, std::vector<GLuint> indices, glm::mat4 parentToNodeTransform);
-
     ~Mesh2D();
 
     glm::mat4 getParentToNodeTransform();
-
     Coordination getParentToNodeCoords();
 
     void setFallbackTCB(GLuint TCB);
-
     void setFallbackColor(GLubyte pixel[4]);
-
     void setTexture(Texture texture);
 
     void render(Shader shader, Screenbuffer screen, glm::mat4 transform);
-
     void init(VRAM_Approach = Sequential);
 
     Texture& getTexture() { return this->texture; }
+    GLuint getFallbackTCB() { return this->texture_fallback; }
 };
-
-namespace Presets2D
-{
-    Mesh2D* newQuad(Vertex2D corners[4], std::string pathToTexel = "");
-    Mesh2D* newQuad(Vertex2D corners[4], GLuint TCB);
-}
 }

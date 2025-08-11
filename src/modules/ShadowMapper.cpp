@@ -1,4 +1,5 @@
 #include "modules/ShadowMapper.hpp"
+#include "Presets.hpp"
 #include "engine/RenderTable.hpp"
 #include "modules/Scene.hpp"
 #include "modules/Screenbuffer.hpp"
@@ -8,10 +9,10 @@
 
 using namespace syng;
 
-ShadowMapper::ShadowMapper(unsigned int width, unsigned int height, glm::mat4 lightProj, glm::mat4 lightView) :
+ShadowMapper::ShadowMapper(GLuint width, GLuint height, glm::mat4 lightProj, glm::mat4 lightView) :
                             shadowWidth(width), shadowHeight(height), lightProjection(lightProj), lightView(lightView) {}
 
-ShadowMapper::ShadowMapper(unsigned int width, unsigned int height) : ShadowMapper(width, height, {}, {}) {
+ShadowMapper::ShadowMapper(GLuint width, GLuint height) : ShadowMapper(width, height, {}, {}) {
     glm::vec3 lightDir = glm::normalize(glm::vec3(-0.5f, -1.0f, -0.5f));
     glm::vec3 lightPos = -lightDir * 10.0f;
     glm::vec3 target = glm::vec3(0.0f);
@@ -22,7 +23,7 @@ ShadowMapper::ShadowMapper(unsigned int width, unsigned int height) : ShadowMapp
     this->lightProjection = glm::ortho(-30.0f, 30.0f, -30.0f, 30.0f, near_plane, far_plane); 
 }
 
-ShadowMapper::ShadowMapper(unsigned int uv) : ShadowMapper(uv, uv) {}
+ShadowMapper::ShadowMapper(GLuint uv) : ShadowMapper(uv, uv) {}
 
 ShadowMapper::~ShadowMapper() {
     glDeleteFramebuffers(1, &depthMapFBO);
@@ -35,10 +36,10 @@ void ShadowMapper::create() {
     glGenTextures(1, &depthMapTCB);
     glBindTexture(GL_TEXTURE_2D, depthMapTCB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowWidth, shadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    
+    PresetsTexel::TextureFilter(GL_TEXTURE_2D, GL_NEAREST);
+    PresetsTexel::TextureParamST(GL_TEXTURE_2D, GL_CLAMP_TO_BORDER);
+
     float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
@@ -87,11 +88,11 @@ void ShadowMapper::pushUniforms(Shader batchShader) {
     batchShader.setTexture("shadowMap", GL_TEXTURE_2D, 7, getDepthMapTCB());
 }
 
-unsigned int ShadowMapper::getDepthMapFBO() {
+GLuint ShadowMapper::getDepthMapFBO() {
     return this->depthMapFBO;
 }
 
-unsigned int ShadowMapper::getDepthMapTCB() {
+GLuint ShadowMapper::getDepthMapTCB() {
     return this->depthMapTCB;
 }
 

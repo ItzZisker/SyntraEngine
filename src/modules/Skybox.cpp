@@ -1,3 +1,5 @@
+#include "Presets.hpp"
+#include "modules/GLObjects.hpp"
 #include "modules/Screenbuffer.hpp"
 #include "modules/Shader.hpp"
 #include <modules/Skybox.hpp>
@@ -6,6 +8,7 @@
 #include <ostream>
 #include <stb_image.h>
 #include <glad/glad.h>
+#include <vector>
 
 using namespace syng;
 
@@ -29,12 +32,8 @@ unsigned int syng::loadCubemap(std::vector<std::string> faces) {
             stbi_image_free(data);
         }
     }
-
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    PresetsTexel::TextureFilter(GL_TEXTURE_CUBE_MAP);
+    PresetsTexel::TextureParamSTR(GL_TEXTURE_CUBE_MAP, GL_CLAMP_TO_EDGE);
 
     return textureID;
 }
@@ -45,71 +44,20 @@ Skybox::Skybox(Scene* scene, std::vector<std::string> faces)
 Skybox::~Skybox() {
     faces.clear();
     shader.disposeProgram();
-    if (cubeVAO)
-        glDeleteVertexArrays(1, &cubeVAO);
-    if (cubeVBO)
-        glDeleteBuffers(1, &cubeVBO);
+    delete cube;
 }
 
 void Skybox::load() {
     shader.init();
     cubemapTexture = loadCubemap(faces);
 
-    float cubeVertices[] = {
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
+    std::vector<glm::vec3> vertices;
+    std::vector<GLuint> indices;
+    Presets3D::pushVerticesCube(2.0f, vertices, indices);
 
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-        -1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f
-    };
-
-    glGenVertexArrays(1, &cubeVAO);
-    glGenBuffers(1, &cubeVBO);
-    glBindVertexArray(cubeVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-    glBindVertexArray(0);
+    cube = new GLVertexElement<glm::vec3>(vertices, indices);
+    cube->attribute({0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0});
+    cube->reserve();
 }
 
 void Skybox::render(Screenbuffer screen) {
@@ -124,8 +72,7 @@ void Skybox::render(Screenbuffer screen) {
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_FALSE);
 
-    glBindVertexArray(cubeVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    cube->draw();
 
     glDepthFunc(GL_LESS);
     glDepthMask(GL_TRUE);

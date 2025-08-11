@@ -17,21 +17,15 @@ private:
     void handle(MeshInstance* meshInstance, glm::vec3& min, glm::vec3& max, bool& unset);
 public:
     MeshInstance(Mesh* mesh);
-
     MeshInstance(Mesh* mesh, Coordination coords);
-    
     MeshInstance(std::unordered_map<std::string, Mesh*> subMeshes);
-
     MeshInstance(std::unordered_map<std::string, Mesh*> subMeshes, Coordination coords);
-
     ~MeshInstance();
 
     void render(Shader shader, Screenbuffer screen, glm::mat4 parentTransform);
-
     void render(Shader shader, Screenbuffer screen = {}) override;
 
     RenderTable<MeshInstance>* getChildren();
-
     Mesh* getSelf();
 };
 }

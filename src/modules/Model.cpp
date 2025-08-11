@@ -1,7 +1,9 @@
 #include "assimp/postprocess.h"
 #include "modules/Mesh.hpp"
 #include "assimp/matrix4x4.h"
+#include "modules/Shader.hpp"
 #include <modules/Model.hpp>
+#include <modules/Presets.hpp>
 #include <ostream>
 #include <regex>
 #include <utils/GameUtils.hpp>
@@ -212,20 +214,18 @@ void Model::pushTexture(const std::string& meshKey, Texture texture) {
     std::cout << "boom1: " << texture.path << std::endl;
     auto pair = meshes.find(meshKey);
     std::cout << "boom2\n";
-    Texture& texRef = texture;
     std::cout << "boom3\n";
     if (pair != meshes.end()) {
         std::cout << "boom4\n";
         Mesh *mesh = pair->second;
         std::cout << "boom5\n";
-        textures_loaded.push_back(texRef);
-        std::cout << "boom6\n";
-        mesh->getTextures().push_back(texRef);
+        textures_loaded.push_back(texture);
+        mesh->getTextures().push_back(texture);
         std::cout << "boom7\n";
-        if (texRef.type == Texture_Height) {
+        if (texture.type == Texture_Height) {
             mesh->material.hasDisplacement = true;
         }
-        if (texRef.type == Texture_Rough) {
+        if (texture.type == Texture_Rough) {
             mesh->material.hasRoughness = true;
         }
         std::cout << "boom8\n";
@@ -298,8 +298,7 @@ unsigned int syng::TCBFromFile(const char *path, const std::string &directory) {
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        PresetsTexel::TextureParamST(GL_TEXTURE_2D, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 

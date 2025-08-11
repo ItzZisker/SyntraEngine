@@ -29,13 +29,11 @@ public:
     ~ModelInstance();
 
     void renderDV(Scene_T snapshot, Shader shader, Screenbuffer screen);
-
     void render(Shader shader, Screenbuffer screen = {}) override;
 
     void setDiscard(std::string mIKey, bool shouldDiscard);
 
     bool shouldDiscard(std::string mIKey);
-
     bool shouldDiscard(Scene_T snapshot, const glm::mat4& transform) override;
 
     RenderTable<MeshInstance>* getMeshInstances();

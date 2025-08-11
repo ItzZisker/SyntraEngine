@@ -15,12 +15,12 @@ namespace syng {
     const AntiAliasing AA_MSAAx4 = {MSAA_4};
 }
 
-Screenbuffer::Screenbuffer(unsigned int FBO) : FBO(FBO) {}
+Screenbuffer::Screenbuffer(GLuint FBO) : FBO(FBO) {}
 
-Screenbuffer::Screenbuffer(unsigned int FBO, unsigned int width, unsigned int height, bool outputToParent)
+Screenbuffer::Screenbuffer(GLuint FBO, GLuint width, GLuint height, bool outputToParent)
                             : FBO(FBO), width(width), height(height), outputToParent(outputToParent) {}
 
-void Screenbuffer::onCreate(unsigned int width, unsigned int height, bool outputToParent, unsigned int FBO) {
+void Screenbuffer::onCreate(GLuint width, GLuint height, bool outputToParent, GLuint FBO) {
     this->width = width;
     this->height = height;
     this->outputToParent = outputToParent;
@@ -28,15 +28,15 @@ void Screenbuffer::onCreate(unsigned int width, unsigned int height, bool output
     SetupObject::onCreate();
 }
 
-unsigned int Screenbuffer::getFBO() {
+GLuint Screenbuffer::getFBO() {
     return this->FBO;
 }
 
-unsigned int Screenbuffer::getWidth() {
+GLuint Screenbuffer::getWidth() {
     return this->width;
 }
 
-unsigned int Screenbuffer::getHeight() {
+GLuint Screenbuffer::getHeight() {
     return this->height;
 }
 

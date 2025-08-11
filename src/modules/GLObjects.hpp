@@ -128,15 +128,15 @@ public:
 };
 
 template<typename V = GLfloat>
-class GLVertexEelement : public GLVertex<V> {
+class GLVertexElement : public GLVertex<V> {
 protected:
     std::vector<GLuint> indices;
     GLuint EBO = 0;
 public:
-    GLVertexEelement(std::vector<V> vertices, std::vector<GLuint> indices, int componentsPerVertex = 3)
+    GLVertexElement(std::vector<V> vertices, std::vector<GLuint> indices, int componentsPerVertex = 3)
         : GLVertex<V>(vertices, componentsPerVertex), indices(indices) {}
 
-    ~GLVertexEelement() {
+    ~GLVertexElement() {
         if (EBO) glDeleteBuffers(1, &EBO);
     }
 
@@ -145,7 +145,7 @@ public:
     }
     
     bool isLoaded() override {
-        return GLVertexEelement::isReserved();
+        return GLVertexElement::isReserved();
     }
     
     void reserve() override {

@@ -1,11 +1,13 @@
 #include "SDL3/SDL_timer.h"
 #include "engine/RenderTable.hpp"
+#include "modules/Mesh.hpp"
 #include "modules/Screenbuffer.hpp"
 #include "modules/Shader.hpp"
 #include "world/WorldObject.hpp"
 #include "utils/GameUtils.hpp"
 #include <modules/Framebuffer.hpp>
 #include <modules/ShadowMapper.hpp>
+#include <modules/Presets.hpp>
 #include <iostream>
 #include <ostream>
 
@@ -23,9 +25,8 @@ Framebuffer::~Framebuffer() {
     glDeleteRenderbuffers(1, &RBO);
     glDeleteTextures(1, &TCB);
 
-    if (outputToParent) {
-        glDeleteVertexArrays(1, &quadVAO);
-        glDeleteBuffers(1, &quadVBO);
+    if (outputToParent && quad) {
+        delete quad;
     }
 }
 
@@ -65,6 +66,7 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
 
     glGenFramebuffers(1, &FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
     if (AA.isMultiSample()) {
         glGenTextures(1, &MS_TCB);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, MS_TCB);
@@ -74,17 +76,18 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
         glGenFramebuffers(1, &MSOUT_FBO);
         glBindFramebuffer(GL_FRAMEBUFFER, MSOUT_FBO);
     }
+
     glGenTextures(1, &TCB);
     glBindTexture(GL_TEXTURE_2D, TCB);
     glTexImage2D(GL_TEXTURE_2D, 0, TCBFormat, width_, height_, 0, TCBBaseFormat, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    PresetsTexel::TextureFilter(GL_TEXTURE_2D, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TCB, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
     glGenRenderbuffers(1, &RBO);
     glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+    
     if (AA.isMultiSample()) {
         glRenderbufferStorageMultisample(GL_RENDERBUFFER, AA.getMultiSamples(), GL_DEPTH24_STENCIL8, width_, height_);
     } else {
@@ -98,27 +101,16 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     if (outputToScreenShader) {
-        float quadVertices[] = {
-        -1.0f,   1.0f,  0.0f,  1.0f,
-        -1.0f,  -1.0f,  0.0f,  0.0f,
-        1.0f,  -1.0f, 1.0f, 0.0f,
-        -1.0f,  1.0f, 0.0f, 1.0f,
-        1.0f, -1.0f, 1.0f, 0.0f,
-        1.0f,  1.0f, 1.0f, 1.0f
+        Vertex2D corners[] = {
+            {{-1.0f,  -1.0f},  {0.0f,  0.0f}},
+            {{-1.0f,   1.0f},  {0.0f,  1.0f}},
+            {{1.0f,  -1.0f}, {1.0f, 0.0f}},
+            {{1.0f,  1.0f}, {1.0f, 1.0f}}
         };
-
-        glGenVertexArrays(1, &quadVAO);
-        glGenBuffers(1, &quadVBO);
-        glBindVertexArray(quadVAO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+        quad = Presets2D::newMeshQuad(corners, TCB);
+        quad->attribute({0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0});
+        quad->attribute({1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float))});
+        quad->reserve();
     }
     if (!outputShader.hasProgram()) {
         outputShader.init();
@@ -208,7 +200,6 @@ void Framebuffer::render(Screenbuffer screen) {
 
         outputShader.use();
         outputShader.setTexture("screenTexture", GL_TEXTURE_2D, 0, TCB);
-
         outputShader.setBool("hdrEnabled", HDR.isEnabled());
         if (HDR.isEnabled()) {
             outputShader.setFloat("hdrExposure", HDR.exposure);
@@ -224,8 +215,7 @@ void Framebuffer::render(Screenbuffer screen) {
             outputShader.setBool("fxaaEnabled", false);
         }
 
-        glBindVertexArray(quadVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        quad->draw();
     }
 }
 

@@ -1,7 +1,9 @@
 #include "modules/Mesh.hpp"
 #include "Model.hpp"
+#include "Presets.hpp"
 #include "Shader.hpp"
 #include "engine/Config.hpp"
+#include "modules/Camera.hpp"
 #include "modules/GLObjects.hpp"
 #include "modules/Screenbuffer.hpp"
 #include "modules/Shader.hpp"
@@ -19,60 +21,12 @@ void createPlainTexture(unsigned int &TCB, unsigned char pixel[4]) {
     glGenTextures(1, &TCB);
     glBindTexture(GL_TEXTURE_2D, TCB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    PresetsTexel::TextureFilter(GL_TEXTURE_2D, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-Mesh2D* Presets2D_newQuad(Vertex2D corners[4], Texture texture) { // TODO: Move these onto separate header-file/cpp, + Mesh2D, Rename modules -> modules_3D, and move these onto modules_2D directory
-    Vertex2D topLeft, topRight, bottomLeft, bottomRight;
-
-    float maxY = corners[0].position.y;
-    float minY = corners[0].position.y;
-    float maxX = corners[0].position.x;
-    float minX = corners[0].position.x;
-
-    for (int i = 1; i < 4; i++) {
-        if (corners[i].position.y > maxY) maxY = corners[i].position.y;
-        if (corners[i].position.y < minY) minY = corners[i].position.y;
-        if (corners[i].position.x > maxX) maxX = corners[i].position.x;
-        if (corners[i].position.x < minX) minX = corners[i].position.x;
-    }
-
-    for (int i = 0; i < 4; i++) {
-        auto& v = corners[i];
-        if (v.position.y == maxY && v.position.x == minX) topLeft = v;
-        else if (v.position.y == maxY && v.position.x == maxX) topRight = v;
-        else if (v.position.y == minY && v.position.x == minX) bottomLeft = v;
-        else if (v.position.y == minY && v.position.x == maxX) bottomRight = v;
-    }
-
-    std::vector<Vertex2D> orderedVertices = {
-        topRight,
-        bottomRight,
-        bottomLeft,
-        topLeft
-    };
-    std::vector<GLuint> indices = {
-        0, 1, 3,
-        1, 2, 3
-    };
-    Mesh2D* res = new Mesh2D(orderedVertices, indices, glm::mat4(1.0f));
-    res->setTexture(texture);
-
-    return res;
-}
-
-Mesh2D* Presets2D::newQuad(Vertex2D corners[4], std::string pathToTexel) {
-    return Presets2D_newQuad(corners, TextureFromFile(pathToTexel.c_str(), std::filesystem::current_path().string(), Texture_Diffuse));
-}
-
-Mesh2D* Presets2D::newQuad(Vertex2D corners[4], GLuint TCB) {
-    return Presets2D_newQuad(corners, {TCB, Texture_Diffuse, ""});
-}
-
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, glm::mat4 parenToNodeTransform)
-    : GLVertexEelement<Vertex>(vertices, indices), parentToNodeTransform(parenToNodeTransform) {}
+    : GLVertexElement<Vertex>(vertices, indices), parentToNodeTransform(parenToNodeTransform) {}
 
 Mesh::~Mesh() {
     vertices.clear();
@@ -179,11 +133,7 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
     shader.setBool("parallax", heightNr > 1  && material.hasDisplacement);
     shader.setBool("roughness", roughNr > 1 && material.hasRoughness);
 
-    GLVertexEelement::draw();
-    // glBindVertexArray(VAO);
-    // glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
-    
-    // glBindVertexArray(0);
+    GLVertexElement::draw();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -286,6 +236,104 @@ void Mesh::init(VRAM_Approach approach) {
             delete[] biTangents;
             delete[] m_Weights;
             delete[] m_BoneIDs;
+        break;
+    }
+}
+
+Mesh2D::Mesh2D(std::vector<Vertex2D> vertices, std::vector<GLuint> indices, glm::mat4 parentToNodeTransform) : GLVertexElement<Vertex2D>(vertices, indices) {
+    this->parentToNodeTransform = parentToNodeTransform;
+}
+
+Mesh2D::~Mesh2D() {
+    if (texture_fallback) glDeleteTextures(1, &texture_fallback);
+    if (texture.TCB) glDeleteTextures(1, &texture.TCB);
+}
+
+glm::mat4 Mesh2D::getParentToNodeTransform() {
+    return this->parentToNodeTransform;
+}
+
+Coordination Mesh2D::getParentToNodeCoords() {
+    return Coordination(getParentToNodeTransform());
+}
+
+void Mesh2D::setFallbackTCB(GLuint TCB) {
+    if (!TCB) return;
+    if (texture_fallback) glDeleteTextures(1, &texture_fallback);
+    this->texture_fallback = TCB;
+}
+
+void Mesh2D::setFallbackColor(GLubyte pixel[4]) {
+    GLuint TCB = 0;
+    createPlainTexture(TCB, pixel);
+    setFallbackTCB(TCB);
+}
+
+void Mesh2D::setTexture(Texture texture) {
+    if (!texture.TCB) return;
+    if (this->texture.TCB) glDeleteTextures(1, &this->texture.TCB);
+    this->texture = texture;
+}
+
+void Mesh2D::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
+    if (!isLoaded()) return;
+    glBindFramebuffer(GL_FRAMEBUFFER, screen.getFBO());
+
+    if (!texture.TCB && !texture_fallback) {
+        GLubyte pixel[4] = {0, 128, 128, 255};
+        setFallbackColor(pixel);
+    }
+    shader.setMatrix4("model", transform, 1, GL_FALSE);
+    shader.setTexture("texture", GL_TEXTURE_2D, 0, texture.TCB ? texture.TCB : texture_fallback);
+    
+    GLVertexElement<Vertex2D>::draw();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Mesh2D::init(VRAM_Approach approach) {
+    if (isLoaded()) return;
+
+    switch (approach) {
+        case Sequential:
+            attribute({0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex2D), (void*)offsetof(Vertex2D, position)});
+            attribute({1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex2D), (void*)offsetof(Vertex2D, texCoords)});
+            reserve();
+        break;
+
+        case Interleaved:
+            size_t count = vertices.size();
+
+            int vec2fLength = 2 * count;
+
+            float* positions = new float[vec2fLength];
+            float* texcoords = new float[vec2fLength];
+
+            for (size_t i = 0; i < count; ++i) {
+                const Vertex2D& v = vertices[i];
+
+                positions[i * 2 + 0] = v.position.x;
+                positions[i * 2 + 1] = v.position.y;
+
+                texcoords[i * 2 + 0] = v.texCoords.x;
+                texcoords[i * 2 + 1] = v.texCoords.y;
+            }
+
+            GLintptr offset = 0;
+            dataSub({offset, static_cast<GLsizeiptr>(vec2fLength * sizeof(float)), positions});
+            offset += vec2fLength * sizeof(float);
+            dataSub({offset, static_cast<GLsizeiptr>(vec2fLength * sizeof(float)), texcoords});
+
+            GLuint attribIndex = 0;
+            offset = 0;
+
+            attribute({attribIndex++, 2, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
+            offset += vec2fLength * sizeof(float);
+            attribute({attribIndex++, 2, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
+
+            reserve();
+
+            delete[] positions;
+            delete[] texcoords;
         break;
     }
 }

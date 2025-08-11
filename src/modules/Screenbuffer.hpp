@@ -99,24 +99,20 @@ public:
 
 class Screenbuffer : public SetupObject {
 protected:
-    unsigned int FBO = 0;
-    unsigned int width = 0, height = 0;
+    GLuint FBO = 0;
+    GLuint width = 0, height = 0;
     bool outputToParent = false;
 
-    void onCreate(unsigned int width, unsigned int height, bool outputToParent, unsigned int FBO = 0);
+    void onCreate(GLuint width, GLuint height, bool outputToParent, GLuint FBO = 0);
 public:
-    Screenbuffer(unsigned int FBO = 0);
-
-    Screenbuffer(unsigned int FBO, unsigned int width, unsigned int height, bool outputToParent = false);
-
-    unsigned int getFBO();
-
-    unsigned int getWidth();
-
-    unsigned int getHeight();
-
-    bool isOutputToParent();
+    Screenbuffer(GLuint FBO = 0);
+    Screenbuffer(GLuint FBO, GLuint width, GLuint height, bool outputToParent = false);
 
     void bind(GLenum target = GL_FRAMEBUFFER);
+
+    GLuint getFBO();
+    GLuint getWidth();
+    GLuint getHeight();
+    bool isOutputToParent();
 };
 }

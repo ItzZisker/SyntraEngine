@@ -59,7 +59,7 @@ void Shader::init(std::map<std::string, std::string> variables) {
     const char *vShaderCode = vertexCode.c_str();
     const char *fShaderCode = fragmentCode.c_str();
 
-    unsigned int vertex, fragment;
+    GLuint vertex, fragment;
     int success;
     char infoLog[512];
 

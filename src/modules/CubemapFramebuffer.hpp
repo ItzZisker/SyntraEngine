@@ -31,7 +31,6 @@ public:
     float zNear = 0.1f, zFar = 100.0f;
 
     CubemapFramebuffer(Scene* scene);
-
     ~CubemapFramebuffer();
 
     Scene_T getSnapshot(Coordination cubemapSideView);
@@ -39,27 +38,21 @@ public:
     void create(bool renderToParent = true);
 
     void render(Screenbuffer screen);
-
     void render(GameWindow* window) override {
         render(*window);
     }
-
     void render(Shader window, Screenbuffer screen) override {
         render(screen);
     }
 
     void addInitTask(std::function<void(CubemapFramebuffer*)> task);
-
     void addRenderTask(std::function<void(unsigned int FBO, const Coordination& sideView)> task);
 
     RenderTable<ShaderRenderable>* getReflectionRenderTable();
-
     RenderTable<ShaderRenderable>* getRefractionRenderTable();
 
     unsigned int getCubemapTexture() const;
-
     const unsigned int* getFBOs() const;
-
     const unsigned int* getRBOs() const;
 private:
     Shader reflectionShader = Shader("shaders/reflectionVertex.glsl", "shaders/reflectionFrag.glsl");
@@ -78,9 +71,8 @@ private:
     std::vector<std::function<void(unsigned int FBO, const Coordination& sideView)>> renderTasks;
 
     void renderDV(ShaderRenderable* renderable, Shader shader, int parentFBO);
-
     void renderCubemap(ShaderRenderable* renderable, int parentFBO);
-
+    
     void createFramebuffer(int index);
 };
 }

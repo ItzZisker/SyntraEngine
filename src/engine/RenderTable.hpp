@@ -20,7 +20,6 @@ class WindowRenderable
 {
 public:
     virtual void render(GameWindow* window) = 0;
-
     virtual ~WindowRenderable() = default;
 };
 
@@ -28,7 +27,6 @@ class ShaderRenderable
 {
 public:
     virtual void render(Shader shader, Screenbuffer screen = {}) = 0;
-
     virtual ~ShaderRenderable() = default;
 };
 

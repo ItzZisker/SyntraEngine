@@ -57,12 +57,12 @@ void Scene::setSpotLights(std::vector<SpotLight> spotLights) {
     updateUniforms();
 }
 
-void Scene::setPointLight(unsigned int num, PointLight pointLight) {
+void Scene::setPointLight(GLuint num, PointLight pointLight) {
     this->pointLights[num] = pointLight;
     updateUniforms();
 }
 
-void Scene::setSpotLight(unsigned int num, SpotLight spotLight) {
+void Scene::setSpotLight(GLuint num, SpotLight spotLight) {
     this->spotLights[num] = spotLight;
     updateUniforms();
 }
