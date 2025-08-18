@@ -1,37 +1,45 @@
-#include "assimp/postprocess.h"
-#include "modules/Mesh.hpp"
-#include "assimp/matrix4x4.h"
-#include "modules/Shader.hpp"
-#include <modules/Model.hpp>
-#include <modules/Presets.hpp>
-#include <ostream>
-#include <regex>
-#include <utils/GameUtils.hpp>
+#include "Model.hpp"
 
+#include "Mesh.hpp"
+#include "Texture.hpp"
+
+#include "serialization/DataSerializer.hpp"
+#include "serialization/DataTemplates.hpp"
+
+#include "modules/Shader.hpp"
+#include "modules/Model.hpp"
+#include "modules/Mesh.hpp"
+#include "utils/GameUtils.hpp"
+
+#ifdef USE_ASSIMP
+#include "assimp/matrix4x4.h"
+#endif
+
+#include <unordered_map>
+#include <ostream>
+#include <cstdint>
+#include <fstream>
 #include <iostream>
-#include <set>
 #include <string>
+#include <vector>
+#include <regex>
 
 using namespace syng;
 
-unsigned int syng::TCBFromFile(const char *path, const std::string &directory);
-Texture syng::TextureFromFile(const char *path, const std::string &directory, const Texture_T &texType);
-
-Model::Model(std::string const &path, bool gamma) : gammaCorrection(gamma), path(path) {}
+Model::Model() {}
 
 Model::~Model() {
-    for (auto& texture : textures_loaded) glDeleteTextures(1, &texture.TCB);
-    textures_loaded.clear();
     meshGroups.clear();
     for (auto& mesh : meshes) delete mesh.second;
     meshes.clear();
     loaded = false;
 }
 
-void Model::loadModel(VRAM_Approach approach, const std::set<std::string>& meshNames, bool flipTextures) {
-    read(meshNames, flipTextures);
-    load(approach);
+void Model::load(CacheApproach::VRAM_Approach approach) {
+    if (meshes.empty()) return;
+    for (const auto& pair : meshes) { pair.second->init(approach); }
     groupMeshes();
+    loaded = true;
 }
 
 void Model::groupMeshes() {
@@ -49,13 +57,67 @@ void Model::groupMeshes() {
     }
 }
 
-void Model::load(VRAM_Approach approach) {
-    for (const auto& pair : meshes) {
-        pair.second->init(approach);
+void Model::serialize(PackedWriter writer) {
+    writer.write(this);
+}
+
+void Model::readPacked(PackedReader reader) {
+    reader.read(this);
+}
+
+#ifdef USE_ASSIMP
+void Model::readAssimp(AssimpReader reader) {
+    reader.read(this);
+}
+#endif
+
+void Model::pushTexture(const std::string& meshKey, MeshTexture2D texture) {
+    auto pair = meshes.find(meshKey);
+    if (pair != meshes.end()) {
+        Mesh *mesh = pair->second;
+        mesh->textures.push_back(texture);
+        if (texture.type == Texture_Height) {
+            mesh->material.hasDisplacement = true;
+        }
+        if (texture.type == Texture_Rough) {
+            mesh->material.hasRoughness = true;
+        }
     }
 }
 
-void Model::read(const std::set<std::string>& meshNames, bool flipTextures, aiPostProcessSteps postProcessSteps) {
+void Model::pullTexture(const std::string& meshKey, const std::string& path) {
+    auto meshIt = meshes.find(meshKey);
+    if (meshIt != meshes.end()) {
+        Mesh* mesh = meshIt->second;
+        mesh->textures.erase(
+            std::remove_if(mesh->textures.begin(), mesh->textures.end(),
+            [&](const MeshTexture2D& tex) {
+                if (tex.texture.path == path) {
+                    if (tex.type == Texture_Height) {
+                        mesh->material.hasDisplacement = false;
+                    }
+                    if (tex.type == Texture_Rough) {
+                        mesh->material.hasRoughness = false;
+                    }
+                    return true;
+                }
+                return false;
+            }),
+            mesh->textures.end()
+        );
+    }
+}
+
+#ifdef USE_ASSIMP
+AssimpReader::AssimpReader(std::string path) : path(path) {}
+
+std::vector<MeshTexture2D>& AssimpReader::getCachedTextures() {
+    return this->cachedTextures;
+}
+
+void AssimpReader::read(Model* model) {
+    if (model->isLoaded() || !model->meshes.empty()) return;
+
     stbi_set_flip_vertically_on_load(flipTextures);
 
     Assimp::Importer importer;
@@ -67,43 +129,33 @@ void Model::read(const std::set<std::string>& meshNames, bool flipTextures, aiPo
     }
     directory = path.substr(0, path.find_last_of('/'));
 
-    processNode(meshNames, scene->mRootNode, scene, aiMatrix4x4());
-    loaded = true;
+    MeshKeyedMap import = processNode(scene->mRootNode, scene, aiMatrix4x4());
+    model->meshes.insert(import.begin(), import.end());
 }
 
-glm::mat4 convertToGLMMatrix(const aiMatrix4x4& aiMat) {
-    glm::mat4 mat;
-    mat[0][0] = aiMat.a1; mat[1][0] = aiMat.a2; mat[2][0] = aiMat.a3; mat[3][0] = aiMat.a4;
-    mat[0][1] = aiMat.b1; mat[1][1] = aiMat.b2; mat[2][1] = aiMat.b3; mat[3][1] = aiMat.b4;
-    mat[0][2] = aiMat.c1; mat[1][2] = aiMat.c2; mat[2][2] = aiMat.c3; mat[3][2] = aiMat.c4;
-    mat[0][3] = aiMat.d1; mat[1][3] = aiMat.d2; mat[2][3] = aiMat.d3; mat[3][3] = aiMat.d4;
-    return mat;
-}
-
-void Model::processNode(const std::set<std::string>& meshNames, aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform) {
+MeshKeyedMap AssimpReader::processNode(aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform) {
+    MeshKeyedMap nodeMeshes;
     aiMatrix4x4 currentTransform = parentTransform * node->mTransformation;
 
-    for (unsigned int i = 0; i < node->mNumMeshes; i++) {
+    for (uint32_t i = 0; i < node->mNumMeshes; i++) {
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
-        glm::mat4 glmTransform = convertToGLMMatrix(currentTransform);
-        std::string meshName(mesh->mName.C_Str());
+        glm::mat4 glmTransform = GameUtils::convertToGLMMatrix(currentTransform);
 
-        if (meshNames.empty() || meshNames.find(meshName) != meshNames.end()) {
-            meshes.insert({meshName, processMesh(mesh, scene, glmTransform)});
-        }
+        nodeMeshes.insert({mesh->mName.C_Str(), processMesh(mesh, scene, glmTransform)});
     }
-
-    for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        processNode(meshNames, node->mChildren[i], scene, currentTransform);
+    for (uint32_t i = 0; i < node->mNumChildren; i++) {
+        MeshKeyedMap sub = processNode(node->mChildren[i], scene, currentTransform);
+        nodeMeshes.insert(sub.begin(), sub.end());
     }
+    return nodeMeshes;
 }
 
-Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& transform) {
+Mesh* AssimpReader::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& transform) {
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
-    std::vector<Texture> textures;
+    std::vector<MeshTexture2D> textures;
 
-    for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+    for (uint32_t i = 0; i < mesh->mNumVertices; i++) {
         Vertex vertex;
         glm::vec3 vector(0.0f);
 
@@ -151,19 +203,19 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& tr
 
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
 
-    std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, Texture_Diffuse);
+    std::vector<MeshTexture2D> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, Texture_Diffuse);
     textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-    std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, Texture_Specular);
+    std::vector<MeshTexture2D> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, Texture_Specular);
     textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-    std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, Texture_Normal);
+    std::vector<MeshTexture2D> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, Texture_Normal);
     textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
-    std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, Texture_Height);
+    std::vector<MeshTexture2D> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, Texture_Height);
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
-    std::vector<Texture> roughMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, Texture_Rough);
+    std::vector<MeshTexture2D> roughMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, Texture_Rough);
     textures.insert(textures.end(), roughMaps.begin(), roughMaps.end());
 
     MaterialProps props;
@@ -182,131 +234,141 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& tr
     props.hasRoughness = !roughMaps.empty();
 
     Mesh* res = new Mesh(vertices, indices, transform);
-    for (auto& tex : textures) res->getTextures().push_back(tex);
+    res->textures = textures;
     res->material = props;
 
     return res;
 }
 
-std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, const Texture_T &texType) {
-    std::vector<Texture> textures;
+std::vector<MeshTexture2D> AssimpReader::loadMaterialTextures(aiMaterial *mat, aiTextureType type, const MeshTexture2D_T &texType) {
+    std::vector<MeshTexture2D> textures;
     for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
         aiString str;
         mat->GetTexture(type, i, &str);
         bool skip = false;
-        for (unsigned int j = 0; j < textures_loaded.size(); j++) {
-            if (std::strcmp(textures_loaded[j].path.data(), str.C_Str()) == 0) {
-                textures.push_back(textures_loaded[j]);
+        for (unsigned int j = 0; j < cachedTextures.size(); j++) {
+            if (std::strcmp(cachedTextures[j].texture.path.data(), str.C_Str()) == 0) {
+                textures.push_back(cachedTextures[j]);
                 skip = true;
                 break;
             }
         }
         if (!skip) {
-            Texture texture = TextureFromFile(str.C_Str(), this->directory, texType);
+            MeshTexture2D texture = loadMeshTexture2D(str.C_Str(), texType);
             textures.push_back(texture);
-            textures_loaded.push_back(texture);
+            cachedTextures.push_back(texture);
         }
     }
     return textures;
 }
+#endif
 
-void Model::pushTexture(const std::string& meshKey, Texture texture) {
-    std::cout << "boom1: " << texture.path << std::endl;
-    auto pair = meshes.find(meshKey);
-    std::cout << "boom2\n";
-    std::cout << "boom3\n";
-    if (pair != meshes.end()) {
-        std::cout << "boom4\n";
-        Mesh *mesh = pair->second;
-        std::cout << "boom5\n";
-        textures_loaded.push_back(texture);
-        mesh->getTextures().push_back(texture);
-        std::cout << "boom7\n";
-        if (texture.type == Texture_Height) {
-            mesh->material.hasDisplacement = true;
-        }
-        if (texture.type == Texture_Rough) {
-            mesh->material.hasRoughness = true;
-        }
-        std::cout << "boom8\n";
-    }
-}
+PackedReader::PackedReader(DataDeserializer* buff) : buffer(buff) {}
 
-void Model::pullTexture(const std::string& meshKey, const std::string& path) {
-    auto it = std::find_if(textures_loaded.begin(), textures_loaded.end(),
-        [&](const Texture& tex) {
-            return tex.path == path;
+void PackedReader::read(Model* model) {
+    DataTemplates::push(buffer, "Model", PCK_HEADER_MODEL);
+
+    std::vector<MeshTexture2D> textures_all = DataTemplates::read_vector<MeshTexture2D>(buffer, [&](){
+        return loadMeshTexture2D(buffer);
+    });
+
+    uint32_t map_size = DataTemplates::read_uint32(buffer);
+    for (uint32_t i = 0; i < map_size; i++) {
+        std::string meshKey = DataTemplates::read_string(buffer);
+        glm::mat4 parentToNodeTransform = DataTemplates::read_glm_mat4(buffer);
+
+        std::vector<Vertex> vertices = DataTemplates::read_vector<Vertex>(buffer, [&]() {
+            Vertex result;
+            result.position = DataTemplates::read_glm_vec3(buffer);
+            result.normal = DataTemplates::read_glm_vec3(buffer);
+            result.texCoords = DataTemplates::read_glm_vec2(buffer);
+            result.tangent = DataTemplates::read_glm_vec3(buffer);
+            result.bitangent = DataTemplates::read_glm_vec3(buffer);
+            for (uint32_t i = 0; i < MAX_BONE_INFLUENCE; i++) {
+                result.m_BoneIDs[i] = DataTemplates::read_int32(buffer);
+                result.m_Weights[i] = DataTemplates::read_float(buffer);
+            }
+            return result;
+        });
+        std::vector<uint32_t> indices = DataTemplates::read_vector<uint32_t>(buffer, [&](){
+            return DataTemplates::read_uint32(buffer);
+        });
+        std::vector<MeshTexture2D> subtextures = DataTemplates::read_vector<MeshTexture2D>(buffer, [&](){
+            return textures_all[DataTemplates::read_uint32(buffer)];
         });
 
-    Texture texRef;
-    bool foundInGlobal = false;
+        MaterialProps material = DataTemplates::read_mesh_material(buffer);
 
-    if (it != textures_loaded.end()) {
-        texRef = *it;
-        textures_loaded.erase(it);
-        foundInGlobal = true;
-    }
+        Mesh* mesh = new Mesh(vertices, indices, parentToNodeTransform);
+        mesh->textures = subtextures;
+        mesh->material = material;
 
-    auto meshIt = meshes.find(meshKey);
-    if (meshIt != meshes.end()) {
-        Mesh* mesh = meshIt->second;
-        auto& meshTextures = mesh->getTextures();
-        meshTextures.erase(
-            std::remove_if(meshTextures.begin(), meshTextures.end(),
-                [&](const Texture& tex) {
-                    return tex.path == path;
-                }),
-            meshTextures.end()
-        );
-        if (texRef.type == Texture_Height) {
-            mesh->material.hasDisplacement = false;
-        }
-        if (texRef.type == Texture_Rough) {
-            mesh->material.hasRoughness = false;
-        }
+        model->meshes.insert({meshKey, mesh});
     }
+    DataTemplates::pop(buffer, "Model", PCK_FOOTER_MODEL);
 }
 
-Texture syng::TextureFromFile(const char *path, const std::string &directory, const Texture_T &type) {
-    Texture texture;
-    texture.TCB = TCBFromFile(path, directory);
-    texture.type = type;
-    texture.path = path;
-    return texture;
-}
+PackedWriter::PackedWriter(DataSerializer* buffer) : buffer(buffer) {}
 
-unsigned int syng::TCBFromFile(const char *path, const std::string &directory) {
-    std::string filename = std::string(path);
-    filename = directory + '/' + filename;
+void PackedWriter::write(Model* model) {
+    DataTemplates::write_uint16(buffer, PCK_HEADER_MODEL);
 
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
+    std::vector<MeshTexture2D> textures_all;
+    std::unordered_map<std::string, uint32_t> textures_all_indices;
+    std::unordered_map<std::string, std::vector<uint8_t>> textures_all_data;
 
-    int width, height, nrComponents;
-    unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
+    uint32_t texelIndex = 0;
+    for (auto& pair : model->meshes) {
+        Mesh* mesh = pair.second;
+        for (auto& mT : mesh->textures) {
+            if (textures_all_indices.find(mT.texture.path) == textures_all_indices.end()) {
+                std::ifstream textureFile;
 
-    if (data) {
-        GLenum format;
-        if (nrComponents == 1)
-            format = GL_RED;
-        else if (nrComponents == 3)
-            format = GL_RGB;
-        else if (nrComponents == 4)
-            format = GL_RGBA;
+                textureFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+                textureFile.open(mT.texture.path, std::ios::binary);
+                std::vector<uint8_t> texel_bytes((std::istreambuf_iterator<char>(textureFile)), {});
+                textureFile.close();
 
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        PresetsTexel::TextureParamST(GL_TEXTURE_2D, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        stbi_image_free(data);
-    } else {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
-        stbi_image_free(data);
+                textures_all.push_back(mT);
+                textures_all_indices[mT.texture.path] = texelIndex++;
+                textures_all_data[mT.texture.path] = std::move(texel_bytes);
+            }
+        }
     }
 
-    return textureID;
+    DataTemplates::write_vector<MeshTexture2D>(buffer, textures_all, [&](const MeshTexture2D& mT){
+        TextureWriter(buffer).writeMeshTexture2D(mT.texture.path, textures_all_data[mT.texture.path], mT.type);
+    });
+
+    DataTemplates::write_uint32(buffer, model->meshes.size());
+    for (auto& pair : model->meshes) {
+        std::string meshKey = pair.first;
+    
+        Mesh* mesh = pair.second;
+        std::vector<Vertex> vertices = mesh->getVertices();
+        std::vector<GLuint> indices = mesh->getIndices();
+
+        DataTemplates::write_string(buffer, meshKey);
+        DataTemplates::write_glm_mat4(buffer, mesh->getParentToNodeTransform());
+        DataTemplates::write_vector<Vertex>(buffer, vertices, [&](const Vertex& v){
+            DataTemplates::write_glm_vec3(buffer, v.position);
+            DataTemplates::write_glm_vec3(buffer, v.normal);
+            DataTemplates::write_glm_vec2(buffer, v.texCoords);
+            DataTemplates::write_glm_vec3(buffer, v.tangent);
+            DataTemplates::write_glm_vec3(buffer, v.bitangent);
+            for (uint32_t i = 0; i < MAX_BONE_INFLUENCE; i++) { 
+                DataTemplates::write_int32(buffer, v.m_BoneIDs[i]);
+                DataTemplates::write_float(buffer, v.m_Weights[i]);
+            }
+        });
+        DataTemplates::write_vector<GLuint>(buffer, indices, [&](const GLuint& index){
+            LittleEndian::write<GLuint>(buffer, index);
+        });
+        DataTemplates::write_vector<MeshTexture2D>(buffer, mesh->textures, [&](const MeshTexture2D& subtexture){
+            LittleEndian::write<uint32_t>(buffer, textures_all_indices[subtexture.texture.path]);
+        });
+        DataTemplates::write_mesh_material(buffer, mesh->material);
+    }
+
+    DataTemplates::write_uint16(buffer, PCK_FOOTER_MODEL);
 }

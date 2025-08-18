@@ -29,11 +29,8 @@ public:
     Coordination coords;
 
     BT_EntityTriangleMesh(BT_World* world, ModelInstance* model);
-
     BT_EntityTriangleMesh(BT_World* world, std::unordered_map<std::string, MeshInstance*> meshes);
-
     BT_EntityTriangleMesh(BT_World* world, MeshInstance* mesh);
-
     ~BT_EntityTriangleMesh();
 
     const glm::mat4 onMotionState() override;

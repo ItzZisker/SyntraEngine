@@ -5,7 +5,13 @@ find_package(OpenGL REQUIRED COMPONENTS OpenGL)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build/lib")
+option(USE_ASSIMP "Enable Assimp support" ON)
+
+if(USE_ASSIMP)
+    add_compile_definitions(USE_ASSIMP)
+endif()
+
+if (USE_ASSIMP AND NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build/lib")
     message(STATUS "Building Assimp...")
     execute_process(
         COMMAND ${CMAKE_COMMAND}
@@ -118,10 +124,12 @@ set(STB_ROOT "${CMAKE_SOURCE_DIR}/libs/stb-image")
 include_directories(${STB_ROOT})
 
 # === Assimp Config ===
-set(ASSIMP_ROOT "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2")
-include_directories(${ASSIMP_ROOT}/include)
-include_directories(${ASSIMP_ROOT}/build/include)
-link_directories(${ASSIMP_ROOT}/build/lib)
+if (USE_ASSIMP)
+    set(ASSIMP_ROOT "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2")
+    include_directories(${ASSIMP_ROOT}/include)
+    include_directories(${ASSIMP_ROOT}/build/include)
+    link_directories(${ASSIMP_ROOT}/build/lib)
+endif()
 
 # === Bullet3 Config ===
 set(BULLET3_ROOT "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25")
@@ -166,7 +174,13 @@ add_library(Syngine SHARED
     src/Syngine.cpp
 
     src/engine/RenderTable.cpp
+    src/engine/Concurrency.cpp
+    src/engine/TaskQueue.cpp
 
+    src/serialization/DataSerializer.cpp
+    src/serialization/DataTemplates.cpp
+
+    src/modules/Texture.cpp
     src/modules/Presets.cpp
     src/modules/GLObjects.cpp
     src/modules/ShadowMapper.cpp
@@ -196,19 +210,25 @@ add_library(Syngine SHARED
 )
 
 if (UNIX AND NOT APPLE) # Linux
-    target_link_libraries(${PROJECT_NAME} SDL3 glfw3 OpenGL::OpenGL assimp Xrandr Xi dl)
+    if (USE_ASSIMP)
+        target_link_libraries(${PROJECT_NAME} SDL3 glfw3 OpenGL::OpenGL assimp Xrandr Xi dl)
+    else()
+        target_link_libraries(${PROJECT_NAME} SDL3 glfw3 OpenGL::OpenGL Xrandr Xi dl)
+    endif()
 elseif (WIN32)
-    target_link_libraries(${PROJECT_NAME}
-        SDL3
-        opengl32
-        assimp
-        -Wl,--start-group
-        "${BULLET_LIBS}"
-        -Wl,--end-group
-    )
+    if (USE_ASSIMP)
+        target_link_libraries(${PROJECT_NAME} SDL3 opengl32 assimp -Wl,--start-group "${BULLET_LIBS}" -Wl,--end-group)
+    else()
+        target_link_libraries(${PROJECT_NAME} SDL3 opengl32 -Wl,--start-group "${BULLET_LIBS}" -Wl,--end-group)
+    endif()
 elseif (APPLE)
     target_link_libraries(${PROJECT_NAME} SDL3 "-framework OpenGL" "-framework Cocoa" "-framework IOKit" "-framework CoreVideo")
 endif()
+
+set_target_properties(Syngine PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "Syng"
+)
 
 add_executable(sample_executable
     src/sample/SampleCallbacks.cpp

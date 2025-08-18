@@ -1,7 +1,6 @@
 #include "RenderTable.hpp"
+
 #include "modules/MeshInstance.hpp"
-#include <engine/RenderTable.hpp>
-#include <algorithm>
 
 namespace syng {
     bool RT_SORT_OPACITY_SUB_MESH(Mesh* a, Mesh* b) {

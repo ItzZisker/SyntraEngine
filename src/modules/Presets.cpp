@@ -1,7 +1,7 @@
 #include "Presets.hpp"
 #include "Shader.hpp"
-#include "modules/Mesh.hpp"
-#include "modules/Model.hpp"
+#include "Syngine.hpp"
+#include "Texture.hpp"
 
 #include <filesystem>
 
@@ -23,7 +23,7 @@ void PresetsTexel::TextureFilter(GLenum target, GLenum param) {
     glTexParameteri(target, GL_TEXTURE_MAG_FILTER, param);
 }
 
-Mesh2D* Presets2D_newMeshQuad(Vertex2D corners[4], Texture texture) {
+Mesh2D* Presets2D_newMeshQuad(Vertex2D corners[4], MeshTexture2D texture) {
     Vertex2D topLeft, topRight, bottomLeft, bottomRight;
 
     float maxY = corners[0].position.y;
@@ -63,11 +63,11 @@ Mesh2D* Presets2D_newMeshQuad(Vertex2D corners[4], Texture texture) {
 }
 
 Mesh2D* Presets2D::newMeshQuad(Vertex2D corners[4], std::string pathToTexel) {
-    return Presets2D_newMeshQuad(corners, TextureFromFile(pathToTexel.c_str(), std::filesystem::current_path().string(), Texture_Diffuse));
+    return Presets2D_newMeshQuad(corners, loadMeshTexture2D(pathToTexel.c_str(), Texture_Diffuse));
 }
 
 Mesh2D* Presets2D::newMeshQuad(Vertex2D corners[4], GLuint TCB) {
-    return Presets2D_newMeshQuad(corners, {TCB, Texture_Diffuse, ""});
+    return Presets2D_newMeshQuad(corners, {{TCB, ""}, Texture_Diffuse});
 }
 
 void syng::Presets3D::pushVerticesCube(float size, std::vector<glm::vec3>& vertices, std::vector<GLuint>& indices) {
@@ -83,11 +83,11 @@ void syng::Presets3D::pushVerticesCube(float size, std::vector<glm::vec3>& verti
         {-h,  h,  h}
     };
     indices = {
-        0, 1, 2,  2, 3, 0, // Back
-        4, 5, 6,  6, 7, 4, // Front
-        0, 4, 7,  7, 3, 0, // Left
-        1, 5, 6,  6, 2, 1, // Right
-        3, 2, 6,  6, 7, 3, // Top
-        0, 1, 5,  5, 4, 0  // Bottom
+        0, 1, 2,  2, 3, 0,
+        4, 5, 6,  6, 7, 4,
+        0, 4, 7,  7, 3, 0,
+        1, 5, 6,  6, 2, 1,
+        3, 2, 6,  6, 7, 3,
+        0, 1, 5,  5, 4, 0
     };
 }

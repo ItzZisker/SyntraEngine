@@ -1,17 +1,14 @@
 #pragma once
 
-#include "modules/GLObjects.hpp"
-#include "modules/Screenbuffer.hpp"
-#include "glm/fwd.hpp"
-#include "world/WorldObject.hpp"
-#include <glad/glad.h>
+#include "GLObjects.hpp"
+#include "Texture.hpp"
+#include "Screenbuffer.hpp"
+#include "Shader.hpp"
 
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <modules/Shader.hpp>
-
-#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -19,18 +16,14 @@
 
 namespace syng
 {
+
+namespace CacheApproach
+{
 enum VRAM_Approach {
     Sequential,
     Interleaved
 };
-
-enum Texture_T {
-    Texture_Diffuse,
-    Texture_Specular,
-    Texture_Normal,
-    Texture_Height,
-    Texture_Rough
-};
+}
 
 struct Vertex {
     glm::vec3 position;
@@ -47,12 +40,6 @@ struct Vertex2D {
     glm::vec2 texCoords;
 };
 
-struct Texture {
-    unsigned int TCB;
-    Texture_T type;
-    std::string path;
-};
-
 struct MaterialProps {
     glm::vec3 ior = glm::vec3(1.0f);
     float shininess = 32.0f;
@@ -64,45 +51,26 @@ struct MaterialProps {
     bool hasRoughness = true;
 };
 
-constexpr std::array<const char*, 5> TextureTNames = {
-    "texture_diffuse",
-    "texture_specular",
-    "texture_normal",
-    "texture_height",
-    "texture_roughness"
-};
-constexpr const char* TEXTURE_NAME(Texture_T type) {
-    auto i = static_cast<size_t>(type);
-    if (i >= TextureTNames.size()) {
-        return "Unknown";
-    }
-    return TextureTNames[i];
-}
-
-Texture loadTexture(const std::string& path, const std::string& type);
-
 class Mesh : public GLVertexElement<Vertex> {
 private:
     glm::mat4 parentToNodeTransform;
-    std::unordered_map<Texture_T, GLuint> textures_fallback;
-    std::vector<Texture> textures;
+    std::unordered_map<MeshTexture2D_T, GLuint> textures_fallback;
 public:
+    std::vector<MeshTexture2D> textures;
     MaterialProps material;
 
-    Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, glm::mat4 parentToNodeTransform);
+    Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, glm::mat4 parentToNodeTransform);
     ~Mesh();
 
     glm::mat4 getParentToNodeTransform();
     Coordination getParentToNodeCoords();
 
-    bool hasFallback(Texture_T texType);
-    void setFallbackTCB(Texture_T texType, GLuint TCB);
-    void setFallbackColor(Texture_T texType, GLubyte pixel[4]);
+    bool hasFallback(MeshTexture2D_T texType);
+    void setFallbackTCB(MeshTexture2D_T texType, GLuint TCB);
+    void setFallbackColor(MeshTexture2D_T texType, GLubyte pixel[4]);
 
-    void render(Shader shader, Screenbuffer screen, glm::mat4 transform);
-    void init(VRAM_Approach = Sequential);
-
-    std::vector<Texture>& getTextures() { return this->textures; };
+    void render(Shader& shader, Screenbuffer screen, glm::mat4 transform);
+    void init(CacheApproach::VRAM_Approach = CacheApproach::Sequential);
 };
 
 // TODO: This
@@ -114,7 +82,7 @@ class Mesh2D : public GLVertexElement<Vertex2D> {
 private:
     glm::mat4 parentToNodeTransform = glm::mat4(1.0f);
     GLuint texture_fallback = 0;
-    Texture texture = {0};
+    MeshTexture2D meshTexture = {0};
 public:
     Mesh2D(std::vector<Vertex2D> vertices, std::vector<GLuint> indices, glm::mat4 parentToNodeTransform);
     ~Mesh2D();
@@ -124,12 +92,12 @@ public:
 
     void setFallbackTCB(GLuint TCB);
     void setFallbackColor(GLubyte pixel[4]);
-    void setTexture(Texture texture);
+    void setTexture(MeshTexture2D texture);
 
-    void render(Shader shader, Screenbuffer screen, glm::mat4 transform);
-    void init(VRAM_Approach = Sequential);
+    void render(Shader& shader, Screenbuffer screen, glm::mat4 transform);
+    void init(CacheApproach::VRAM_Approach = CacheApproach::Sequential);
 
-    Texture& getTexture() { return this->texture; }
+    MeshTexture2D& getTexture() { return this->meshTexture; }
     GLuint getFallbackTCB() { return this->texture_fallback; }
 };
 }

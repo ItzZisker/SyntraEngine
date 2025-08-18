@@ -1,22 +1,18 @@
-#include "modules/CubemapFramebuffer.hpp"
+#include "CubemapFramebuffer.hpp"
+
 #include "Presets.hpp"
+#include "Screenbuffer.hpp"
+
 #include "engine/Config.hpp"
-#include "engine/RenderTable.hpp"
-#include "modules/Scene.hpp"
-#include "modules/Screenbuffer.hpp"
-#include "modules/Shader.hpp"
-#include "world/WorldObject.hpp"
 #include "utils/GameUtils.hpp"
-#include "glm/ext/matrix_clip_space.hpp"
-#include "glm/ext/matrix_transform.hpp"
-#include "glm/fwd.hpp"
+
 #include <iostream>
-#include <glm/gtc/matrix_transform.hpp>
 #include <string>
 
 using namespace syng;
 
-CubemapFramebuffer::CubemapFramebuffer(Scene* scene) : scene(scene) {}
+CubemapFramebuffer::CubemapFramebuffer(Scene* scene, Shader &reflectionShader, Shader &refractionShader)
+    : scene(scene), reflectionShader(reflectionShader), refractionShader(refractionShader) {}
 
 CubemapFramebuffer::~CubemapFramebuffer() {
     glDeleteFramebuffers(6, FBO);
@@ -80,7 +76,7 @@ void CubemapFramebuffer::create(bool renderToParent) {
 
     onCreate(sceneSize, sceneSize, renderToParent);
     addRenderTask([&](unsigned int FBO, const Coordination& sideView) {
-        Shader batchShader = scene->getBatchShader();
+        Shader& batchShader = scene->getBatchShader();
 
         glm::mat4 projection = glm::perspective(fieldOfView, aspectRatio, zNear, zFar);
         glm::mat4 view = glm::lookAt(sideView.getPosition(), sideView.getPosition() + sideView.getDirection(), sideView.getUp());
@@ -126,7 +122,7 @@ void CubemapFramebuffer::renderCubemap(ShaderRenderable* renderable, int parentF
 }
 
 void CubemapFramebuffer::render(Screenbuffer screen) {
-    auto renderJob = [&](const std::string& key, ShaderRenderable* renderable, Shader shader){
+    auto renderJob = [&](const std::string& key, ShaderRenderable* renderable, Shader& shader){
         if (outputToParent && GameUtils::shouldDiscard(renderable, scene)) {
             return;
         }
@@ -151,10 +147,7 @@ void CubemapFramebuffer::render(Screenbuffer screen) {
 
 Scene_T CubemapFramebuffer::getSnapshot(Coordination cubemapSideView) {
     Scene_T res;
-    res.cameraPos = cubemapSideView.getPosition();
-    res.cameraDir = cubemapSideView.getDirection();
-    res.cameraUp = cubemapSideView.getUp();
-    res.cameraRight = cubemapSideView.getRight();
+    res.cameraCoords = cubemapSideView;
     res.aspectRatio = aspectRatio;
     res.FOV = fieldOfView;
     res.zNear = zNear;

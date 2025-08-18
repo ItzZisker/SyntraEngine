@@ -1,65 +1,141 @@
-#include <modules/Shader.hpp>
+#include "Shader.hpp"
 
-#include <cstdlib>
-#include <glm/gtc/matrix_transform.hpp>
+#include "serialization/DataTemplates.hpp"
+
 #include <glm/gtc/type_ptr.hpp>
 
+#include <filesystem>
 #include <fstream>
-#include <regex>
-#include <sstream>
 #include <iostream>
-#include <string>
+#include <regex>
 
 using namespace syng;
 
-Shader::Shader(const char *vertexPath, const char *fragmentPath) {
-    this->vertexPath = vertexPath;
-    this->fragmentPath = fragmentPath;
+ShaderEncoder::ShaderEncoder(DataSerializer *buffer) : buffer(buffer) {}
+
+void ShaderEncoder::encode(std::string vertex, std::string fragment, std::string geometry) {
+    DataTemplates::write_uint16(buffer, PCK_HEADER_SHADER);
+    DataTemplates::write_string(buffer, vertex);
+    DataTemplates::write_string(buffer, fragment);
+    DataTemplates::write_bool(buffer, !geometry.empty());
+    if (!geometry.empty()) {
+        DataTemplates::write_string(buffer, geometry);
+    }
+    DataTemplates::write_uint16(buffer, PCK_FOOTER_SHADER);
 }
 
-void Shader::init(std::map<std::string, std::string> variables) {
-    this->variables = variables;
+void ShaderEncoder::encode(Shader shader) {
+    ShaderEncoder::encode(shader.vertexCode, shader.fragmentCode, shader.geometryCode);
+}
 
-    std::string vertexCode, fragmentCode;
-    std::ifstream vShaderFile, fShaderFile;
+ShaderDecoder::ShaderDecoder(DataDeserializer *buff) : buffer(buff) {}
+
+Shader LazyShader::publish() {
+    return {*this};
+}
+
+LazyShader ShaderDecoder::decodeLazy() {
+    DataTemplates::push(buffer, "Shader", PCK_HEADER_SHADER);
+
+    LazyShader lazy;
+    lazy.vertexCode = DataTemplates::read_string(buffer);
+    lazy.fragmentCode = DataTemplates::read_string(buffer);
+
+    if (DataTemplates::read_bool(buffer)) {
+        lazy.geometryCode = DataTemplates::read_string(buffer);
+    }
+    DataTemplates::pop(buffer, "Shader", PCK_FOOTER_SHADER);
+    return lazy;
+}
+
+Shader ShaderDecoder::decode() {
+    return ShaderDecoder::decodeLazy().publish();
+}
+
+Shader::Shader(LazyShader lazy) : vertexCode(lazy.vertexCode), fragmentCode(lazy.fragmentCode), geometryCode(lazy.geometryCode) {}
+
+void Shader::read(DataDeserializer *buffer) {
+    LazyShader lazy = ShaderDecoder(buffer).decodeLazy();
+    this->vertexCode = lazy.vertexCode;
+    this->fragmentCode = lazy.fragmentCode;
+    this->geometryCode = lazy.geometryCode;
+}
+
+void Shader::read(std::filesystem::path vertexPath, std::filesystem::path fragmentPath, std::filesystem::path geometryPath) {
+    std::ifstream vShaderFile, fShaderFile, gShaderFile;
 
     vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+    if (!geometryPath.empty()) {
+        gShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    }
 
     try {
         vShaderFile.open(vertexPath);
         fShaderFile.open(fragmentPath);
 
-        std::stringstream vShaderStream, fShaderStream;
+        if (!geometryPath.empty()) {
+            gShaderFile.open(geometryPath);
+        }
+
+        std::stringstream vShaderStream, fShaderStream, gShaderStream;
 
         vShaderStream << vShaderFile.rdbuf();
         fShaderStream << fShaderFile.rdbuf();
 
+        if (gShaderFile.is_open()) {
+            gShaderStream << gShaderFile.rdbuf();
+        }
+
         vShaderFile.close();
         fShaderFile.close();
+
+        if (gShaderFile.is_open()) {
+            gShaderFile.close();
+        }
 
         vertexCode = vShaderStream.str();
         fragmentCode = fShaderStream.str();
 
-        for (const auto& pair : variables) {
-            std::regex pattern("\\$\\{" + pair.first + "=(.+?)\\}");
-
-            vertexCode = std::regex_replace(vertexCode, pattern, pair.second);
-            fragmentCode = std::regex_replace(fragmentCode, pattern, pair.second);
+        if (!geometryPath.empty()) {
+            geometryCode = gShaderStream.str();
+        } else {
+            geometryCode = "";
         }
-
-        std::regex pattern(R"(\$\{[^=]+=(.+?)\})");
-
-        vertexCode = std::regex_replace(vertexCode, pattern, "$1");
-        fragmentCode = std::regex_replace(fragmentCode, pattern, "$1");
     } catch (std::ifstream::failure e) {
-        std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ::" << e.what() << ", Code: " << e.code() << std::endl;
+        std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ::" << e.what() << ", ERR=" << e.code() << std::endl;
+    }
+}
+
+void Shader::init(std::map<std::string, std::string> variables) {
+    this->variables = variables;
+    
+    for (const auto& pair : variables) {
+        std::regex pattern("\\$\\{" + pair.first + "=(.+?)\\}");
+
+        vertexCode = std::regex_replace(vertexCode, pattern, pair.second);
+        fragmentCode = std::regex_replace(fragmentCode, pattern, pair.second);
+
+        if (!geometryCode.empty()) {
+            geometryCode = std::regex_replace(geometryCode, pattern, pair.second);
+        }
+    }
+
+    std::regex pattern(R"(\$\{[^=]+=(.+?)\})");
+
+    vertexCode = std::regex_replace(vertexCode, pattern, "$1");
+    fragmentCode = std::regex_replace(fragmentCode, pattern, "$1");
+
+    if (!geometryCode.empty()) {
+        geometryCode = std::regex_replace(fragmentCode, pattern, "$1");
     }
 
     const char *vShaderCode = vertexCode.c_str();
     const char *fShaderCode = fragmentCode.c_str();
+    const char *gShaderCode = !geometryCode.empty() ? geometryCode.c_str() : nullptr;
 
-    GLuint vertex, fragment;
+    GLuint vertex, fragment, geometry = 0;
     int success;
     char infoLog[512];
 
@@ -71,7 +147,7 @@ void Shader::init(std::map<std::string, std::string> variables) {
 
     if (!success) {
         glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-        std::cout << vertexPath << ": ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     };
 
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
@@ -81,13 +157,26 @@ void Shader::init(std::map<std::string, std::string> variables) {
     glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(fragment, 512, NULL, infoLog);
-        std::cout << fragmentPath << ": ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+
+    if (gShaderCode != nullptr) {
+        geometry = glCreateShader(GL_GEOMETRY_SHADER);
+        glShaderSource(geometry, 1, &gShaderCode, NULL);
+        glCompileShader(geometry);
+
+        glGetShaderiv(geometry, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            glGetShaderInfoLog(geometry, 512, NULL, infoLog);
+            std::cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << std::endl;
+        }
     }
 
     ID = glCreateProgram();
 
     glAttachShader(ID, vertex);
     glAttachShader(ID, fragment);
+    if (geometry) glAttachShader(ID, geometry);
     glLinkProgram(ID);
 
     glGetProgramiv(ID, GL_LINK_STATUS, &success);
@@ -99,6 +188,7 @@ void Shader::init(std::map<std::string, std::string> variables) {
 
     glDeleteShader(vertex);
     glDeleteShader(fragment);
+    if (geometry) glDeleteShader(geometry);
 }
 
 std::string Shader::getVariable(std::string key) {

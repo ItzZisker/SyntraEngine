@@ -1,16 +1,17 @@
-#include "modules/ModelInstance.hpp"
+#include "ModelInstance.hpp"
+
+#include "Model.hpp"
+#include "Mesh.hpp"
+#include "MeshInstance.hpp"
+#include "Scene.hpp"
+#include "Shader.hpp"
+#include "Screenbuffer.hpp"
 
 #include "engine/RenderTable.hpp"
-#include "modules/MeshInstance.hpp"
-#include "modules/Model.hpp"
-#include "modules/Scene.hpp"
-#include "modules/Screenbuffer.hpp"
-#include "modules/Shader.hpp"
 #include "world/WorldObject.hpp"
-#include <iostream>
-#include <modules/Mesh.hpp>
+#include "utils/GameUtils.hpp"
+
 #include <unordered_map>
-#include <utils/GameUtils.hpp>
 
 using namespace syng;
 
@@ -45,7 +46,7 @@ bool ModelInstance::shouldDiscard(Scene_T snapshot, const glm::mat4& transform) 
     return shouldDiscard;
 }
 
-void renderNonDiscardable(MeshInstance* meshInstance, Shader shader, Scene_T snapshot, Screenbuffer screen, glm::mat4 parentTransform = glm::mat4(1.0f)) {
+void renderNonDiscardable(MeshInstance* meshInstance, Shader& shader, Scene_T snapshot, Screenbuffer screen, glm::mat4 parentTransform = glm::mat4(1.0f)) {
     if (meshInstance->getSelf()) {
         if (!meshInstance->shouldDiscard(snapshot, meshInstance->getTransform())) {
             meshInstance->render(shader, screen, parentTransform);
@@ -57,16 +58,16 @@ void renderNonDiscardable(MeshInstance* meshInstance, Shader shader, Scene_T sna
     }
 }
 
-void ModelInstance::renderDV(Scene_T snapshot, Shader shader, Screenbuffer screen) {
-    if (model->loaded) {
+void ModelInstance::renderDV(Scene_T snapshot, Shader& shader, Screenbuffer screen) {
+    if (model->isLoaded()) {
         meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance) {
             if (!shouldDiscard(key)) renderNonDiscardable(meshInstance, shader, snapshot, screen);
         });
     }
 }
 
-void ModelInstance::render(Shader shader, Screenbuffer screen) {
-    if (model->loaded) {
+void ModelInstance::render(Shader& shader, Screenbuffer screen) {
+    if (model->isLoaded()) {
         meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance) {
             if (!shouldDiscard(key)) meshInstance->render(shader, screen);
         });

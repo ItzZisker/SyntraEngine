@@ -2,19 +2,18 @@
 
 #include "MeshInstance.hpp"
 #include "Screenbuffer.hpp"
-#include "modules/MeshInstance.hpp"
-#include "modules/Model.hpp"
-#include "engine/RenderTable.hpp"
-#include "modules/Scene.hpp"
-#include "world/WorldObject.hpp"
-#include <glad/glad.h>
+#include "Model.hpp"
+#include "Scene.hpp"
 
+#include "engine/RenderTable.hpp"
+#include "world/WorldObject.hpp"
+
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <set>
-#include <string>
+
 #include <unordered_map>
-#include <vector>
+#include <string>
 
 namespace syng
 {
@@ -28,8 +27,8 @@ public:
 
     ~ModelInstance();
 
-    void renderDV(Scene_T snapshot, Shader shader, Screenbuffer screen);
-    void render(Shader shader, Screenbuffer screen = {}) override;
+    void renderDV(Scene_T snapshot, Shader& shader, Screenbuffer screen);
+    void render(Shader& shader, Screenbuffer screen = {}) override;
 
     void setDiscard(std::string mIKey, bool shouldDiscard);
 

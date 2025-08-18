@@ -1,6 +1,7 @@
 #pragma once
 
-#include "modules/Shader.hpp"
+#include <glad/glad.h>
+
 namespace syng
 {
 

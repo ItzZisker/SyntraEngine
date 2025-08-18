@@ -1,22 +1,21 @@
-#include "modules/MeshInstance.hpp"
+#include "MeshInstance.hpp"
+#include "Mesh.hpp"
+#include "Screenbuffer.hpp"
+#include "Shader.hpp"
 
 #include "engine/RenderTable.hpp"
-#include "glm/fwd.hpp"
-#include "modules/Screenbuffer.hpp"
-#include "modules/Shader.hpp"
 #include "world/WorldObject.hpp"
-#include <modules/Mesh.hpp>
+#include "utils/GameUtils.hpp"
+
+#include <glm/fwd.hpp>
+
 #include <string>
-#include <utils/GameUtils.hpp>
 
 using namespace syng;
 
 MeshInstance::MeshInstance(Mesh* mesh) : MeshInstance(mesh, {}) {}
-
 MeshInstance::MeshInstance(Mesh* mesh, Coordination coords) : MeshInstance({{"ROOT", mesh}}, coords) {}
-
 MeshInstance::MeshInstance(std::unordered_map<std::string, Mesh*> subMeshes) : MeshInstance(subMeshes, {}) {}
-
 MeshInstance::MeshInstance(std::unordered_map<std::string, Mesh*> subMeshes, Coordination coords) {
     if (subMeshes.find("ROOT") != subMeshes.end()) {
         this->mesh = subMeshes["ROOT"];
@@ -56,7 +55,7 @@ void MeshInstance::handle(MeshInstance* meshInstance, glm::vec3& min, glm::vec3&
     }
 }
 
-void MeshInstance::render(Shader shader, Screenbuffer screen, glm::mat4 parentTransform) {
+void MeshInstance::render(Shader& shader, Screenbuffer screen, glm::mat4 parentTransform) {
     glm::mat4 worldTransform = transform * parentTransform;
 
     if (this->mesh) {
@@ -68,7 +67,7 @@ void MeshInstance::render(Shader shader, Screenbuffer screen, glm::mat4 parentTr
     }
 }
 
-void MeshInstance::render(Shader shader, Screenbuffer screen) {
+void MeshInstance::render(Shader& shader, Screenbuffer screen) {
     MeshInstance::render(shader, screen, glm::mat4(1.0f));
 }
 

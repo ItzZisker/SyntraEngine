@@ -1,6 +1,6 @@
-#include "glm/fwd.hpp"
-#include "glm/geometric.hpp"
-#include <modules/Camera.hpp>
+#include "Camera.hpp"
+
+#include <glm/ext/matrix_transform.hpp>
 
 using namespace syng;
 

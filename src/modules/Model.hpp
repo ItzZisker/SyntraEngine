@@ -1,69 +1,103 @@
 #pragma once
 
+#include "Mesh.hpp"
+#include "Shader.hpp"
+#include "Texture.hpp"
+#include "serialization/DataSerializer.hpp"
+
 #include <glad/glad.h>
+#include <stb_image.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <set>
-#include <stb_image.h>
+
+#ifdef USE_ASSIMP
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#endif
 
-#include <Syngine.hpp>
-#include <modules/Mesh.hpp>
-#include <modules/Shader.hpp>
 #include <unordered_map>
-#include <world/WorldObject.hpp>
-
 #include <string>
 #include <vector>
 
 namespace syng
 {
-unsigned int TCBFromFile(const char *path, const std::string &directory);
+constexpr uint16_t PCK_HEADER_MODEL = 100;
+constexpr uint16_t PCK_FOOTER_MODEL = 101;
 
-Texture TextureFromFile(const char *path, const std::string &directory, const Texture_T &type);
+typedef std::unordered_map<std::string, Mesh*> MeshKeyedMap;
+class Model;
+
+class PackedWriter {
+private:
+    DataSerializer* buffer;
+public:
+    PackedWriter(DataSerializer* buffer);
+
+    void write(Model* model);
+};
+
+class PackedReader {
+private:
+    DataDeserializer* buffer;
+public:
+    bool flipTextures = false;
+
+    PackedReader(DataDeserializer* buffer);
+
+    void read(Model* model);
+};
+
+#ifdef USE_ASSIMP
+class AssimpReader {
+private:
+    std::string directory, path;
+    std::vector<MeshTexture2D> cachedTextures;
+
+    MeshKeyedMap processNode(aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform);
+    Mesh* processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& transform);
+    std::vector<MeshTexture2D> loadMaterialTextures(aiMaterial *mat, aiTextureType type, const MeshTexture2D_T &texType);
+public:
+    aiPostProcessSteps postProcessSteps = static_cast<aiPostProcessSteps>(
+        aiProcess_Triangulate |
+        aiProcess_GenSmoothNormals |
+        aiProcess_FlipUVs |
+        aiProcess_CalcTangentSpace
+    );
+    bool flipTextures = false;
+
+    AssimpReader(std::string path);
+
+    std::vector<MeshTexture2D>& getCachedTextures();
+    void read(Model* model);
+};
+#endif
 
 class Model
 {
+private:
+    bool loaded;
 public:
-    std::vector<Texture> textures_loaded;
-    std::unordered_map<std::string, Mesh*> meshes;
-    std::unordered_map<std::string, std::unordered_map<std::string, Mesh*>> meshGroups;
-    std::string directory;
-    bool loaded, gammaCorrection;
-    
-    Model(std::string const &path, bool gamma = false);
+    MeshKeyedMap meshes;
+    std::unordered_map<std::string, MeshKeyedMap> meshGroups;
 
+    Model();
     ~Model();
 
     void draw(Shader &shader);
 
-    void read(
-        const std::set<std::string>& meshes = {},
-        bool flipTextures = false,
-        aiPostProcessSteps postProcessSteps = static_cast<aiPostProcessSteps>(
-            aiProcess_Triangulate |
-            aiProcess_GenSmoothNormals |
-            aiProcess_FlipUVs |
-            aiProcess_CalcTangentSpace
-        )
-    );
+    void serialize(PackedWriter writer);
+    void readPacked(PackedReader reader);
+#ifdef USE_ASSIMP
+    void readAssimp(AssimpReader reader);
+#endif
 
-    void load(VRAM_Approach approach = Sequential);
-    void loadModel(VRAM_Approach approach = Sequential, const std::set<std::string>& meshes = {}, bool flip = false);
-
+    bool isLoaded() { return this->loaded; };
+    void load(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential);
     void groupMeshes();
 
-    void pushTexture(const std::string& meshKey, Texture texture);
+    void pushTexture(const std::string& meshKey, MeshTexture2D texture);
     void pullTexture(const std::string& meshKey, const std::string& path);
-private:
-    std::string path;
-
-    void processNode(const std::set<std::string>& meshNames, aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform);
-    Mesh* processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& transform);
-
-    std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, const Texture_T& texType);
 };
 }

@@ -1,13 +1,6 @@
 #pragma once
 
-#include <Syngine.hpp>
-#include <world/World.hpp>
-#include <world/WorldObject.hpp>
-#include <modules/Shader.hpp>
-
-#include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "world/WorldObject.hpp"
 
 namespace syng
 {

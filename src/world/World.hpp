@@ -21,9 +21,8 @@ public:
     bool paused = true;
 
     unsigned int getID() const { return id; }
-    
-    std::string getName() const { return name; }
 
+    std::string getName() const { return name; }
     glm::vec3 getGravity() const { return gravity; }
 };
 

@@ -1,7 +1,11 @@
 #include "SampleGame.hpp"
 
 #include "SampleCallbacks.hpp"
+#include "engine/Concurrency.hpp"
 #include "engine/RenderTable.hpp"
+#include "modules/Model.hpp"
+#include "modules/Shader.hpp"
+#include "serialization/DataSerializer.hpp"
 #include "utils/GameUtils.hpp"
 #include "glm/fwd.hpp"
 #include "imgui.h"
@@ -12,8 +16,12 @@
 #include "modules/Scene.hpp"
 #include <cmath>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <ostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 
 /* TODO:
@@ -103,60 +111,81 @@ void SampleGame::createWindow(GameWindow *window) {
     // std::cout << "G\n";
 
     std::cout << "scene\n";
-    sceneModel = new Model("models/wall/2g/wall.gltf");
+    sceneModel = new Model();
     std::cout << "H\n";
-    sceneModel->loadModel(syng::Interleaved);
-    std::cout << "scene done\n";
 
-    std::string dir = std::filesystem::current_path().string();
-    for (auto& pair : sceneModel->meshes) {
-        std::cout << "texture start: " << pair.first << std::endl;
-        Mesh* mesh = pair.second;
-        for (auto& tex : mesh->getTextures()) {
-            std::cout << "texture path: " << tex.path << std::endl;
-            if (GameUtils::str_contains(tex.path, "beige_wall_001")) {
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/beige_wall_001_nor_gl_1k.jpg", dir, Texture_Normal));
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/beige_wall_001_disp_1k.png", dir, Texture_Height));
-            }
-            std::cout << "ellionat1\n";
-            if (GameUtils::str_contains(tex.path, "laminate_floor_03")) {
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_nor_gl_1k.png", dir, Texture_Normal));
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_disp_1k.png", dir, Texture_Height));
-            }
-            std::cout << "ellionat2\n";
-            if (GameUtils::str_contains(tex.path, "paper_0033")) {
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_normal_opengl_1k.png", dir, Texture_Normal));
-                //sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_height_1k.png", dir, Texture_Height));
-            }
-            std::cout << "ellionat3\n";
-            if (GameUtils::str_contains(tex.path, "wood_table_001")) {
-                sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_nor_gl_1k.png", dir, Texture_Normal));
-                //sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_disp_1k.png", dir, Texture_Height));
-            }
-            std::cout << "ellionat4\n";
-        }
-        std::cout << "texture end: " << pair.first << std::endl;
-    }
-    std::cout << "textures done\n";
+    std::ifstream boomPckFile;
+    boomPckFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    boomPckFile.open(std::filesystem::current_path() / "boom.pck", std::ios::binary);
+
+    std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(boomPckFile)), {});
+    boomPckFile.close();
+
+    DataDeserializer buff(bytes.data(), bytes.size());
+
+    PackedReader reader(&buff);
+    Model* sceneModel = new Model();
+    sceneModel->readPacked(reader);
+
+    //sceneModel->readAssimp({"models/wall/2g/wall.gltf"});
+    sceneModel->load(CacheApproach::Interleaved);
+
+    // std::cout << "textures start\n";
+    // std::string dir = std::filesystem::current_path().string();
+    // for (auto& pair : sceneModel->meshes) {
+    //     Mesh* mesh = pair.second;
+    //     std::vector<Texture> texCpy = std::vector<Texture>(mesh->textures);
+    //     for (auto tex : texCpy) {
+    //         std::string texPath = tex.path;
+    //         if (GameUtils::str_contains(texPath, "beige_wall_001")) {
+    //             sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/beige_wall_001_nor_gl_1k.jpg", dir, Texture_Normal));
+    //             sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/beige_wall_001_disp_1k.png", dir, Texture_Height));
+    //         }
+    //         if (GameUtils::str_contains(texPath, "laminate_floor_03")) {
+    //             sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_nor_gl_1k.png", dir, Texture_Normal));
+    //             sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/laminate_floor_03_disp_1k.png", dir, Texture_Height));
+    //         }
+    //         if (GameUtils::str_contains(texPath, "paper_0033")) {
+    //             sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_normal_opengl_1k.png", dir, Texture_Normal));
+    //             //sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/paper_0033_height_1k.png", dir, Texture_Height));
+    //         }
+    //         if (GameUtils::str_contains(texPath, "wood_table_001")) {
+    //             sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_nor_gl_1k.png", dir, Texture_Normal));
+    //             //sceneModel->pushTexture(pair.first, TextureFromFile("models/wall/2g/wood_table_001_disp_1k.png", dir, Texture_Height));
+    //         }
+    //     }
+    // }
+    // std::cout << "textures end\n";
+
+    // DataSerializer buff(500 * 1024 * 1024);
+    // PackedWriter writer(&buff);
+    // sceneModel->serialize(writer);
+
+    // auto serialized = buff.copyData(buff.getWritePos());
+    // std::ofstream boomPckFile;
+
+    // boomPckFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    // boomPckFile.open(std::filesystem::current_path() / std::filesystem::path("boom.pck"), std::ios::binary);
+    // boomPckFile.write(reinterpret_cast<const char*>(serialized.data()), serialized.size());
+    // boomPckFile.close();
 
     //sceneModel->meshes["Plane"]->textures.push_back(bricks2disp);
 
     sceneModelInstance = new ModelInstance(sceneModel);
-    std::cout << "haha1\n";
     sceneModelInstance->setDiscard("LIGHT", true);
-    std::cout << "haha2\n";
     sceneModelInstance->getMeshInstances()->forEach([](const std::string& key, MeshInstance* meshInstance){
         std::cout << "IA: " << key << std::endl;
     });
-    std::cout << "3\n";
     //sceneModelInstance->getMeshInstances()->get("Cube")->getMesh()->material.opacity = 0.5f;
     //sceneModelInstance->getMeshInstances()->sort(RT_SORT_OPACITY);
 
     //sceneEntity = new BT_EntityTriangleMesh(overWorld, sceneModelInstance);
     //sceneEntity->load();
-    std::cout << "4\n";
 
-    scene = new Scene(camera, window);
+    batchShader.read("shaders/batchVertex.glsl", "shaders/batchFrag.glsl");
+    screenShader.read("shaders/screenVertex.glsl", "shaders/screenFrag.glsl");
+
+    scene = new Scene(camera, batchShader, screenShader);
     scene->setZBufferLayout(0.1f, 100.0f);
     // shadowMapper = new ShadowMapper(2048);
     // shadowMapper->strength = 1.0f;
@@ -165,7 +194,11 @@ void SampleGame::createWindow(GameWindow *window) {
     // scene->withShadows(shadowMapper);
     std::cout << "5\n";
 
-    skybox = new Skybox(scene, {
+    skyboxShader.read("shaders/skyboxVertex.glsl", "shaders/skyboxFrag.glsl");
+
+    skybox = new Skybox(scene, skyboxShader);
+    skybox->hdrBoost = glm::vec3(hdrSkyBoost);
+    skybox->load({
         "models/skybox/lightblue/right.png",
         "models/skybox/lightblue/left.png",
         "models/skybox/lightblue/top.png",
@@ -173,8 +206,6 @@ void SampleGame::createWindow(GameWindow *window) {
         "models/skybox/lightblue/front.png",
         "models/skybox/lightblue/back.png"
     });
-    skybox->hdrBoost = glm::vec3(hdrSkyBoost);
-    skybox->load();
     scene->getBatchRenderTable()->add("skybox", skybox);
     scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
     //scene->getBatchRenderTable()->add("appleModel", appleMeshInstance);
@@ -214,15 +245,16 @@ void SampleGame::createWindow(GameWindow *window) {
     //framebuffer_VHS = new Framebuffer(scene, {"shaders/vhsVertex.glsl", "shaders/vhs2Frag.glsl"});
     framebuffer_VHS = new Framebuffer(scene);
     framebuffer_VHS->addRenderTask([&](Framebuffer* buffer){
-        Shader outputShader = buffer->getOutputShader();
+        Shader& outputShader = buffer->getOutputShader();
         outputShader.use();
         outputShader.setFloat("time", SDL_GetTicks() / 1000.0f);
     });
     framebuffer_VHS->setTCBFormat(GL_RGBA16F);
+    framebuffer_VHS->setTCBFiltering(GL_NEAREST);
     framebuffer_VHS->setHDR({0.036f});
-    framebuffer_VHS->setAntiAliasing(AA_FXAAx1);
+    framebuffer_VHS->setAntiAliasing(AA_OFF);
     framebuffer_VHS->getRenderTable()->add("scene", scene);
-    framebuffer_VHS->create(1024, 768, true);
+    framebuffer_VHS->create(320, 240, true);
 
     framebuffer = new Framebuffer(scene);
     //framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
@@ -312,6 +344,7 @@ void SampleGame::cleanup() {
 }
 
 int main() {
+    Concurrency::initMainThread();
     SampleGame *game = new SampleGame();
     return game->launch();
 }

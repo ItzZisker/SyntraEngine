@@ -4,8 +4,9 @@
 #include "engine/RenderTable.hpp"
 #include "modules/Mesh.hpp"
 #include "world/WorldObject.hpp"
-#include <glm/glm.hpp>
+
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/glm.hpp>
 
 namespace syng
 {
@@ -22,8 +23,8 @@ public:
     MeshInstance(std::unordered_map<std::string, Mesh*> subMeshes, Coordination coords);
     ~MeshInstance();
 
-    void render(Shader shader, Screenbuffer screen, glm::mat4 parentTransform);
-    void render(Shader shader, Screenbuffer screen = {}) override;
+    void render(Shader& shader, Screenbuffer screen, glm::mat4 parentTransform);
+    void render(Shader& shader, Screenbuffer screen = {}) override;
 
     RenderTable<MeshInstance>* getChildren();
     Mesh* getSelf();

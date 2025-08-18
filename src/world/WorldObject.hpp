@@ -1,11 +1,12 @@
 #pragma once
 
-#include "glm/fwd.hpp"
 #include <engine/RenderTable.hpp>
 #include <world/World.hpp>
 #include <utils/FastMath.hpp>
 
+#include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
+
 #include <vector>
 
 namespace syng
@@ -18,7 +19,6 @@ struct FrustumPlane {
     float distance;
 
     FrustumPlane();
-
     FrustumPlane(const glm::vec3& point, const glm::vec3& normalVec);
 
     float getSignedDistanceToPlane(const glm::vec3& point) const;
@@ -34,9 +34,7 @@ public:
     glm::vec3 extents {0.0f, 0.0f, 0.0f};
 
     AABB(std::vector<glm::vec3> positions);
-
     AABB(const glm::vec3& min, const glm::vec3& max);
-
     AABB(const glm::vec3& inCenter, float iI, float iJ, float iK);
 
     bool isOnOrForwardPlane(const FrustumPlane& plane) const;
@@ -52,23 +50,17 @@ protected:
     AABB bounding;
 public:
     FrustumDiscardable(AABB bounding);
-
     FrustumDiscardable();
-
     ~FrustumDiscardable();
 
     Frustum createFrustum(Scene* scene);
-
     Frustum createFrustum(Scene_T snapshot);
 
     bool isInFrustum(const Frustum& frustum, const glm::mat4& transform);
-
     bool isInView(Scene_T snapshot, const glm::mat4& transform);
-
     bool isInView(Scene* scene, const glm::mat4& transform);
 
     bool shouldDiscard(Scene_T snapshot, const glm::mat4& transform) override;
-
     bool shouldDiscard(Scene* scene, const glm::mat4& transform);
 
     AABB getBounding();

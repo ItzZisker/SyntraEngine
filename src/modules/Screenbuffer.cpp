@@ -1,6 +1,4 @@
 #include "Screenbuffer.hpp"
-#include "modules/Shader.hpp"
-#include <modules/Screenbuffer.hpp>
 
 using namespace syng;
 

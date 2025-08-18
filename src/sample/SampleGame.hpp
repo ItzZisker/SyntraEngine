@@ -20,10 +20,14 @@ using namespace syng;
 
 class SampleLightRenderer : ShaderRenderable {
 public:
-    Shader shader = {"shaders/lightBulbVertex.glsl", "shaders/lightBulbFrag.glsl"};
+    Shader shader;
     std::vector<MeshInstance*> lightBulbs;
 
-    void render(Shader shader, Screenbuffer screen = {}) override {
+    SampleLightRenderer() {
+        shader.read("shaders/lightBulbVertex.glsl", "shaders/lightBulbFrag.glsl");
+    }
+
+    void render(Shader& shader, Screenbuffer screen = {}) override {
         for (MeshInstance* bulb : lightBulbs) {
             bulb->render(this->shader, screen);
         }
@@ -58,6 +62,8 @@ public:
     Model *appleModel, *sceneModel;
     ModelInstance *sceneModelInstance;
     MeshInstance *appleHMeshInstance, *appleMeshInstance;
+
+    Shader batchShader, screenShader, skyboxShader;
 
     //BT_EntityConvexHull* appleEntity;
     //BT_EntityTriangleMesh* sceneEntity;

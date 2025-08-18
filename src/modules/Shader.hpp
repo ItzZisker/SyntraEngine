@@ -1,27 +1,83 @@
 #pragma once
 
-#include <glad/glad.h>
-#include <map>
-#include <string>
+#include "serialization/DataSerializer.hpp"
 
+#include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+
+#include <filesystem>
+#include <string>
+#include <map>
 
 namespace syng
 {
+constexpr uint16_t PCK_HEADER_SHADER = 102;
+constexpr uint16_t PCK_FOOTER_SHADER = 103;
+
+class Shader;
+
+class LazyShader {
+public:
+    std::string vertexCode, fragmentCode, geometryCode = "";
+    Shader publish();
+};
+
+class ShaderEncoder {
+private:
+    DataSerializer *buffer;
+public:
+    ShaderEncoder(DataSerializer *buffer);
+    void encode(std::string vertex, std::string fragment, std::string geometry = "");
+    void encode(Shader shader);
+};
+
+class ShaderDecoder {
+private:
+    DataDeserializer *buffer;
+public:
+    ShaderDecoder(DataDeserializer *buffer);
+    LazyShader decodeLazy();
+    Shader decode();
+};
+
 class Shader
 {
 private:
     std::map<std::string, std::string> variables;
-
     GLuint ID = 0;
-    const char *vertexPath, *fragmentPath;
 public:
-    Shader(const char *vertexPath, const char *fragmentPath);
+    std::string vertexCode, fragmentCode, geometryCode;
+
+    Shader() = default;
+    Shader(LazyShader lazy);
+    Shader(const Shader&) = delete;
+    Shader& operator=(const Shader&) = delete;
+    Shader(Shader&& other) noexcept
+        : variables(std::move(other.variables)),
+          ID(other.ID),
+          vertexCode(std::move(other.vertexCode)),
+          fragmentCode(std::move(other.fragmentCode)),
+          geometryCode(std::move(other.geometryCode)) {
+        other.ID = 0;
+    }
+
+    Shader& operator=(Shader&& other) noexcept {
+        if (this != &other) {
+            disposeProgram();
+            variables = std::move(other.variables);
+            ID = other.ID;
+            vertexCode = std::move(other.vertexCode);
+            fragmentCode = std::move(other.fragmentCode);
+            geometryCode = std::move(other.geometryCode);
+            other.ID = 0;
+        }
+        return *this;
+    }
 
     std::string getVariable(std::string key);
 
+    void read(DataDeserializer *buffer);
+    void read(std::filesystem::path vertexPath, std::filesystem::path fragmentPath, std::filesystem::path geometryPath = "");
     void init(std::map<std::string, std::string> variables = {});
     void use();
     
@@ -41,10 +97,7 @@ public:
     void setMatrix3(const std::string &name, glm::mat3 matrix, int count, bool transpose);
     void setMatrix4(const std::string &name, glm::mat4 matrix, int count, bool transpose);
 
-    const char *getVertexPath() const { return vertexPath; }
-    const char *getFragmentPath() const { return fragmentPath; }
     unsigned int getProgramID() const { return ID; }
-
     bool hasProgram() const { return static_cast<bool>(ID); }
 };
 }

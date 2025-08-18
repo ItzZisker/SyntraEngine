@@ -1,46 +1,35 @@
-#include "modules/Scene.hpp"
-#include "SDL3/SDL_video.h"
 #include "Scene.hpp"
-#include "Syngine.hpp"
+
+#include "Scene.hpp"
+#include "ShadowMapper.hpp"
+#include "Screenbuffer.hpp"
+#include "Shader.hpp"
+
+#include "engine/Config.hpp"
 #include "engine/RenderTable.hpp"
-#include "modules/ShadowMapper.hpp"
-#include "modules/Screenbuffer.hpp"
-#include "modules/Shader.hpp"
+
 #include "world/WorldObject.hpp"
+
 #include "utils/GameUtils.hpp"
-#include <glm/gtc/matrix_transform.hpp>
+
+#include <SDL3/SDL_video.h>
+#include <glm/ext/matrix_clip_space.hpp>
+
 #include <iostream>
 #include <ostream>
 #include <string>
-#include "engine/Config.hpp"
 
 using namespace syng;
 
-Scene::Scene(Camera* camera, GameWindow* window)
-    : camera(camera),
-      screenWidth(window->getWidth()),
-      screenHeight(window->getHeight()),
-      near(0.1f),
-      far(100.0f),
-      fieldOfView(65.0f) {
+Scene::Scene(Camera* camera, Shader& batchShader, Shader& screenShader, Scene_T props)
+    : camera(camera), batchShader(batchShader), screenShader(screenShader), snapshot(props) {
     glEnable(GL_DEPTH_TEST);
-    glViewport(0, 0, screenWidth, screenHeight);
-    aspectRatio = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
+    glViewport(0, 0, snapshot.width, snapshot.height);
     updateProjection();
 }
 
-Scene::Scene(Camera* camera, float FOVDegrees, float near, float far, int width, int height)
-    : camera(camera),
-      screenWidth(width),
-      screenHeight(height),
-      near(near),
-      far(far),
-      fieldOfView(FOVDegrees) {
-    glEnable(GL_DEPTH_TEST);
-    glViewport(0, 0, screenWidth, screenHeight);
-    aspectRatio = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
-    updateProjection();
-}
+Scene::Scene(Camera* camera, Shader& batchShader, Shader& screenShader)
+    : Scene(camera, batchShader, screenShader, {}) {}
 
 void Scene::setDirectionalLight(DirLight light) {
     this->dirLight = light;
@@ -105,19 +94,24 @@ void Scene::onEvent(const SDL_Event& event) {
         SDL_Window* current = SDL_GetWindowFromID(event.window.windowID);
         SDL_GetWindowSize(current, &width, &height);
         if (width != 0 && height != 0) {
-            std::cout << "resize: width=" << width << ", height=" << height <<std::endl;
             setScreenLayout(width, height); 
         }
     }
 }
 
 void Scene::updateProjection() {
-    updateProjection(glm::perspective(glm::radians(fieldOfView), aspectRatio, near, far));
+    updateProjection(glm::perspective(
+        glm::radians(snapshot.FOV),
+        snapshot.aspectRatio,
+        snapshot.zNear,
+        snapshot.zFar
+    ));
 }
 
 void Scene::updateUniforms() {
     screenShader.use();
-    screenShader.setVec2f("screenSize", screenWidth, screenHeight);
+    screenShader.setVec2f("screenSize", snapshot.width, snapshot.height);
+
     batchShader.use();
     batchShader.setVec3f("dirLight.direction", dirLight.direction);
     batchShader.setVec3f("dirLight.ambient", dirLight.ambient);
@@ -163,52 +157,52 @@ void Scene::updateProjection(glm::mat4 customPerspective) {
 
 void Scene::setScreenLayout(int width, int height) {
     glViewport(0, 0, width, height);
-    screenWidth = width;
-    screenHeight = height;
-    aspectRatio = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
+    snapshot.width = width;
+    snapshot.height = height;
+    snapshot.aspectRatio = static_cast<float>(width) / static_cast<float>(height);
     screenShader.use();
     screenShader.setVec2f("screenSize", width, height);
     updateProjection();
 }
 
 void Scene::setZBufferLayout(float near, float far) {
-    this->near = near;
-    this->far = far;
+    this->snapshot.zNear = near;
+    this->snapshot.zFar = far;
     updateProjection();
 }
 
 void Scene::setAspectRatio(float aspectRatio) {
-    this->aspectRatio = aspectRatio;
+    this->snapshot.aspectRatio = aspectRatio;
     updateProjection();
 }
 
 void Scene::setFieldOfView(float FOVDegrees) {
-    fieldOfView = FOVDegrees;
+    snapshot.FOV = FOVDegrees;
     updateProjection();
 }
 
 float Scene::getScreenWidth() {
-    return screenWidth;
+    return snapshot.width;
 }
 
 float Scene::getScreenHeight() {
-    return screenHeight;
+    return snapshot.height;
 }
 
 float Scene::getZNear() {
-    return near;
+    return snapshot.zNear;
 }
 
 float Scene::getZFar() {
-    return far;
+    return snapshot.zFar;
 }
 
 float Scene::getFieldOfViewDegrees() {
-    return fieldOfView;
+    return snapshot.FOV;
 }
 
 float Scene::getAspectRatio() {
-    return aspectRatio;
+    return snapshot.aspectRatio;
 }
 
 DirLight Scene::getDirectionalLight() {
@@ -232,15 +226,8 @@ SpotLight Scene::getSpotLight(unsigned int num) {
 }
 
 Scene_T Scene::getSnapshot() {
-    Scene_T res;
-    res.cameraPos = camera->getPosition();
-    res.cameraDir = camera->getDirection();
-    res.cameraUp = camera->getUp();
-    res.cameraRight = camera->getRight();
-    res.aspectRatio = aspectRatio;
-    res.FOV = fieldOfView;
-    res.zNear = near;
-    res.zFar = far;
+    Scene_T res = this->snapshot;
+    res.cameraCoords = {camera->getTransform()};
     return res;
 }
 
@@ -264,10 +251,10 @@ glm::mat4 Scene::getViewMatrix() {
     return camera->getViewMatrix();
 }
 
-Shader Scene::getBatchShader() {
+Shader& Scene::getBatchShader() {
     return batchShader;
 }
 
-Shader Scene::getScreenShader() {
+Shader& Scene::getScreenShader() {
     return screenShader;
 }

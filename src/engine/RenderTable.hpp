@@ -2,10 +2,11 @@
 
 #include "modules/Screenbuffer.hpp"
 #include "modules/Shader.hpp"
+
 #include <unordered_map>
-#include <string>
 #include <functional>
 #include <algorithm>
+#include <string>
 
 namespace syng
 {
@@ -26,7 +27,7 @@ public:
 class ShaderRenderable
 {
 public:
-    virtual void render(Shader shader, Screenbuffer screen = {}) = 0;
+    virtual void render(Shader& shader, Screenbuffer screen = {}) = 0;
     virtual ~ShaderRenderable() = default;
 };
 

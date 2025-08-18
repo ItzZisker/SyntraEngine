@@ -1,16 +1,25 @@
-#include "SDL3/SDL_events.h"
-#include "SDL3/SDL_video.h"
-#include "engine/RenderTable.hpp"
-#include "modules/Shader.hpp"
 #include "Syngine.hpp"
 
-#include <iostream>
-#include <math.h>
+#include "SDL3/SDL_events.h"
+#include "SDL3/SDL_video.h"
+#include "engine/Concurrency.hpp"
+#include "engine/RenderTable.hpp"
+#include "engine/TaskQueue.hpp"
+#include "modules/Shader.hpp"
+
 #include <ostream>
+#include <iostream>
+
+#include <math.h>
+#include <stdexcept>
 
 using namespace syng;
 
 GameWindow::GameWindow(std::string title, WindowSize initialSize) {
+    if (!Concurrency::isMainThreadInitialized()) {
+        throw std::runtime_error("Syngine: GL Main Thread isn't initialized -> Concurrency::initMainThread()");
+    }
+
     this->title = title;
     this->width = initialSize.width;
     this->height = initialSize.height;
@@ -56,14 +65,14 @@ void GameWindow::attrib(SDL_GLAttr attr, int value) {
 int GameWindow::initLoop() {
     if (SDL_Init(SDL_INIT_VIDEO) <= 0) {
         std::cerr << "Syngine: Failed to initialize SDL3: " << SDL_GetError() << std::endl;
-        return -1;
+        return -2;
     }
 
     SDL_Window *sdlWindow = SDL_CreateWindow(title.c_str(), width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (sdlWindow == NULL) {
         std::cerr << "Syngine: Failed to create SDL3 window: " << SDL_GetError() << std::endl;
         SDL_Quit();
-        return -2;
+        return -3;
     }
     sdlWindowPtr = sdlWindow;
     glContext =  SDL_GL_CreateContext(sdlWindow);
@@ -72,7 +81,7 @@ int GameWindow::initLoop() {
 
     if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress)) {
         std::cerr << "Syngine: Failed to initialize GLAD" << std::endl;
-        return -3;
+        return -4;
     }
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
@@ -86,6 +95,7 @@ int GameWindow::initLoop() {
         task(this);
     }
     while (initialized) {
+        TaskQueue::Instance().executeAll();
         for (auto& task : renderTasks) {
             task(this);
         }
@@ -175,6 +185,10 @@ SDL_GLContext GameWindow::getGLContext() {
     return glContext;
 }
 
+TaskQueue& GameWindow::getGameLoopQueue() {
+    return this->gameLoopQueue;
+}
+
 RenderTable<WindowRenderable>* GameWindow::getWindowRenderTable() {
     return this->windowRenderTable;
 }
@@ -183,4 +197,14 @@ WindowSize GameWindow::getSize() {
     int width, height;
     SDL_GetWindowSize(sdlWindowPtr, &width, &height);
     return {width, height};
+}
+
+LazyShader GameWindow::getPresetShader(std::string path) {
+    auto pair = presetShaders.find(path);
+    if (pair != presetShaders.end()) {
+        LazyShader copy = pair->second;
+        return copy;
+    } else {
+        return {};
+    }
 }

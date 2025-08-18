@@ -1,16 +1,19 @@
-#include <modules/Mesh.hpp>
-#include <vector>
-#include <world/entity/BT_EntityTriangleMesh.hpp>
+#include "BT_EntityTriangleMesh.hpp"
+
+#include "modules/Mesh.hpp"
 #include "modules/MeshInstance.hpp"
 #include "modules/ModelInstance.hpp"
-#include "modules/Shader.hpp"
 #include "utils/GameUtils.hpp"
+
+#include <glm/gtc/type_ptr.hpp>
+
 #include <LinearMath/btVector3.h>
 #include <BulletCollision/CollisionDispatch/btInternalEdgeUtility.h>
-#include "BulletCollision/CollisionShapes/btTriangleInfoMap.h"
-#include "BulletCollision/CollisionShapes/btTriangleMesh.h"
+#include <BulletCollision/CollisionShapes/btTriangleInfoMap.h>
+#include <BulletCollision/CollisionShapes/btTriangleMesh.h>
 
 #include <iostream>
+#include <vector>
 
 using namespace syng;
 

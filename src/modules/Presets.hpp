@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Shader.hpp"
-#include "modules/GLObjects.hpp"
-#include "modules/Mesh.hpp"
+#include "Mesh.hpp"
 
 namespace syng
 {
@@ -23,4 +21,5 @@ namespace Presets3D
 {
     void pushVerticesCube(float size, std::vector<glm::vec3>& vertices, std::vector<GLuint>& indices);
 }
+
 }

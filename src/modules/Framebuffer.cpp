@@ -1,22 +1,19 @@
-#include "SDL3/SDL_timer.h"
+#include "Framebuffer.hpp"
+
+#include "Screenbuffer.hpp"
+#include "Shader.hpp"
+#include "Presets.hpp"
+
 #include "engine/RenderTable.hpp"
-#include "modules/Mesh.hpp"
-#include "modules/Screenbuffer.hpp"
-#include "modules/Shader.hpp"
-#include "world/WorldObject.hpp"
 #include "utils/GameUtils.hpp"
-#include <modules/Framebuffer.hpp>
-#include <modules/ShadowMapper.hpp>
-#include <modules/Presets.hpp>
+
 #include <iostream>
 #include <ostream>
 
 using namespace syng;
 
 Framebuffer::Framebuffer(Scene* scene) : scene(scene), outputShader(scene->getScreenShader()) {}
-
-Framebuffer::Framebuffer(Scene* scene, Shader outputShader) : scene(scene), outputShader(outputShader) {}
-
+Framebuffer::Framebuffer(Scene* scene, Shader& outputShader) : scene(scene), outputShader(outputShader) {}
 Framebuffer::~Framebuffer() {
     initTasks.clear();
     renderTasks.clear();
@@ -35,7 +32,6 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
         std::cerr << "ERROR::FRAMEBUFFER::Already Created" << std::endl;
         return;
     }
-
     GLenum TCBBaseFormat;
 
     switch (TCBFormat) {
@@ -80,7 +76,7 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
     glGenTextures(1, &TCB);
     glBindTexture(GL_TEXTURE_2D, TCB);
     glTexImage2D(GL_TEXTURE_2D, 0, TCBFormat, width_, height_, 0, TCBBaseFormat, GL_UNSIGNED_BYTE, NULL);
-    PresetsTexel::TextureFilter(GL_TEXTURE_2D, GL_LINEAR);
+    PresetsTexel::TextureFilter(GL_TEXTURE_2D, TCBFiltering);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TCB, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -102,15 +98,13 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
 
     if (outputToScreenShader) {
         Vertex2D corners[] = {
-            {{-1.0f,  -1.0f},  {0.0f,  0.0f}},
-            {{-1.0f,   1.0f},  {0.0f,  1.0f}},
-            {{1.0f,  -1.0f}, {1.0f, 0.0f}},
-            {{1.0f,  1.0f}, {1.0f, 1.0f}}
+            {{-1.0f, -1.0f}, {0.0f, 0.0f}},
+            {{-1.0f, 1.0f}, {0.0f, 1.0f}},
+            {{1.0f, -1.0f}, {1.0f, 0.0f}},
+            {{1.0f, 1.0f}, {1.0f, 1.0f}}
         };
         quad = Presets2D::newMeshQuad(corners, TCB);
-        quad->attribute({0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0});
-        quad->attribute({1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float))});
-        quad->reserve();
+        quad->init();
     }
     if (!outputShader.hasProgram()) {
         outputShader.init();
@@ -159,6 +153,10 @@ void Framebuffer::setAntiAliasing(AntiAliasing AA) {
 
 void Framebuffer::setTCBFormat(GLenum format) {
     if (!created) TCBFormat = format;
+}
+
+void Framebuffer::setTCBFiltering(GLenum filterType) {
+    if (!created) TCBFiltering = filterType;
 }
 
 void Framebuffer::setHDR(class HDR hdr) {
@@ -223,7 +221,7 @@ RenderTable<ShaderRenderable>* Framebuffer::getRenderTable() {
     return this->renderTable;
 }
 
-Shader Framebuffer::getOutputShader() {
+Shader& Framebuffer::getOutputShader() {
     return this->outputShader;
 }
 

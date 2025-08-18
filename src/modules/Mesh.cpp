@@ -1,18 +1,19 @@
-#include "modules/Mesh.hpp"
-#include "Model.hpp"
+#include "Mesh.hpp"
+
 #include "Presets.hpp"
 #include "Shader.hpp"
+#include "Texture.hpp"
+#include "GLObjects.hpp"
+#include "Screenbuffer.hpp"
+#include "Shader.hpp"
+
 #include "engine/Config.hpp"
-#include "modules/Camera.hpp"
-#include "modules/GLObjects.hpp"
-#include "modules/Screenbuffer.hpp"
-#include "modules/Shader.hpp"
-#include "glm/fwd.hpp"
+#include "utils/GameUtils.hpp"
 #include "world/WorldObject.hpp"
-#include <filesystem>
-#include <modules/Mesh.hpp>
+
+#include "glm/fwd.hpp"
+
 #include <string>
-#include <utils/GameUtils.hpp>
 #include <vector>
 
 using namespace syng;
@@ -32,8 +33,8 @@ Mesh::~Mesh() {
     vertices.clear();
     indices.clear();
 
-    for (auto& texture : textures) {
-        glDeleteTextures(1, &texture.TCB);
+    for (auto& mT : textures) {
+        glDeleteTextures(1, &mT.texture.TCB);
     }
     textures.clear();
 
@@ -50,11 +51,11 @@ Coordination Mesh::getParentToNodeCoords() {
     return {getParentToNodeTransform()};
 }
 
-bool Mesh::hasFallback(Texture_T texType) {
+bool Mesh::hasFallback(MeshTexture2D_T texType) {
     return textures_fallback.find(texType) != textures_fallback.end();
 }
 
-void Mesh::setFallbackTCB(Texture_T texType, GLuint TCB) {
+void Mesh::setFallbackTCB(MeshTexture2D_T texType, GLuint TCB) {
     auto last = textures_fallback.find(texType);
     if (last != textures_fallback.end()) {
         glDeleteTextures(1, &(last->second));
@@ -63,13 +64,13 @@ void Mesh::setFallbackTCB(Texture_T texType, GLuint TCB) {
     textures_fallback.emplace(texType, TCB);
 }
 
-void Mesh::setFallbackColor(Texture_T texType, GLubyte pixel[4]) {
+void Mesh::setFallbackColor(MeshTexture2D_T texType, GLubyte pixel[4]) {
     GLuint TCB = 0;
     createPlainTexture(TCB, pixel);
     setFallbackTCB(texType, TCB);
 }
 
-void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
+void Mesh::render(Shader& shader, Screenbuffer screen, glm::mat4 transform) {
     if (!isLoaded()) return;
     glBindFramebuffer(GL_FRAMEBUFFER, screen.getFBO());
 
@@ -112,7 +113,7 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
             case Texture_Rough: number = std::to_string(roughNr++); break;
         }
 
-        shader.setTexture(TEXTURE_NAME(tex.type) + number, GL_TEXTURE_2D, texUnit++, tex.TCB);
+        shader.setTexture(TEXTURE_NAME(tex.type) + number, GL_TEXTURE_2D, texUnit++, tex.texture.TCB);
     }
     
     if (specularNr == 1 && !hasFallback(Texture_Specular)) {
@@ -137,11 +138,11 @@ void Mesh::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Mesh::init(VRAM_Approach approach) {
+void Mesh::init(CacheApproach::VRAM_Approach approach) {
     if (isLoaded()) return;
 
     switch (approach) {
-        case Sequential:
+        case CacheApproach::Sequential:
             attribute({0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) 0});
             attribute({1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal)});
             attribute({2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoords)});
@@ -151,7 +152,7 @@ void Mesh::init(VRAM_Approach approach) {
             attribute({6, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, m_Weights)});
             reserve();
         break;
-        case Interleaved:        
+        case CacheApproach::Interleaved:        
             size_t count = vertices.size();
         
             int vec2fLength   = 2 * count;
@@ -246,7 +247,7 @@ Mesh2D::Mesh2D(std::vector<Vertex2D> vertices, std::vector<GLuint> indices, glm:
 
 Mesh2D::~Mesh2D() {
     if (texture_fallback) glDeleteTextures(1, &texture_fallback);
-    if (texture.TCB) glDeleteTextures(1, &texture.TCB);
+    if (meshTexture.texture.TCB) glDeleteTextures(1, &meshTexture.texture.TCB);
 }
 
 glm::mat4 Mesh2D::getParentToNodeTransform() {
@@ -269,38 +270,37 @@ void Mesh2D::setFallbackColor(GLubyte pixel[4]) {
     setFallbackTCB(TCB);
 }
 
-void Mesh2D::setTexture(Texture texture) {
-    if (!texture.TCB) return;
-    if (this->texture.TCB) glDeleteTextures(1, &this->texture.TCB);
-    this->texture = texture;
+void Mesh2D::setTexture(MeshTexture2D mT) {
+    if (!mT.texture.TCB) return;
+    if (this->meshTexture.texture.TCB) glDeleteTextures(1, &this->meshTexture.texture.TCB);
+    this->meshTexture = mT;
 }
 
-void Mesh2D::render(Shader shader, Screenbuffer screen, glm::mat4 transform) {
+void Mesh2D::render(Shader& shader, Screenbuffer screen, glm::mat4 transform) {
     if (!isLoaded()) return;
     glBindFramebuffer(GL_FRAMEBUFFER, screen.getFBO());
 
-    if (!texture.TCB && !texture_fallback) {
+    if (!meshTexture.texture.TCB && !texture_fallback) {
         GLubyte pixel[4] = {0, 128, 128, 255};
         setFallbackColor(pixel);
     }
     shader.setMatrix4("model", transform, 1, GL_FALSE);
-    shader.setTexture("texture", GL_TEXTURE_2D, 0, texture.TCB ? texture.TCB : texture_fallback);
+    shader.setTexture("texture", GL_TEXTURE_2D, 0, meshTexture.texture.TCB ? meshTexture.texture.TCB : texture_fallback);
     
     GLVertexElement<Vertex2D>::draw();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Mesh2D::init(VRAM_Approach approach) {
+void Mesh2D::init(CacheApproach::VRAM_Approach approach) {
     if (isLoaded()) return;
 
     switch (approach) {
-        case Sequential:
+        case CacheApproach::Sequential:
             attribute({0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex2D), (void*)offsetof(Vertex2D, position)});
             attribute({1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex2D), (void*)offsetof(Vertex2D, texCoords)});
             reserve();
         break;
-
-        case Interleaved:
+        case CacheApproach::Interleaved:
             size_t count = vertices.size();
 
             int vec2fLength = 2 * count;

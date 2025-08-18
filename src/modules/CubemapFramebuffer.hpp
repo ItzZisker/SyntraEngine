@@ -1,27 +1,20 @@
 #pragma once
 
 #include "Syngine.hpp"
+#include "Scene.hpp"
+#include "Shader.hpp"
+
 #include "engine/RenderTable.hpp"
-#include "modules/Scene.hpp"
-#include "modules/Shader.hpp"
 #include "world/WorldObject.hpp"
+
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+
 #include <vector>
 #include <functional>
 
 #define SG_CUBEMAP_SIDES 6
 
-// TODO: Use only One Framebuffer, but multiple attachments, use glDrawBuffer(1, attachment) to render to the exact TCB
-/*
-    Notes:
-      - CubemapFramebuffer renders the scene into a dynamic cubemap (6 faces)
-      - It uses a TextureCubemap as color output and a single Renderbuffer as the shared depth buffer
-      - The cubemap can be used for dynamic reflection or refraction
-      - Use addInitTask to customize initialization
-      - Use addRenderTask to define scene rendering per face (view matrix provided)
-      - You can call renderToCubemap() each frame to update the environment map
- */
 namespace syng
 {
 class CubemapFramebuffer : public Screenbuffer, public DuplexRenderable {
@@ -30,7 +23,7 @@ public:
     float fieldOfView = 89.527f, aspectRatio = 1.0f;
     float zNear = 0.1f, zFar = 100.0f;
 
-    CubemapFramebuffer(Scene* scene);
+    CubemapFramebuffer(Scene* scene, Shader &reflectionShader, Shader &refractionShader);
     ~CubemapFramebuffer();
 
     Scene_T getSnapshot(Coordination cubemapSideView);
@@ -41,7 +34,7 @@ public:
     void render(GameWindow* window) override {
         render(*window);
     }
-    void render(Shader window, Screenbuffer screen) override {
+    void render(Shader& window, Screenbuffer screen) override {
         render(screen);
     }
 
@@ -55,9 +48,7 @@ public:
     const unsigned int* getFBOs() const;
     const unsigned int* getRBOs() const;
 private:
-    Shader reflectionShader = Shader("shaders/reflectionVertex.glsl", "shaders/reflectionFrag.glsl");
-    Shader refractionShader = Shader("shaders/refractionVertex.glsl", "shaders/refractionFrag.glsl");
-
+    Shader &reflectionShader, &refractionShader;
     Scene* scene;
 
     unsigned int FBO[SG_CUBEMAP_SIDES] = {0, 0, 0, 0, 0, 0};

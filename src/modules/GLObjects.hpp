@@ -1,12 +1,9 @@
 #pragma once
 
-#include "modules/Shader.hpp"
-#include <cstddef>
-#include <iostream>
-#include <ostream>
+#include "utils/GameUtils.hpp"
+
 #include <stdexcept>
 #include <vector>
-#include "utils/GameUtils.hpp"
 
 namespace syng
 {

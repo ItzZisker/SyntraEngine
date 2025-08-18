@@ -1,12 +1,15 @@
 #pragma once
 
+#include "Syngine.hpp"
+#include "Camera.hpp"
 #include "EventHandler.hpp"
 #include "Screenbuffer.hpp"
-#include "Syngine.hpp"
-#include "engine/RenderTable.hpp"
-#include "modules/Camera.hpp"
 #include "Shader.hpp"
-#include <glm/glm.hpp>
+
+#include "engine/RenderTable.hpp"
+#include "glm/fwd.hpp"
+#include "world/WorldObject.hpp"
+
 #include <vector>
 
 namespace syng
@@ -14,14 +17,32 @@ namespace syng
 class ShadowMapper;
 
 struct Scene_T {
-    glm::vec3 cameraPos;
-    glm::vec3 cameraDir;
-    glm::vec3 cameraUp;
-    glm::vec3 cameraRight;
-    float zNear;
-    float zFar;
-    float aspectRatio;
-    float FOV;
+    int width = 0, height = 0;
+    Coordination cameraCoords {
+        {0.0f, 1.0f, 0.0f},
+        {1.0f, 0.0f, 0.0f},
+        {0.0f, 1.0f, 0.0f}
+    };
+    float zNear = 0.1f;
+    float zFar = 100.0f;
+    float aspectRatio = 1.0f;
+    float FOV = 65.0f;
+
+    static Scene_T of(WindowSize size) {
+        Scene_T scene;
+        scene.aspectRatio = static_cast<float>(size.width) / static_cast<float>(size.height);
+        scene.width = size.width;
+        scene.height = size.height;
+        return scene;
+    }
+
+    static Scene_T of(WindowSize size, float near, float far, float FOV) {
+        Scene_T scene = Scene_T::of(size);
+        scene.zNear = near;
+        scene.zFar = far;
+        scene.FOV = FOV;
+        return scene;
+    }
 };
 
 struct DirLight {
@@ -76,9 +97,7 @@ class Scene : public SDL_EventHandler, public DuplexRenderable
 {
 private:
     ShadowMapper* shadowMapper = nullptr;
-
-    Shader screenShader = Shader("shaders/screenVertex.glsl", "shaders/screenFrag.glsl");
-    Shader batchShader = Shader("shaders/batchVertex.glsl", "shaders/batchFrag.glsl");
+    Shader &screenShader, &batchShader;
 
     RenderTable<ShaderRenderable>* batchRenderTable = new RenderTable<ShaderRenderable>;
     Camera* camera;
@@ -87,35 +106,26 @@ private:
     std::vector<PointLight> pointLights;
     std::vector<SpotLight> spotLights;
     
-    int screenWidth;
-    int screenHeight;
-    float near;
-    float far;
-    float fieldOfView;
-    float aspectRatio;
+    Scene_T snapshot;
     float gamma = 1.1f;
 
     glm::mat4 projection;
 
     void updateProjection();
 public:
-    Scene(Camera* camera, GameWindow* window);
-
-    Scene(Camera* camera, float FOVDegrees, float near, float far, int width, int height);
+    Scene(Camera* camera, Shader& batchShader, Shader& screenShader);
+    Scene(Camera* camera, Shader& batchShader, Shader& screenShader, Scene_T props);
     
     void reloadShaders();
-
     void setupShaders() {
         reloadShaders();
     }
 
     void render(Screenbuffer screen);
-
     void render(GameWindow* window) override {
         render(*window);
     }
-
-    void render(Shader shader, Screenbuffer screen = {}) override {
+    void render(Shader& shader, Screenbuffer screen = {}) override {
         render(screen);
     }
 
@@ -160,8 +170,8 @@ public:
     glm::mat4 getProjection();
     glm::mat4 getViewMatrix();
 
-    Shader getScreenShader();
-    Shader getBatchShader();
+    Shader& getScreenShader();
+    Shader& getBatchShader();
 
     RenderTable<ShaderRenderable>* getBatchRenderTable();
 };

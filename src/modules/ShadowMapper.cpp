@@ -1,18 +1,16 @@
-#include "modules/ShadowMapper.hpp"
+#include "ShadowMapper.hpp"
+#include "Skybox.hpp"
 #include "Presets.hpp"
-#include "engine/RenderTable.hpp"
-#include "modules/Scene.hpp"
-#include "modules/Screenbuffer.hpp"
-#include "modules/Shader.hpp"
-#include "modules/Skybox.hpp"
+
 #include "utils/GameUtils.hpp"
 
 using namespace syng;
 
-ShadowMapper::ShadowMapper(GLuint width, GLuint height, glm::mat4 lightProj, glm::mat4 lightView) :
-                            shadowWidth(width), shadowHeight(height), lightProjection(lightProj), lightView(lightView) {}
+ShadowMapper::ShadowMapper(Shader& depthShader, GLuint width, GLuint height, glm::mat4 lightProj, glm::mat4 lightView) :
+        shadowWidth(width), shadowHeight(height), lightProjection(lightProj), lightView(lightView), depthShader(depthShader) {}
 
-ShadowMapper::ShadowMapper(GLuint width, GLuint height) : ShadowMapper(width, height, {}, {}) {
+ShadowMapper::ShadowMapper(Shader& depthShader, GLuint width, GLuint height) :
+        ShadowMapper(depthShader, width, height, {}, {}) {
     glm::vec3 lightDir = glm::normalize(glm::vec3(-0.5f, -1.0f, -0.5f));
     glm::vec3 lightPos = -lightDir * 10.0f;
     glm::vec3 target = glm::vec3(0.0f);
@@ -23,7 +21,7 @@ ShadowMapper::ShadowMapper(GLuint width, GLuint height) : ShadowMapper(width, he
     this->lightProjection = glm::ortho(-30.0f, 30.0f, -30.0f, 30.0f, near_plane, far_plane); 
 }
 
-ShadowMapper::ShadowMapper(GLuint uv) : ShadowMapper(uv, uv) {}
+ShadowMapper::ShadowMapper(Shader& depthShader, GLuint uv) : ShadowMapper(depthShader, uv, uv) {}
 
 ShadowMapper::~ShadowMapper() {
     glDeleteFramebuffers(1, &depthMapFBO);
@@ -77,7 +75,7 @@ void ShadowMapper::renderDepth(Screenbuffer screen, Scene *scene) {
     glViewport(0, 0, screen.getWidth(), screen.getHeight());
 }
 
-void ShadowMapper::pushUniforms(Shader batchShader) {
+void ShadowMapper::pushUniforms(Shader& batchShader) {
     batchShader.use();
     batchShader.setMatrix4("lightSpaceMatrix", getLightSpaceMatrix(), 1, GL_FALSE);
     batchShader.setFloat("shadowStrength", strength);
