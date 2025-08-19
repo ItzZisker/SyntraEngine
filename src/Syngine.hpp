@@ -49,7 +49,7 @@ private:
     std::unordered_map<int, int> window_attributes;
     std::unordered_map<std::string, LazyShader> presetShaders;
 
-    std::vector<std::function<void(GameWindow *)>> initTasks, renderTasks;
+    std::vector<std::function<void(GameWindow *)>> initTasks, renderTasks, cleanupTasks;
     
     std::vector<SDL_EventHandler*> eventHandlers;
     std::vector<SDL_Event> lastFrameEvents;
@@ -58,7 +58,6 @@ private:
 
     int sdlWindowStatus, glfwWindowStatus, gladLoadStatus;
     bool initialized, disposed;
-
 public:
     GameWindow(std::string title, WindowSize initialSize);
 
@@ -70,8 +69,9 @@ public:
     void pullEventHandler(SDL_EventHandler *handler);
     void forEachFrameEvents(std::function<void(const SDL_Event event)> func);
 
-    void addRenderTask(std::function<void(GameWindow *)> task);
     void addInitTask(std::function<void(GameWindow *)> task);
+    void addRenderTask(std::function<void(GameWindow *)> task);
+    void addCleanupTask(std::function<void(GameWindow *)> task);
 
     void closeWindow();
 

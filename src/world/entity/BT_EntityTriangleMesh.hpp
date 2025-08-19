@@ -1,4 +1,5 @@
 #pragma once
+#ifdef USE_BULLET
 
 #include "BulletCollision/CollisionShapes/btTriangleInfoMap.h"
 #include "modules/MeshInstance.hpp"
@@ -46,3 +47,5 @@ public:
     }
 };
 }
+
+#endif

@@ -12,7 +12,7 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-uniform vec2 screenSize;
+uniform vec2 screenSize = vec2(320.0, 240.0);
 
 noperspective out vec2 vTexCoord;
 
@@ -26,8 +26,7 @@ void main() {
     vec2 snappedNDC = (screen / screenSize) * 2.0 - 1.0;
 
     // Reconstruct clip space with snapped NDC but original w
-    //gl_Position = vec4(snappedNDC * clip.w, clip.z, clip.w);
-    gl_Position = clip;
+    gl_Position = vec4(snappedNDC * clip.w, clip.z, clip.w);
 
     vTexCoord = aTexCoord; // affine
 }

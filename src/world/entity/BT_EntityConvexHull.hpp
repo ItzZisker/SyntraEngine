@@ -1,4 +1,5 @@
 #pragma once
+#ifdef USE_BULLET
 
 #include "modules/MeshInstance.hpp"
 #include "modules/ModelInstance.hpp"
@@ -47,3 +48,5 @@ public:
     }
 };
 }
+
+#endif

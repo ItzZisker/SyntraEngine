@@ -2,13 +2,14 @@
 
 #include "utils/GameUtils.hpp"
 
+using namespace syng;
+
+#ifdef USE_BULLET
 #include <BulletDynamics/Dynamics/btDynamicsWorld.h>
 #include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
 #include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
 #include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
-
-using namespace syng;
 
 void BT_World::create(unsigned int id, std::string name, glm::vec3 gravity) {
     if (this->dynamicsWorld) return;
@@ -46,3 +47,4 @@ void BT_World::render(GameWindow* window) {
 btDynamicsWorld* BT_World::getDynamics() {
     return this->dynamicsWorld;
 }
+#endif

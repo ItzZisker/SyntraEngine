@@ -13,7 +13,8 @@
         "CMAKE_CXX_COMPILER": "clang++",
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_MAKE_PROGRAM": "ninja",
-        "USE_ASSIMP": "ON"
+        "USE_ASSIMP": "ON",
+        "USE_BULLET": "ON"
       }
     }
   ],

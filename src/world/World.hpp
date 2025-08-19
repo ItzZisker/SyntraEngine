@@ -3,7 +3,9 @@
 #include <Syngine.hpp>
 #include <engine/RenderTable.hpp>
 
+#ifdef USE_BULLET
 #include <BulletDynamics/Dynamics/btDynamicsWorld.h>
+#endif
 
 #include <glm/glm.hpp>
 #include <string>
@@ -26,6 +28,7 @@ public:
     glm::vec3 getGravity() const { return gravity; }
 };
 
+#ifdef USE_BULLET
 class BT_World : public World {
 private:
     btDynamicsWorld* dynamicsWorld;
@@ -38,4 +41,5 @@ public:
 
     btDynamicsWorld* getDynamics();
 };
+#endif
 }

@@ -1,6 +1,9 @@
 #pragma once
 
+#ifdef USE_BULLET
 #include "BulletDynamics/Dynamics/btRigidBody.h"
+#endif
+
 #include "engine/RenderTable.hpp"
 #include "modules/MeshInstance.hpp"
 #include "world/World.hpp"
@@ -15,6 +18,7 @@
 namespace syng
 {
 
+#ifdef USE_BULLET
 class BT_Entity : public WorldObject, public WindowRenderable {
 protected:
     btRigidBody* body;
@@ -63,5 +67,6 @@ public:
         }
     }
 };
+#endif
 
 }

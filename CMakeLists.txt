@@ -6,9 +6,13 @@ find_package(OpenGL REQUIRED COMPONENTS OpenGL)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(USE_ASSIMP "Enable Assimp support" ON)
+option(USE_BULLET "Enable Bullet3 Physics support" ON)
 
 if(USE_ASSIMP)
     add_compile_definitions(USE_ASSIMP)
+endif()
+if(USE_BULLET)
+    add_compile_definitions(USE_BULLET)
 endif()
 
 if (USE_ASSIMP AND NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build/lib")
@@ -55,7 +59,7 @@ if (USE_ASSIMP AND NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build/lib")
     )
 endif()
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build/lib")
+if (USE_BULLET AND NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build/lib")
     message(STATUS "Building Bullet...")
     execute_process(
         COMMAND ${CMAKE_COMMAND}
@@ -132,21 +136,23 @@ if (USE_ASSIMP)
 endif()
 
 # === Bullet3 Config ===
-set(BULLET3_ROOT "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25")
-include_directories(${BULLET3_ROOT}/src)
-set(BULLET_LIBS
-    "${BULLET3_ROOT}/build/lib/libBullet2FileLoader.a"
-    "${BULLET3_ROOT}/build/lib/libBullet3OpenCL_clew.a"
-    "${BULLET3_ROOT}/build/lib/libBullet3Common.a"
-    "${BULLET3_ROOT}/build/lib/libBullet3Geometry.a"
-    "${BULLET3_ROOT}/build/lib/libBulletCollision.a"
-    "${BULLET3_ROOT}/build/lib/libBullet3Collision.a"
-    "${BULLET3_ROOT}/build/lib/libBulletInverseDynamics.a"
-    "${BULLET3_ROOT}/build/lib/libBulletDynamics.a"
-    "${BULLET3_ROOT}/build/lib/libBullet3Dynamics.a"
-    "${BULLET3_ROOT}/build/lib/libBulletSoftBody.a"
-    "${BULLET3_ROOT}/build/lib/libLinearMath.a"
-)
+if (USE_BULLET)
+    set(BULLET3_ROOT "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25")
+    include_directories(${BULLET3_ROOT}/src)
+    set(BULLET_LIBS
+        "${BULLET3_ROOT}/build/lib/libBullet2FileLoader.a"
+        "${BULLET3_ROOT}/build/lib/libBullet3OpenCL_clew.a"
+        "${BULLET3_ROOT}/build/lib/libBullet3Common.a"
+        "${BULLET3_ROOT}/build/lib/libBullet3Geometry.a"
+        "${BULLET3_ROOT}/build/lib/libBulletCollision.a"
+        "${BULLET3_ROOT}/build/lib/libBullet3Collision.a"
+        "${BULLET3_ROOT}/build/lib/libBulletInverseDynamics.a"
+        "${BULLET3_ROOT}/build/lib/libBulletDynamics.a"
+        "${BULLET3_ROOT}/build/lib/libBullet3Dynamics.a"
+        "${BULLET3_ROOT}/build/lib/libBulletSoftBody.a"
+        "${BULLET3_ROOT}/build/lib/libLinearMath.a"
+    )
+endif()
 
 # === GLM Config ===
 set(GLM_ROOT "${CMAKE_SOURCE_DIR}/libs/glm")
@@ -205,25 +211,32 @@ add_library(Syngine SHARED
     src/utils/GameUtils.cpp
     src/utils/stb_image.c
     src/utils/glad.c
-
-    ${IMGUI_SRC}
 )
 
-if (UNIX AND NOT APPLE) # Linux
-    if (USE_ASSIMP)
-        target_link_libraries(${PROJECT_NAME} SDL3 glfw3 OpenGL::OpenGL assimp Xrandr Xi dl)
-    else()
-        target_link_libraries(${PROJECT_NAME} SDL3 glfw3 OpenGL::OpenGL Xrandr Xi dl)
-    endif()
-elseif (WIN32)
-    if (USE_ASSIMP)
-        target_link_libraries(${PROJECT_NAME} SDL3 opengl32 assimp -Wl,--start-group "${BULLET_LIBS}" -Wl,--end-group)
-    else()
-        target_link_libraries(${PROJECT_NAME} SDL3 opengl32 -Wl,--start-group "${BULLET_LIBS}" -Wl,--end-group)
-    endif()
+# Initialize common libraries
+set(common_libs SDL3)
+
+if (UNIX AND NOT APPLE)  # Linux
+    list(APPEND common_libs glfw3 OpenGL::OpenGL Xrandr Xi dl)
+elseif (WIN32)  # Windows
+    list(APPEND common_libs opengl32)
 elseif (APPLE)
-    target_link_libraries(${PROJECT_NAME} SDL3 "-framework OpenGL" "-framework Cocoa" "-framework IOKit" "-framework CoreVideo")
+    list(APPEND common_libs "-framework OpenGL" "-framework Cocoa" "-framework IOKit" "-framework CoreVideo")
 endif()
+
+if (USE_ASSIMP)
+    list(APPEND common_libs assimp)
+endif()
+
+if (USE_BULLET)
+    if (WIN32)
+        list(APPEND common_libs -Wl,--start-group "${BULLET_LIBS}" -Wl,--end-group)
+    else()
+        list(APPEND common_libs ${BULLET_LIBS})
+    endif()
+endif()
+
+target_link_libraries(${PROJECT_NAME} ${common_libs})
 
 set_target_properties(Syngine PROPERTIES
     PREFIX ""
@@ -233,5 +246,6 @@ set_target_properties(Syngine PROPERTIES
 add_executable(sample_executable
     src/sample/SampleCallbacks.cpp
     src/sample/SampleGame.cpp
+    ${IMGUI_SRC}
 )
 target_link_libraries(sample_executable Syngine)

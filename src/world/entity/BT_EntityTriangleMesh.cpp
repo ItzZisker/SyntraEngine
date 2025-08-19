@@ -1,4 +1,5 @@
 #include "BT_EntityTriangleMesh.hpp"
+#ifdef USE_BULLET
 
 #include "modules/Mesh.hpp"
 #include "modules/MeshInstance.hpp"
@@ -101,3 +102,5 @@ void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
 
     worldAsBT()->getDynamics()->addRigidBody(body);
 }
+
+#endif

@@ -121,6 +121,10 @@ int GameWindow::initLoop() {
             }
         }
     }
+    for (auto& task : cleanupTasks) {
+        task(this);
+    }
+
     SDL_DestroyWindow(sdlWindow);
     SDL_GL_DestroyContext(glContext);
     return 0;
@@ -145,12 +149,16 @@ void GameWindow::forEachFrameEvents(std::function<void(const SDL_Event event)> f
     }
 }
 
+void GameWindow::addInitTask(std::function<void(GameWindow *)> task) {
+    this->initTasks.push_back(task);
+}
+
 void GameWindow::addRenderTask(std::function<void(GameWindow *)> task) {
     this->renderTasks.push_back(task);
 }
 
-void GameWindow::addInitTask(std::function<void(GameWindow *)> task) {
-    this->initTasks.push_back(task);
+void GameWindow::addCleanupTask(std::function<void(GameWindow *)> task) {
+    this->cleanupTasks.push_back(task);
 }
 
 void GameWindow::closeWindow() {

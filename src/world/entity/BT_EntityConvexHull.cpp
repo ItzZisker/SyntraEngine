@@ -1,4 +1,5 @@
 #include "BT_EntityConvexHull.hpp"
+#ifdef USE_BULLET
 
 #include "modules/ModelInstance.hpp"
 #include "modules/MeshInstance.hpp"
@@ -105,3 +106,4 @@ void BT_EntityConvexHull::load(bool enablePolyhedral) {
 
     worldAsBT()->getDynamics()->addRigidBody(body);
 }
+#endif

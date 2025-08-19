@@ -68,9 +68,10 @@ int SampleGame::launch() {
         renderImGUI();
         renderETC();
     });
-    int exitCode = window->initLoop();
-    cleanup();
-    return exitCode;
+    window->addCleanupTask([&](GameWindow *window){
+        cleanup();
+    });
+    return window->initLoop();
 }
 
 void SampleGame::createImGUI() {
