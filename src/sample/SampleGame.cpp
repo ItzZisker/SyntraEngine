@@ -127,7 +127,9 @@ void SampleGame::createWindow(GameWindow *window) {
     Model* sceneModel = new Model();
     sceneModel->readPacked(reader);
 
-    //sceneModel->readAssimp({"models/wall/2g/wall.gltf"});
+    // std::cout << "kar kar\n";
+    // sceneModel->readAssimp({"models/wall/2g/wall.gltf"});
+    std::cout << "kor kor\n";
     sceneModel->load(CacheApproach::Interleaved);
 
     // std::cout << "textures start\n";
@@ -182,10 +184,12 @@ void SampleGame::createWindow(GameWindow *window) {
     //sceneEntity = new BT_EntityTriangleMesh(overWorld, sceneModelInstance);
     //sceneEntity->load();
 
-    batchShader.read("shaders/batchVertex.glsl", "shaders/batchFrag.glsl");
+    batchShader.read("shaders/ps1batchVertex.glsl", "shaders/ps1batchFrag.glsl");
     screenShader.read("shaders/screenVertex.glsl", "shaders/screenFrag.glsl");
 
     scene = new Scene(camera, batchShader, screenShader);
+    scene->getBatchShader().use();
+    scene->getBatchShader().setVec2f("screenSize", 320, 240);
     scene->setZBufferLayout(0.1f, 100.0f);
     // shadowMapper = new ShadowMapper(2048);
     // shadowMapper->strength = 1.0f;

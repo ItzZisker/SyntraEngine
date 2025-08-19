@@ -3,6 +3,7 @@
 #include "modules/Model.hpp"
 #include "modules/Presets.hpp"
 
+#include "serialization/DataSerializer.hpp"
 #include "serialization/DataTemplates.hpp"
 
 #include <cstdint>
@@ -24,6 +25,8 @@ std::vector<uint8_t> readTextureBytes(std::string path) {
 
     return texel_bytes;
 }
+
+TextureWriter::TextureWriter(DataSerializer *buff) : buffer(buff) {}
 
 void TextureWriter::writeTexture2D(std::string path, std::vector<uint8_t> bytes) {
     DataTemplates::write_uint16(buffer, PCK_HEADER_TEX2D);
@@ -162,10 +165,10 @@ GLuint syng::TCBFromBytes(uint8_t *raw, int width, int height, int nrComponents)
     glGenTextures(1, &TCB);
     glBindTexture(GL_TEXTURE_2D, TCB);
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, raw);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    //glGenerateMipmap(GL_TEXTURE_2D);
 
     PresetsTexel::TextureParamST(GL_TEXTURE_2D, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     return TCB;

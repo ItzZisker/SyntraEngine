@@ -6,10 +6,8 @@
 #include "serialization/DataSerializer.hpp"
 #include "serialization/DataTemplates.hpp"
 
-#include "modules/Shader.hpp"
-#include "modules/Model.hpp"
-#include "modules/Mesh.hpp"
 #include "utils/GameUtils.hpp"
+#include <filesystem>
 
 #ifdef USE_ASSIMP
 #include "assimp/matrix4x4.h"
@@ -73,43 +71,43 @@ void Model::readAssimp(AssimpReader reader) {
 
 void Model::pushTexture(const std::string& meshKey, MeshTexture2D texture) {
     auto pair = meshes.find(meshKey);
-    if (pair != meshes.end()) {
-        Mesh *mesh = pair->second;
-        mesh->textures.push_back(texture);
-        if (texture.type == Texture_Height) {
-            mesh->material.hasDisplacement = true;
-        }
-        if (texture.type == Texture_Rough) {
-            mesh->material.hasRoughness = true;
-        }
+    if (pair == meshes.end()) return;
+    Mesh *mesh = pair->second;
+    mesh->textures.push_back(texture);
+
+    if (texture.type == Texture_Height) {
+        mesh->material.hasDisplacement = true;
     }
+    if (texture.type == Texture_Rough) {
+        mesh->material.hasRoughness = true;
+    }
+    
 }
 
 void Model::pullTexture(const std::string& meshKey, const std::string& path) {
     auto meshIt = meshes.find(meshKey);
-    if (meshIt != meshes.end()) {
-        Mesh* mesh = meshIt->second;
-        mesh->textures.erase(
-            std::remove_if(mesh->textures.begin(), mesh->textures.end(),
-            [&](const MeshTexture2D& tex) {
-                if (tex.texture.path == path) {
-                    if (tex.type == Texture_Height) {
-                        mesh->material.hasDisplacement = false;
-                    }
-                    if (tex.type == Texture_Rough) {
-                        mesh->material.hasRoughness = false;
-                    }
-                    return true;
+    if (meshIt == meshes.end()) return;
+    Mesh* mesh = meshIt->second;
+    mesh->textures.erase(
+        std::remove_if(mesh->textures.begin(), mesh->textures.end(),
+        [&](const MeshTexture2D& tex) {
+            if (tex.texture.path == path) {
+                if (tex.type == Texture_Height) {
+                    mesh->material.hasDisplacement = false;
                 }
-                return false;
-            }),
-            mesh->textures.end()
-        );
-    }
+                if (tex.type == Texture_Rough) {
+                    mesh->material.hasRoughness = false;
+                }
+                return true;
+            }
+            return false;
+        }),
+        mesh->textures.end()
+    );
 }
 
 #ifdef USE_ASSIMP
-AssimpReader::AssimpReader(std::string path) : path(path) {}
+AssimpReader::AssimpReader(const std::filesystem::path& path) : path(path) {}
 
 std::vector<MeshTexture2D>& AssimpReader::getCachedTextures() {
     return this->cachedTextures;
@@ -121,13 +119,12 @@ void AssimpReader::read(Model* model) {
     stbi_set_flip_vertically_on_load(flipTextures);
 
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile(path, postProcessSteps);
+    const aiScene *scene = importer.ReadFile(path.string(), postProcessSteps);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
         return;
     }
-    directory = path.substr(0, path.find_last_of('/'));
 
     MeshKeyedMap import = processNode(scene->mRootNode, scene, aiMatrix4x4());
     model->meshes.insert(import.begin(), import.end());
@@ -243,18 +240,18 @@ Mesh* AssimpReader::processMesh(aiMesh *mesh, const aiScene *scene, const glm::m
 std::vector<MeshTexture2D> AssimpReader::loadMaterialTextures(aiMaterial *mat, aiTextureType type, const MeshTexture2D_T &texType) {
     std::vector<MeshTexture2D> textures;
     for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
-        aiString str;
-        mat->GetTexture(type, i, &str);
+        aiString texName;
+        mat->GetTexture(type, i, &texName);
         bool skip = false;
         for (unsigned int j = 0; j < cachedTextures.size(); j++) {
-            if (std::strcmp(cachedTextures[j].texture.path.data(), str.C_Str()) == 0) {
+            if (std::strcmp(cachedTextures[j].texture.path.data(), texName.C_Str()) == 0) {
                 textures.push_back(cachedTextures[j]);
                 skip = true;
                 break;
             }
         }
         if (!skip) {
-            MeshTexture2D texture = loadMeshTexture2D(str.C_Str(), texType);
+            MeshTexture2D texture = loadMeshTexture2D(path.parent_path() / texName.C_Str(), texType);
             textures.push_back(texture);
             cachedTextures.push_back(texture);
         }

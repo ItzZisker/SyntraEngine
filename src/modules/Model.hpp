@@ -5,6 +5,7 @@
 #include "Texture.hpp"
 #include "serialization/DataSerializer.hpp"
 
+#include <filesystem>
 #include <glad/glad.h>
 #include <stb_image.h>
 
@@ -52,7 +53,7 @@ public:
 #ifdef USE_ASSIMP
 class AssimpReader {
 private:
-    std::string directory, path;
+    std::filesystem::path path;
     std::vector<MeshTexture2D> cachedTextures;
 
     MeshKeyedMap processNode(aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform);
@@ -67,7 +68,7 @@ public:
     );
     bool flipTextures = false;
 
-    AssimpReader(std::string path);
+    AssimpReader(const std::filesystem::path& path);
 
     std::vector<MeshTexture2D>& getCachedTextures();
     void read(Model* model);
