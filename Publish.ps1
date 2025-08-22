@@ -25,7 +25,7 @@ robocopy "$PSScriptRoot/src" "$BuildDir/publish/include" *.h *.hpp /S /XO | Out-
 
 Copy-Item -Force "$BuildDir/Syng.dll" "$BuildDir/publish/bin/"
 
-$header="$BuildDir/publish/include/Syngine.hpp"
+$header="$BuildDir/publish/include/Syngine/Syngine.hpp"
 $content=Get-Content $header
 $out=@()
 

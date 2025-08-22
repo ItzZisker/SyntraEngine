@@ -177,40 +177,40 @@ enable_testing()
 
 # Define library files
 add_library(Syngine SHARED
-    src/Syngine.cpp
+    src/Syngine/Syngine.cpp
 
-    src/engine/RenderTable.cpp
-    src/engine/Concurrency.cpp
-    src/engine/TaskQueue.cpp
+    src/Syngine/engine/RenderTable.cpp
+    src/Syngine/engine/Concurrency.cpp
+    src/Syngine/engine/TaskQueue.cpp
 
-    src/serialization/DataSerializer.cpp
-    src/serialization/DataTemplates.cpp
+    src/Syngine/serialization/DataSerializer.cpp
+    src/Syngine/serialization/DataTemplates.cpp
 
-    src/modules/Texture.cpp
-    src/modules/Presets.cpp
-    src/modules/GLObjects.cpp
-    src/modules/ShadowMapper.cpp
-    src/modules/Screenbuffer.cpp
-    src/modules/CubemapFramebuffer.cpp
-    src/modules/Framebuffer.cpp
-    src/modules/Scene.cpp
-    src/modules/Camera.cpp
-    src/modules/Shader.cpp
-    src/modules/Mesh.cpp
-    src/modules/MeshInstance.cpp
-    src/modules/Model.cpp
-    src/modules/ModelInstance.cpp
-    src/modules/Skybox.cpp
+    src/Syngine/modules/Texture.cpp
+    src/Syngine/modules/Presets.cpp
+    src/Syngine/modules/GLObjects.cpp
+    src/Syngine/modules/ShadowMapper.cpp
+    src/Syngine/modules/Screenbuffer.cpp
+    src/Syngine/modules/CubemapFramebuffer.cpp
+    src/Syngine/modules/Framebuffer.cpp
+    src/Syngine/modules/Scene.cpp
+    src/Syngine/modules/Camera.cpp
+    src/Syngine/modules/Shader.cpp
+    src/Syngine/modules/Mesh.cpp
+    src/Syngine/modules/MeshInstance.cpp
+    src/Syngine/modules/Model.cpp
+    src/Syngine/modules/ModelInstance.cpp
+    src/Syngine/modules/Skybox.cpp
 
-    src/world/World.cpp
-    src/world/WorldObject.cpp
-    src/world/entity/BT_EntityConvexHull.cpp
-    src/world/entity/BT_EntityTriangleMesh.cpp
+    src/Syngine/world/World.cpp
+    src/Syngine/world/WorldObject.cpp
+    src/Syngine/world/entity/BT_EntityConvexHull.cpp
+    src/Syngine/world/entity/BT_EntityTriangleMesh.cpp
 
-    src/utils/FastMath.cpp
-    src/utils/GameUtils.cpp
-    src/utils/stb_image.c
-    src/utils/glad.c
+    src/Syngine/utils/FastMath.cpp
+    src/Syngine/utils/GameUtils.cpp
+    src/Syngine/utils/stb_image.c
+    src/Syngine/utils/glad.c
 )
 
 # Initialize common libraries
@@ -244,8 +244,8 @@ set_target_properties(Syngine PROPERTIES
 )
 
 add_executable(sample_executable
-    src/sample/SampleCallbacks.cpp
-    src/sample/SampleGame.cpp
+    src/Syngine/sample/SampleCallbacks.cpp
+    src/Syngine/sample/SampleGame.cpp
     ${IMGUI_SRC}
 )
 target_link_libraries(sample_executable Syngine)
