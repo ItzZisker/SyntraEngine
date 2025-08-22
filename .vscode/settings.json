@@ -1,7 +1,7 @@
 {
   "C_Cpp.intelliSenseEngine": "disabled",
   "clangd.arguments": ["--compile-commands-dir=out/build/clang"],
-  "clangd.path": "C:/msys64/mingw64/bin/clangd.exe",
+  "clangd.path": "clangd",
   "cmake.generator": "Ninja",
   "cmake.configureSettings": {
     "CMAKE_C_COMPILER": "clang",

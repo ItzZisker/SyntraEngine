@@ -23,13 +23,13 @@
         "command": "bash",
         "args": [
           "-c",
-          "mkdir -p shaders models && ",
-          "cp -ru ${workspaceFolder}/libs/sdl-3.2.18/bin/* .",
-          "cp -ru ${workspaceFolder}/libs/assimp-6.0.2/build/bin/* .",
-          "cp -ru ${workspaceFolder}/shaders/* shaders/",
-          "cp -ru ${workspaceFolder}/models/* models/",
-          "echo \"\"",
-          "ninja && ./sample_executable.exe"
+          "mkdir -p shaders models;",
+          "cp -ru ${workspaceFolder}/libs/sdl-3.2.18/bin/* .;",
+          "cp -ru ${workspaceFolder}/libs/assimp-6.0.2/build/bin/* .;",
+          "cp -ru ${workspaceFolder}/shaders/* shaders/;",
+          "cp -ru ${workspaceFolder}/models/* models/;",
+          "ninja;",
+          "./sample_executable"
         ]
       },
       "options": {

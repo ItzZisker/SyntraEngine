@@ -128,8 +128,8 @@ void SampleGame::createWindow(GameWindow *window) {
     Model* sceneModel = new Model();
     sceneModel->readPacked(reader);
 
-    // std::cout << "kar kar\n";
-    // sceneModel->readAssimp({"models/wall/2g/wall.gltf"});
+    std::cout << "kar kar\n";
+    //sceneModel->readAssimp({"models/wall/2g/wall.gltf"});
     std::cout << "kor kor\n";
     sceneModel->load(CacheApproach::Interleaved);
 

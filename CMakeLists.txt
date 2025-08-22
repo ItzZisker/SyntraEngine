@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10.0)
+cmake_minimum_required(VERSION 3.11.0)
 project(Syngine VERSION 0.1.0 LANGUAGES C CXX)
 
 find_package(OpenGL REQUIRED COMPONENTS OpenGL)
@@ -61,6 +61,12 @@ endif()
 
 if (USE_BULLET AND NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build/lib")
     message(STATUS "Building Bullet...")
+
+    set(BULLET_EXTRA_ARGS "")
+    if(UNIX AND NOT APPLE) # Linux
+        set(BULLET_EXTRA_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=ON)
+    endif()
+
     execute_process(
         COMMAND ${CMAKE_COMMAND}
             -B build
@@ -91,6 +97,7 @@ if (USE_BULLET AND NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build/lib")
             -DENABLE_VHACD=ON
             -DINSTALL_CMAKE_FILES=ON
             -DINSTALL_LIBS=ON
+            -DLIB_DESTINATION=lib
             -DINTERNAL_ADD_POSTFIX_EXECUTABLE_NAMES=OFF
             -DINTERNAL_CREATE_DISTRIBUTABLE_MSVC_PROJECTFILES=OFF
             -DINTERNAL_CREATE_MSVC_RELATIVE_PATH_PROJECTFILES=OFF
@@ -103,8 +110,10 @@ if (USE_BULLET AND NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build/lib")
             -DUSE_MSVC_RUNTIME_LIBRARY_DLL=OFF
             -DUSE_OPENVR=OFF
             -DUSE_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD=ON
+            ${BULLET_EXTRA_ARGS}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/bullet3-3.25
     )
+
     execute_process(
         COMMAND ninja
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build
@@ -116,8 +125,13 @@ include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # === SDL Config ===
 set(SDL_ROOT "${CMAKE_SOURCE_DIR}/libs/sdl-3.2.18")
-include_directories(${SDL_ROOT}/include)
-link_directories(${SDL_ROOT}/lib)
+if (WIN32)
+    include_directories(${SDL_ROOT}/windows/include)
+    link_directories(${SDL_ROOT}/windows/lib)
+elseif(UNIX AND NOT APPLE)
+    include_directories(${SDL_ROOT}/linux/include)
+    link_directories(${SDL_ROOT}/linux/bin)
+endif()
 
 # === GLAD Config ===
 set(GLAD_ROOT "${CMAKE_SOURCE_DIR}/libs/glad-3.3")
