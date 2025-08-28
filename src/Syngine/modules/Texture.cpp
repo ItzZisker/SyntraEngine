@@ -198,7 +198,6 @@ GLuint syng::TCBFromFileBytes(uint8_t *bytes, int length) {
 
 GLuint syng::TCBFromFile(const std::filesystem::path& path) {
     int width, height, nrComponents;
-    std::cout << stbi_is_16_bit(path.string().c_str()) << std::endl;
     uint8_t *data = stbi_load(path.string().c_str(), &width, &height, &nrComponents, 0);
 
     if (data) {
