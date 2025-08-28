@@ -58,14 +58,8 @@
         "command": "bash",
         "args": [
           "-c",
-          "mkdir -p ${workspaceFolder}/out/build/clang/publish/include ${workspaceFolder}/out/build/clang/publish/bin && ",
-          "rsync -avm --include='*/' --include='*.h' --include='*.hpp' --exclude='*' ${workspaceFolder}/src/ ${workspaceFolder}/out/build/clang/publish/include/ && ",
-          "cp -u ${workspaceFolder}/out/build/clang/Syn.dll ${workspaceFolder}/out/build/clang/publish/bin/ 2>/dev/null || true && ",
-          "header=${workspaceFolder}/out/build/clang/publish/include/Syngine.hpp; ",
-          "if grep -q '#pragma once' \"$header\"; then ",
-          "  if [ \"$USE_ASSIMP\" = \"ON\" ]; then sed -i '/#pragma once/a #define USE_ASSIMP' \"$header\"; fi; ",
-          "  if [ \"$USE_BULLET\" = \"ON\" ]; then sed -i '/#pragma once/a #define USE_BULLET' \"$header\"; fi; ",
-          "fi"
+          "${workspaceFolder}/Publish.sh",
+          "${workspaceFolder}/out/build/clang"
         ]
       },
       "options": {

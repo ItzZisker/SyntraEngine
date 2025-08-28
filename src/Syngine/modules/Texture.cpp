@@ -154,6 +154,7 @@ Texture2D syng::loadTexture2D(DataDeserializer *buffer) {
 }
 
 GLuint syng::TCBFromBytes(uint8_t *raw, int width, int height, int nrComponents) {
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     GLuint TCB;
     GLenum format;
 
@@ -163,9 +164,11 @@ GLuint syng::TCBFromBytes(uint8_t *raw, int width, int height, int nrComponents)
         case 4: format = GL_RGBA; break;
         default: return 0;
     }
+    GLenum internalFormat = (nrComponents == 3) ? GL_SRGB8 : (nrComponents == 4) ? GL_RGBA8 : GL_R8;
+
     glGenTextures(1, &TCB);
     glBindTexture(GL_TEXTURE_2D, TCB);
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, raw);
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, raw);
     //glGenerateMipmap(GL_TEXTURE_2D);
 
     PresetsTexel::TextureParamST(GL_TEXTURE_2D, GL_REPEAT);
@@ -195,6 +198,7 @@ GLuint syng::TCBFromFileBytes(uint8_t *bytes, int length) {
 
 GLuint syng::TCBFromFile(const std::filesystem::path& path) {
     int width, height, nrComponents;
+    std::cout << stbi_is_16_bit(path.string().c_str()) << std::endl;
     uint8_t *data = stbi_load(path.string().c_str(), &width, &height, &nrComponents, 0);
 
     if (data) {
@@ -210,6 +214,7 @@ GLuint syng::TCBFromFile(const std::filesystem::path& path) {
 
 GLuint syng::QBTCBFromBytes(uint8_t **raws, int *widths, int *heights, int *nrComponentss) {
     GLuint QBTCB;
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glGenTextures(1, &QBTCB);
     glBindTexture(GL_TEXTURE_CUBE_MAP, QBTCB);
 

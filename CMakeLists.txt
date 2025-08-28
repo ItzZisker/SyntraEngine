@@ -246,7 +246,7 @@ if (USE_BULLET)
     if (WIN32)
         list(APPEND common_libs -Wl,--start-group "${BULLET_LIBS}" -Wl,--end-group)
     else()
-        list(APPEND common_libs ${BULLET_LIBS})
+        list(APPEND common_libs -Wl,--whole-archive ${BULLET_LIBS} -Wl,--no-whole-archive)
     endif()
 endif()
 

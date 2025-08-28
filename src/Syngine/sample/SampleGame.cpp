@@ -111,25 +111,25 @@ void SampleGame::createWindow(GameWindow *window) {
     // appleEntity->load(false);
     // std::cout << "G\n";
 
-    std::cout << "scene\n";
-    sceneModel = new Model();
-    std::cout << "H\n";
+    // std::cout << "scene\n";
+    // sceneModel = new Model();
+    // std::cout << "H\n";
 
-    std::ifstream boomPckFile;
-    boomPckFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    boomPckFile.open(std::filesystem::current_path() / "boom.pck", std::ios::binary);
+    // std::ifstream boomPckFile;
+    // boomPckFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    // boomPckFile.open(std::filesystem::current_path() / "boom.pck", std::ios::binary);
 
-    std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(boomPckFile)), {});
-    boomPckFile.close();
+    // std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(boomPckFile)), {});
+    // boomPckFile.close();
 
-    DataDeserializer buff(bytes.data(), bytes.size());
+    // DataDeserializer buff(bytes.data(), bytes.size());
 
-    PackedReader reader(&buff);
+    // PackedReader reader(&buff);
     Model* sceneModel = new Model();
-    sceneModel->readPacked(reader);
+    // sceneModel->readPacked(reader);
 
     std::cout << "kar kar\n";
-    //sceneModel->readAssimp({"models/wall/2g/wall.gltf"});
+    sceneModel->readAssimp({"models/wall/2g/scenetest.gltf"});
     std::cout << "kor kor\n";
     sceneModel->load(CacheApproach::Interleaved);
 
@@ -185,7 +185,7 @@ void SampleGame::createWindow(GameWindow *window) {
     //sceneEntity = new BT_EntityTriangleMesh(overWorld, sceneModelInstance);
     //sceneEntity->load();
 
-    batchShader.read("shaders/ps1batchVertex.glsl", "shaders/ps1batchFrag.glsl");
+    batchShader.read("shaders/batchVertex.glsl", "shaders/batchFrag.glsl");
     screenShader.read("shaders/screenVertex.glsl", "shaders/screenFrag.glsl");
 
     scene = new Scene(camera, batchShader, screenShader);
