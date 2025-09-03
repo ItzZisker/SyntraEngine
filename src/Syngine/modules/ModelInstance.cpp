@@ -8,7 +8,7 @@
 #include "Screenbuffer.hpp"
 
 #include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "Syngine/world/Coordination.hpp"
 #include "Syngine/utils/GameUtils.hpp"
 
 #include <unordered_map>

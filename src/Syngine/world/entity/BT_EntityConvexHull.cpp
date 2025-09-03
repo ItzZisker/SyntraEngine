@@ -5,7 +5,7 @@
 #include "Syngine/modules/MeshInstance.hpp"
 #include "Syngine/modules/Mesh.hpp"
 #include "Syngine/world/World.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "Syngine/world/Coordination.hpp"
 #include "Syngine/utils/GameUtils.hpp"
 
 #include <LinearMath/btVector3.h>
@@ -15,13 +15,12 @@
 using namespace syng;
 
 BT_EntityConvexHull::BT_EntityConvexHull(BT_World* world, float mass, MeshInstance* mesh) 
-    : BT_Entity(world), mass(mass), meshes({{"ROOT", mesh}}) {}
+    : mass(mass), meshes({{"ROOT", mesh}}) {}
 
 BT_EntityConvexHull::BT_EntityConvexHull(BT_World* world, float mass, ModelInstance* model) 
-    : BT_Entity(world), mass(mass), meshes(model->getMeshInstances()->asMap()) {}
+    : mass(mass), meshes(model->getMeshInstances()->asMap()) {}
 
 BT_EntityConvexHull::~BT_EntityConvexHull() {
-    worldAsBT()->getDynamics()->removeRigidBody(body);
     delete body;
     delete shape;
 }
@@ -103,7 +102,5 @@ void BT_EntityConvexHull::load(bool enablePolyhedral) {
     if (hasRollingFriction) body->setRollingFriction(rollingFriction);
     body->setFriction(1.0f);
     body->setDamping(0.8f, 0.2f);
-
-    worldAsBT()->getDynamics()->addRigidBody(body);
 }
 #endif

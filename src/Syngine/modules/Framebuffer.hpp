@@ -9,6 +9,8 @@
 #include "Syngine/modules/Scene.hpp"
 #include "Syngine/modules/Shader.hpp"
 
+#include "glm/glm.hpp"
+
 namespace syng
 {
 class Framebuffer : public Screenbuffer, public WindowRenderable {
@@ -27,6 +29,8 @@ private:
     Mesh2D* quad;
     unsigned int MSOUT_FBO = 0, MS_TCB = 0;
     unsigned int RBO = 0, TCB = 0;
+
+    glm::vec3 fallbackColor = {0.1f, 0.5f, 0.5f};
 public:
     Framebuffer(Scene* scene);
     Framebuffer(Scene* scene, Shader& outputShader);
@@ -37,6 +41,7 @@ public:
 
     void appendTCB(int attachmentIndex, unsigned int TCB, GLenum textureTarget = GL_TEXTURE_2D, GLuint layer = 0);
 
+    void setFallbackColor(glm::vec3 fallbackColor);
     void setOutputAttachments(std::vector<GLenum> GL_attachments);
     void setAntiAliasing(AntiAliasing AA);
     void setTCBFormat(GLenum format);

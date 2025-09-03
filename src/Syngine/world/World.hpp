@@ -31,7 +31,7 @@ public:
 #ifdef USE_BULLET
 class BT_World : public World {
 private:
-    btDynamicsWorld* dynamicsWorld;
+    btDynamicsWorld* dynamicsWorld = nullptr;
 protected:
     void create(unsigned int id, std::string name, glm::vec3 gravity = glm::vec3(0.0f, -9.81f, 0.0f)) override;
 public:

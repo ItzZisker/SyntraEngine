@@ -3,11 +3,9 @@
 
 #include "Syngine/modules/MeshInstance.hpp"
 #include "Syngine/modules/ModelInstance.hpp"
-#include "Syngine/world/World.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "Syngine/world/Coordination.hpp"
 #include "Syngine/world/entity/BT_Entity.hpp"
 #include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/modules/Model.hpp"
 
 #include <Bullet3Common/b3Vector3.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
@@ -30,9 +28,9 @@ private:
 public:
     Coordination coords;
 
-    BT_EntityTriangleMesh(BT_World* world, ModelInstance* model);
-    BT_EntityTriangleMesh(BT_World* world, std::unordered_map<std::string, MeshInstance*> meshes);
-    BT_EntityTriangleMesh(BT_World* world, MeshInstance* mesh);
+    BT_EntityTriangleMesh(ModelInstance* model);
+    BT_EntityTriangleMesh(MeshInstance* mesh);
+    BT_EntityTriangleMesh(std::unordered_map<std::string, MeshInstance*> meshes);
     ~BT_EntityTriangleMesh();
 
     const glm::mat4 onMotionState() override;

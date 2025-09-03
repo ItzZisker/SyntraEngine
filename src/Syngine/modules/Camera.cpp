@@ -1,5 +1,5 @@
 #include "Camera.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "Syngine/world/Coordination.hpp"
 
 #include <glm/ext/matrix_transform.hpp>
 

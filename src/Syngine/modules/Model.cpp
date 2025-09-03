@@ -140,7 +140,8 @@ MeshKeyedMap AssimpReader::processNode(aiNode *node, const aiScene *scene, const
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
         glm::mat4 glmTransform = GameUtils::convertToGLMMatrix(currentTransform);
 
-        nodeMeshes.insert({mesh->mName.C_Str(), processMesh(mesh, scene, glmTransform)});
+        std::string key = std::string(node->mName.C_Str()) + "_" + std::to_string(i);
+        nodeMeshes[key] = processMesh(mesh, scene, glmTransform);
     }
     for (uint32_t i = 0; i < node->mNumChildren; i++) {
         MeshKeyedMap sub = processNode(node->mChildren[i], scene, currentTransform);

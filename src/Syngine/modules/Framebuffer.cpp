@@ -137,6 +137,10 @@ void Framebuffer::appendTCB(int attachmentIndex, unsigned int TCB, GLenum textur
     glBindTexture(textureTarget, 0);
 }
 
+void Framebuffer::setFallbackColor(glm::vec3 fallbackColor) {
+    this->fallbackColor = fallbackColor;
+}
+
 void Framebuffer::setOutputAttachments(std::vector<GLenum> GL_attachments) {
     glDrawBuffers(GL_attachments.size(), GL_attachments.data());  
 }
@@ -177,7 +181,7 @@ void Framebuffer::render(Screenbuffer screen) {
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
     glViewport(0, 0, this->width, this->height);
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.1f, 0.5f, 0.5f, 1.0f);
+    glClearColor(fallbackColor[0], fallbackColor[1], fallbackColor[2], 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     for (auto& func : renderTasks) {

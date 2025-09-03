@@ -9,7 +9,7 @@
 
 #include "Syngine/engine/Config.hpp"
 #include "Syngine/utils/GameUtils.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "Syngine/world/Coordination.hpp"
 
 #include "glm/fwd.hpp"
 

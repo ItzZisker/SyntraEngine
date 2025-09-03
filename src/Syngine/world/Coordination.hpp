@@ -1,9 +1,5 @@
 #pragma once
 
-#include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/world/World.hpp"
-#include "Syngine/utils/FastMath.hpp"
-
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 
@@ -196,14 +192,4 @@ public:
     }
 };
 
-class WorldObject : public Coordination {
-protected:
-    World *world;
-public:
-    WorldObject(World *initialWorld);
-
-    void setWorld(World *world);
-
-    World *getWorld() const;
-};
 }

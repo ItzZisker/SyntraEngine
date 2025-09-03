@@ -4,7 +4,6 @@
 #include "Syngine/modules/Mesh.hpp"
 #include "Syngine/modules/MeshInstance.hpp"
 #include "Syngine/modules/ModelInstance.hpp"
-#include "Syngine/utils/GameUtils.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -18,17 +17,16 @@
 
 using namespace syng;
 
-BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, ModelInstance* model) 
-    : BT_Entity(world), meshes(model->getMeshInstances()->asMap()) {}
+BT_EntityTriangleMesh::BT_EntityTriangleMesh(ModelInstance* model) 
+    : meshes(model->getMeshInstances()->asMap()) {}
 
-BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, std::unordered_map<std::string, MeshInstance*> meshes) 
-    : BT_Entity(world), meshes(meshes) {}
+BT_EntityTriangleMesh::BT_EntityTriangleMesh(std::unordered_map<std::string, MeshInstance*> meshes) 
+    : meshes(meshes) {}
 
-BT_EntityTriangleMesh::BT_EntityTriangleMesh(BT_World* world, MeshInstance* mesh) 
-    : BT_Entity(world), meshes({{"ROOT", mesh}}) {}
+BT_EntityTriangleMesh::BT_EntityTriangleMesh(MeshInstance* mesh) 
+    : meshes({{"ROOT", mesh}}) {}
 
 BT_EntityTriangleMesh::~BT_EntityTriangleMesh() {
-    worldAsBT()->getDynamics()->removeRigidBody(body);
     delete body;
     delete shape;
     delete triangleInfoMap;
@@ -99,8 +97,6 @@ void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
 
     body = new btRigidBody(rigidBodyCI);
     body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
-
-    worldAsBT()->getDynamics()->addRigidBody(body);
 }
 
 #endif

@@ -6,8 +6,7 @@
 
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/MeshInstance.hpp"
-#include "Syngine/world/World.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "Syngine/world/Coordination.hpp"
 
 #include <glm/fwd.hpp>
 
@@ -20,17 +19,11 @@ namespace syng
 {
 
 #ifdef USE_BULLET
-class BT_Entity : public WorldObject, public WindowRenderable {
+class BT_Entity : public Coordination, public WindowRenderable {
 protected:
     btRigidBody* body;
     std::unordered_map<std::string, std::function<void(const glm::mat4&)>> motionStateFunctions;
 public:
-    BT_Entity(BT_World* world) : WorldObject(world) {}
-
-    BT_World* worldAsBT() const { 
-        return static_cast<BT_World*>(this->world);
-    }
-
     btRigidBody* getBody() {
         return this->body;
     }

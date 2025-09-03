@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Syngine/world/WorldObject.hpp"
+#include "Syngine/world/Coordination.hpp"
 
 namespace syng
 {

@@ -217,7 +217,7 @@ add_library(Syngine SHARED
     src/Syngine/modules/Skybox.cpp
 
     src/Syngine/world/World.cpp
-    src/Syngine/world/WorldObject.cpp
+    src/Syngine/world/Coordination.cpp
     src/Syngine/world/entity/BT_EntityConvexHull.cpp
     src/Syngine/world/entity/BT_EntityTriangleMesh.cpp
 

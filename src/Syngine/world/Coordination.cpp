@@ -1,7 +1,6 @@
-#include "WorldObject.hpp"
+#include "Coordination.hpp"
 
 #include "Syngine/modules/Scene.hpp"
-#include "Syngine/world/World.hpp"
 
 #include <vector>
 
@@ -114,14 +113,4 @@ bool FrustumDiscardable::shouldDiscard(Scene_T snapshot, const glm::mat4& transf
 
 bool FrustumDiscardable::shouldDiscard(Scene* scene, const glm::mat4& transform) {
     return !isInView(scene, transform);
-}
-
-WorldObject::WorldObject(World *initialWorld) : world(initialWorld) {}
-
-void WorldObject::setWorld(World *world) {
-    this->world = world; 
-}
-
-World* WorldObject::getWorld() const { 
-    return world;
 }

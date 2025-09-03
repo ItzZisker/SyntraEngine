@@ -5,7 +5,7 @@
 
 #include "Syngine/Syngine.hpp"
 #include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "Syngine/world/Coordination.hpp"
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>

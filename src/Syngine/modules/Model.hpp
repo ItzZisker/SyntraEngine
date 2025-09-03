@@ -79,7 +79,7 @@ public:
 class Model
 {
 private:
-    bool loaded;
+    bool loaded = false;
 public:
     MeshKeyedMap meshes;
     std::unordered_map<std::string, MeshKeyedMap> meshGroups;

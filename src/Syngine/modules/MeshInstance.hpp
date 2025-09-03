@@ -4,7 +4,7 @@
 
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/Mesh.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "Syngine/world/Coordination.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/glm.hpp>

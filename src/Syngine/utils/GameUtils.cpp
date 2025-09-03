@@ -2,7 +2,7 @@
 
 #include "Syngine/modules/ModelInstance.hpp"
 #include "Syngine/modules/Screenbuffer.hpp"
-#include "Syngine/world/WorldObject.hpp"
+#include "Syngine/world/Coordination.hpp"
 
 #include "LinearMath/btTransform.h"
 #include "glm/fwd.hpp"
