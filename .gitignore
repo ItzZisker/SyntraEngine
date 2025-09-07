@@ -3,3 +3,9 @@ out/
 out/*
 out/**
 .vs/
+libs/assimp-6.0.2/build
+libs/assimp-6.0.2/build/*
+libs/assimp-6.0.2/build/**
+libs/bullet3-3.25/build
+libs/bullet3-3.25/build/*
+libs/bullet3-3.25/build/**

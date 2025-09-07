@@ -11,8 +11,8 @@
           "-NoProfile",
           "-Command",
           "New-Item -ItemType Directory -Force -Path 'shaders','models'; ",
-          "Copy-Item -Recurse -Force '${workspaceFolder}/libs/sdl-3.2.16/bin/*' .; ",
-          "Copy-Item -Recurse -Force '${workspaceFolder}/libs/assimp-5.4.3/bin/*' .; ",
+          "Copy-Item -Recurse -Force '${workspaceFolder}/libs/sdl-3.2.18/bin/*' .; ",
+          "Copy-Item -Recurse -Force '${workspaceFolder}/libs/assimp-6.0.2/build/bin/*' .; ",
           "Copy-Item -Recurse -Force '${workspaceFolder}/shaders/*' shaders; ",
           "Copy-Item -Recurse -Force '${workspaceFolder}/models/*' models; ",
           "ninja; ",
@@ -23,16 +23,47 @@
         "command": "bash",
         "args": [
           "-c",
-          "mkdir -p shaders models && ",
-          "cp -ru ${workspaceFolder}/libs/sdl-3.2.16/bin/* .",
-          "cp -ru ${workspaceFolder}/libs/assimp-5.4.3/bin/* .",
-          "cp -ru ${workspaceFolder}/shaders/* shaders/",
-          "cp -ru ${workspaceFolder}/models/* models/",
-          "ninja && ./sample_executable.exe"
+          "mkdir -p shaders models;",
+          "cp -ru ${workspaceFolder}/libs/sdl-3.2.18/bin/* .;",
+          "cp -ru ${workspaceFolder}/libs/assimp-6.0.2/build/bin/* .;",
+          "cp -ru ${workspaceFolder}/shaders/* shaders/;",
+          "cp -ru ${workspaceFolder}/models/* models/;",
+          "ninja;",
+          "./sample_executable"
         ]
       },
       "options": {
         "cwd": "${workspaceFolder}/out/build/clang"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Publish",
+      "type": "shell",
+      "windows": {
+        "command": "powershell",
+        "args": [
+          "-NoLogo",
+          "-NoProfile",
+          "-ExecutionPolicy", "Bypass",
+          "-File", "${workspaceFolder}/publish.ps1",
+          "-BuildDir", "${workspaceFolder}/out/build/clang"
+        ]
+      },
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-c",
+          "${workspaceFolder}/Publish.sh",
+          "${workspaceFolder}/out/build/clang"
+        ]
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
       },
       "group": {
         "kind": "build",
