@@ -1,4 +1,7 @@
 #pragma once
+
+#include "Syngine/Syngine.hpp"
+
 #ifdef USE_BULLET
 
 #include "Syngine/modules/MeshInstance.hpp"

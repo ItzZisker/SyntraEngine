@@ -9,7 +9,6 @@
 
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/world/Coordination.hpp"
-#include "Syngine/utils/GameUtils.hpp"
 
 #include <unordered_map>
 
@@ -59,7 +58,7 @@ void renderNonDiscardable(MeshInstance* meshInstance, Shader& shader, Scene_T sn
 }
 
 void ModelInstance::renderDV(Scene_T snapshot, Shader& shader, Screenbuffer screen) {
-    if (model->isLoaded()) {
+    if (model->isUploaded()) {
         meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance) {
             if (!shouldDiscard(key)) renderNonDiscardable(meshInstance, shader, snapshot, screen);
         });
@@ -67,7 +66,7 @@ void ModelInstance::renderDV(Scene_T snapshot, Shader& shader, Screenbuffer scre
 }
 
 void ModelInstance::render(Shader& shader, Screenbuffer screen) {
-    if (model->isLoaded()) {
+    if (model->isUploaded()) {
         meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance) {
             if (!shouldDiscard(key)) meshInstance->render(shader, screen);
         });

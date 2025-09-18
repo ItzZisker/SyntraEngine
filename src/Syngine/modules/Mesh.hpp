@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #define MAX_BONE_INFLUENCE 4
@@ -51,19 +52,58 @@ struct MaterialProps {
     bool hasRoughness = true;
 };
 
+class M_Metadata {
+public:
+    const int type;
+
+    M_Metadata(int type, const char *data, int data_length);
+
+    using Value = std::variant<float, double, std::string, int, std::vector<char>>;
+    Value getValue() const;
+
+    std::vector<char>& rawData();
+    int dataLength();
+private:
+    std::vector<char> data_copy;
+    const int data_length;
+};
+
+using MetaDataMap = std::unordered_map<std::string, M_Metadata>;
+
+class Material {
+private:
+    int ID = -1;
+    std::string name = "Default";
+public:
+    MaterialProps props = {};
+    MetaDataMap metadata_map;
+
+    Material() {}
+    Material(int id, std::string name, MaterialProps props, MetaDataMap metadata) : ID(id), name(name), props(props), metadata_map(metadata) {}
+
+    int getID() { return ID; }
+    std::string& getName() { return name; }
+};
+
+namespace MeshMaterial
+{
+static Material* Default = new Material();
+}
+
 class Mesh : public GLVertexElement<Vertex> {
 private:
     glm::mat4 parentToNodeTransform;
     std::unordered_map<MeshTexture2D_T, GLuint> textures_fallback;
 public:
     std::vector<MeshTexture2D> textures;
-    MaterialProps material;
+    Material *material = MeshMaterial::Default;
 
     Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, glm::mat4 parentToNodeTransform);
     ~Mesh();
 
     glm::mat4 getParentToNodeTransform();
     Coordination getParentToNodeCoords();
+    int getMaterialId();
 
     bool hasFallback(MeshTexture2D_T texType);
     void setFallbackTCB(MeshTexture2D_T texType, GLuint TCB);
@@ -74,7 +114,6 @@ public:
 };
 
 // TODO: This
-// - Replace all messy vertex arrays in all modules with new GLVertex and GLVertexElement
 // - Text is also an implementation of Mesh2D which could have font, animations, etc
 // - Mesh2D could be sprite, quads, menu buttons, animated, or any 2D object
 // - Unfolded Spherical One-Pass Shadow Maps

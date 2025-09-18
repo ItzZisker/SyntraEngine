@@ -7,8 +7,8 @@ namespace syng {
         auto aMat = a->material;
         auto bMat = b->material;
 
-        float aOMin = std::min(aMat.opacity, aMat.maxOpacity);
-        float bOMin = std::min(bMat.opacity, bMat.maxOpacity);
+        float aOMin = std::min(aMat->props.opacity, aMat->props.maxOpacity);
+        float bOMin = std::min(bMat->props.opacity, bMat->props.maxOpacity);
 
         return aOMin > bOMin;
     }
@@ -18,12 +18,12 @@ namespace syng {
 
         a->getChildren()->forEach([&](std::string key, MeshInstance* child) {
             auto& mat = child->getSelf()->material;
-            float op = std::min(mat.opacity, mat.maxOpacity);
+            float op = std::min(mat->props.opacity, mat->props.maxOpacity);
             aMaxOpacity = std::max(aMaxOpacity, op);
         });
         b->getChildren()->forEach([&](std::string key, MeshInstance* child) {
             auto& mat = child->getSelf()->material;
-            float op = std::min(mat.opacity, mat.maxOpacity);
+            float op = std::min(mat->props.opacity, mat->props.maxOpacity);
             bMaxOpacity = std::max(bMaxOpacity, op);
         });
         return aMaxOpacity > bMaxOpacity;

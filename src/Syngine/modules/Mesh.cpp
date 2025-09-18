@@ -8,7 +8,6 @@
 #include "Shader.hpp"
 
 #include "Syngine/engine/Config.hpp"
-#include "Syngine/utils/GameUtils.hpp"
 #include "Syngine/world/Coordination.hpp"
 
 #include "glm/fwd.hpp"
@@ -24,6 +23,58 @@ void createPlainTexture(unsigned int &TCB, unsigned char pixel[4]) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
     PresetsTexel::TextureFilter(GL_TEXTURE_2D, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+M_Metadata::M_Metadata(int type, const char *data, int data_length)
+    : type(type), data_length(data_length) {
+    data_copy.resize(data_length);
+    if (data && data_length > 0) {
+        std::memcpy(data_copy.data(), data, data_length);
+    }
+}
+
+int M_Metadata::dataLength() {
+    return data_length;
+}
+
+std::vector<char>& M_Metadata::rawData() {
+    return data_copy;
+}
+
+M_Metadata::Value M_Metadata::getValue() const {
+    const char *raw = data_copy.data();
+
+    switch (type) {
+        case 0x1: { // Float
+            float val{};
+            if (data_length >= sizeof(float)) {
+                std::memcpy(&val, raw, sizeof(float));
+            }
+            return val;
+        }
+        case 0x2: { // Double
+            double val{};
+            if (data_length >= sizeof(double)) {
+                std::memcpy(&val, raw, sizeof(double));
+            }
+            return val;
+        }
+        case 0x3: { // String
+            return std::string(raw, data_length);
+        }
+        case 0x4: { // Integer
+            int val{};
+            if (data_length >= sizeof(int)) {
+                std::memcpy(&val, raw, sizeof(int));
+            }
+            return val;
+        }
+        case 0x5: { // Buffer
+            return data_copy;
+        }
+        default:
+            throw std::runtime_error("Unknown metadata type");
+    }
 }
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, glm::mat4 parenToNodeTransform)
@@ -51,6 +102,10 @@ Coordination Mesh::getParentToNodeCoords() {
     return {getParentToNodeTransform()};
 }
 
+int Mesh::getMaterialId() {
+    return this->material->getID();
+}
+
 bool Mesh::hasFallback(MeshTexture2D_T texType) {
     return textures_fallback.find(texType) != textures_fallback.end();
 }
@@ -76,15 +131,15 @@ void Mesh::render(Shader& shader, Screenbuffer screen, glm::mat4 transform) {
 
     shader.use();
     shader.setMatrix4("model", transform, 1, GL_FALSE);
-    shader.setFloat("F0", material.F0);
-    shader.setVec3f("ior", material.ior);
-    shader.setFloat("shininess", material.shininess);
+    shader.setFloat("F0", material->props.F0);
+    shader.setVec3f("ior", material->props.ior);
+    shader.setFloat("shininess", material->props.shininess);
 
     if (shader.getVariable(SHADER_REFRAC_KEY_DYNAMIC_OPACITY) == SHADER_VAL_ON) {
-        shader.setFloat("minOpacity", material.minOpacity);
-        shader.setFloat("maxOpacity", material.maxOpacity);
+        shader.setFloat("minOpacity", material->props.minOpacity);
+        shader.setFloat("maxOpacity", material->props.maxOpacity);
     } else {
-        shader.setFloat("opacity", material.opacity);
+        shader.setFloat("opacity", material->props.opacity);
     }
 
     unsigned int diffuseNr = 1;
@@ -131,8 +186,8 @@ void Mesh::render(Shader& shader, Screenbuffer screen, glm::mat4 transform) {
         shader.setTexture("texture_normal1", GL_TEXTURE_2D, texUnit++, textures_fallback[Texture_Normal]);
     }
 
-    shader.setBool("parallax", heightNr > 1  && material.hasDisplacement);
-    shader.setBool("roughness", roughNr > 1 && material.hasRoughness);
+    shader.setBool("parallax", heightNr > 1  && material->props.hasDisplacement);
+    shader.setBool("roughness", roughNr > 1 && material->props.hasRoughness);
 
     GLVertexElement::draw();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

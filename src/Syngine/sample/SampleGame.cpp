@@ -129,9 +129,9 @@ void SampleGame::createWindow(GameWindow *window) {
     // sceneModel->readPacked(reader);
 
     std::cout << "kar kar\n";
-    sceneModel->readAssimp({"models/wall/2g/scenetest.gltf"});
+    sceneModel->readAssimp({"models/wall/2g/wall.gltf"});
     std::cout << "kor kor\n";
-    sceneModel->load(CacheApproach::Interleaved);
+    sceneModel->uploadVertices(CacheApproach::Interleaved);
 
     // std::cout << "textures start\n";
     // std::string dir = std::filesystem::current_path().string();

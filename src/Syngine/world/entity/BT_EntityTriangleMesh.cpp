@@ -1,4 +1,7 @@
 #include "BT_EntityTriangleMesh.hpp"
+#include <iostream>
+#include <ostream>
+
 #ifdef USE_BULLET
 
 #include "Syngine/modules/Mesh.hpp"
@@ -12,7 +15,8 @@
 #include <BulletCollision/CollisionShapes/btTriangleInfoMap.h>
 #include <BulletCollision/CollisionShapes/btTriangleMesh.h>
 
-#include <iostream>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 using namespace syng;
@@ -38,26 +42,12 @@ const glm::mat4 BT_EntityTriangleMesh::onMotionState() {
 }
 
 void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
-    for (const auto& it : meshes) {
-        MeshInstance* instance = it.second;
-        if (instance->getSelf()) {
-            if (!instance->getSelf()->isLoaded()) {
-                std::cerr << "ERROR::Entity::<UNLOADED_MESH>::SELF::" << it.first << std::endl;
-                return;
-            }
-        } else {
-            instance->getChildren()->forEach([&](const std::string& key, MeshInstance* meshInstance){                
-                if (!meshInstance->getSelf()->isLoaded()) {
-                    std::cerr << "ERROR::Entity::<UNLOADED_MESH>::" << key << std::endl;
-                    return;
-                }
-            });
-        }
-    }
+    if (body) return;
+
     triangleMesh = new btTriangleMesh();
     triangleInfoMap = new btTriangleInfoMap();
 
-    auto emplaceFunc = [&](glm::mat4 transform, std::vector<Vertex>& vertices, std::vector<GLuint>& indices) {
+    auto emplaceFunc = [&](int materialId, glm::mat4 transform, std::vector<Vertex>& vertices, std::vector<GLuint>& indices) {
         for (size_t i = 0; i < indices.size(); i += 3) {
             glm::vec3 v0 = glm::vec3(transform * glm::vec4(vertices[indices[i]].position, 1.0f));
             glm::vec3 v1 = glm::vec3(transform * glm::vec4(vertices[indices[i + 1]].position, 1.0f));
@@ -69,6 +59,7 @@ void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
                 btVector3(v2.x, v2.y, v2.z),
                 true
             );
+            triangleMaterials.push_back(materialId);
         }
     };
 
@@ -76,11 +67,21 @@ void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
         MeshInstance* instance = it.second;
         Mesh* self = instance->getSelf();
         if (self) {
-            emplaceFunc(instance->getTransform(), self->getVertices(), self->getIndices());
+            emplaceFunc(
+                self->getMaterialId(),
+                instance->getTransform(),
+                self->getVertices(),
+                self->getIndices()
+            );
         } else {
             instance->getChildren()->forEach([&](const std::string& key, MeshInstance* child){
                 Mesh* self = child->getSelf();
-                emplaceFunc(instance->getTransform() * child->getTransform(), self->getVertices(), self->getIndices());
+                emplaceFunc(
+                    self->getMaterialId(),
+                    instance->getTransform() * child->getTransform(),
+                    self->getVertices(),
+                    self->getIndices()
+                );
             });
         }
     }
@@ -97,6 +98,11 @@ void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
 
     body = new btRigidBody(rigidBodyCI);
     body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
+    body->setUserPointer(this);
+}
+
+int BT_EntityTriangleMesh::getTrigMaterial(int trigIdx) const {
+    return triangleMaterials[trigIdx];
 }
 
 #endif

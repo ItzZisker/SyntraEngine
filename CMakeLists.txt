@@ -252,10 +252,18 @@ endif()
 
 target_link_libraries(${PROJECT_NAME} ${common_libs})
 
-set_target_properties(Syngine PROPERTIES
-    PREFIX ""
-    OUTPUT_NAME "Syng"
-)
+if (WIN32)
+    set_target_properties(Syngine PROPERTIES
+        PREFIX ""
+        OUTPUT_NAME "Syng"
+        VERSION ${PROJECT_VERSION}
+    )
+else()
+    set_target_properties(Syngine PROPERTIES
+        OUTPUT_NAME "Syng"
+        VERSION ${PROJECT_VERSION}
+    )
+endif()
 
 add_executable(sample_executable
     src/Syngine/sample/SampleCallbacks.cpp

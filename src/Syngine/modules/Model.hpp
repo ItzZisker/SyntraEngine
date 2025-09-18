@@ -57,8 +57,8 @@ private:
     std::filesystem::path path;
     std::vector<MeshTexture2D> cachedTextures;
 
-    MeshKeyedMap processNode(aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform);
-    Mesh* processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& transform);
+    void processNode(Model *model, aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform);
+    Mesh* processMesh(Model *model, aiMesh *mesh, const aiScene *scene, const glm::mat4& transform);
     std::vector<MeshTexture2D> loadMaterialTextures(aiMaterial *mat, aiTextureType type, const MeshTexture2D_T &texType);
 public:
     aiPostProcessSteps postProcessSteps = static_cast<aiPostProcessSteps>(
@@ -79,10 +79,11 @@ public:
 class Model
 {
 private:
-    bool loaded = false;
+    bool uploaded = false;
 public:
     MeshKeyedMap meshes;
     std::unordered_map<std::string, MeshKeyedMap> meshGroups;
+    std::vector<Material*> materialById;
 
     Model();
     ~Model();
@@ -95,8 +96,8 @@ public:
     void readAssimp(AssimpReader reader);
 #endif
 
-    bool isLoaded() { return this->loaded; };
-    void load(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential);
+    bool isUploaded() { return this->uploaded; };
+    void uploadVertices(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential);
     void groupMeshes();
 
     void pushTexture(const std::string& meshKey, MeshTexture2D texture);

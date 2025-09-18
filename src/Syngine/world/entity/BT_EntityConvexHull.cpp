@@ -10,8 +10,6 @@
 
 #include <LinearMath/btVector3.h>
 
-#include <iostream>
-
 using namespace syng;
 
 BT_EntityConvexHull::BT_EntityConvexHull(BT_World* world, float mass, MeshInstance* mesh) 
@@ -32,22 +30,6 @@ const glm::mat4 BT_EntityConvexHull::onMotionState() {
 }
 
 void BT_EntityConvexHull::load(bool enablePolyhedral) {
-    for (const auto& it : meshes) {
-        MeshInstance* instance = it.second;
-        if (instance->getSelf()) {
-            if (!instance->getSelf()->isLoaded()) {
-                std::cerr << "ERROR::Entity::<UNLOADED_MESH>::SELF::" << it.first << std::endl;
-                return;
-            }
-        } else {
-            instance->getChildren()->forEach([&](const std::string& key, MeshInstance* meshInstance){                
-                if (!meshInstance->getSelf()->isLoaded()) {
-                    std::cerr << "ERROR::Entity::<UNLOADED_MESH>::" << key << std::endl;
-                    return;
-                }
-            });
-        }
-    }
 
     int numPoints = 0;
     for (const auto& it : meshes) {
