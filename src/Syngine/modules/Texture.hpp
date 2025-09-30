@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Syngine/serialization/DataSerializer.hpp"
+#include "assimp/material.h"
 
 #include <glad/glad.h>
 
@@ -13,14 +14,14 @@
 namespace syng
 {
 
-constexpr uint16_t PCK_HEADER_TEX2D = 200;
-constexpr uint16_t PCK_FOOTER_TEX2D = 201;
+constexpr uint16_t PCK_HEADER_TEX2D = 104;
+constexpr uint16_t PCK_FOOTER_TEX2D = 105;
 
-constexpr uint16_t PCK_HEADER_TEX2D_MESH = 202;
-constexpr uint16_t PCK_FOOTER_TEX2D_MESH = 203;
+constexpr uint16_t PCK_HEADER_TEX2D_MESH = 106;
+constexpr uint16_t PCK_FOOTER_TEX2D_MESH = 107;
 
-constexpr uint16_t PCK_HEADER_TEXQBMP = 204;
-constexpr uint16_t PCK_FOOTER_TEXQBMP = 205;
+constexpr uint16_t PCK_HEADER_TEXQBMP = 108;
+constexpr uint16_t PCK_FOOTER_TEXQBMP = 109;
 
 struct Texture2D {
     GLuint TCB = 0;
@@ -31,16 +32,12 @@ struct TextureCubemap {
     std::string paths[6];
 };
 
-enum MeshTexture2D_T {
+enum MaterialTexture2D_T {
     Texture_Diffuse,
     Texture_Specular,
     Texture_Normal,
     Texture_Height,
     Texture_Rough
-};
-struct MeshTexture2D {
-    Texture2D texture;
-    MeshTexture2D_T type;
 };
 
 class TextureWriter {
@@ -55,8 +52,8 @@ public:
     void writeTextureCubemap(TextureCubemap texQB);
     void writeTextureCubemap(std::string paths[6], std::vector<uint8_t> bytes[6]);
 
-    void writeMeshTexture2D(MeshTexture2D meshTex2D);
-    void writeMeshTexture2D(std::string path, std::vector<uint8_t> bytes, MeshTexture2D_T type);
+    void writeMeshTexture2D(MaterialTexture2D_T texType, Texture2D texel);
+    void writeMeshTexture2D(std::string path, std::vector<uint8_t> bytes, MaterialTexture2D_T type);
 };
 
 constexpr std::array<const char*, 5> TextureTNames = {
@@ -66,13 +63,30 @@ constexpr std::array<const char*, 5> TextureTNames = {
     "texture_height",
     "texture_roughness"
 };
-constexpr const char* TEXTURE_NAME(MeshTexture2D_T type) {
+constexpr std::array<const aiTextureType, 5> TextureTAssimp = {
+    aiTextureType_DIFFUSE,
+    aiTextureType_SPECULAR,
+    aiTextureType_NORMALS,
+    aiTextureType_HEIGHT,
+    aiTextureType_DIFFUSE_ROUGHNESS
+};
+constexpr const char* TEXTURE_NAME(MaterialTexture2D_T type) {
     auto i = static_cast<size_t>(type);
     if (i >= TextureTNames.size()) {
         return "Unknown";
     }
     return TextureTNames[i];
 }
+constexpr const aiTextureType TEXTURE_ASSIMP(MaterialTexture2D_T type) {
+    auto i = static_cast<size_t>(type);
+    if (i >= TextureTNames.size()) {
+        return aiTextureType_NONE;
+    }
+    return TextureTAssimp[i];
+}
+
+GLuint TCBByPlainColor(unsigned char pixel[4]);
+void TCBPlainColor(unsigned int &TCB, unsigned char pixel[4]);
 
 std::future<GLuint> TCBFromBytes_TQ(uint8_t *raw, int width, int height, int nrComponents);
 GLuint TCBFromBytes(uint8_t *raw, int width, int height, int nrComponents);
@@ -90,7 +104,6 @@ Texture2D loadTexture2D(DataDeserializer *buffer);
 TextureCubemap loadTextureCubemap(std::vector<std::filesystem::path> paths);
 TextureCubemap loadTextureCubemap(DataDeserializer *buffer);
 
-MeshTexture2D loadMeshTexture2D(const std::filesystem::path& path, MeshTexture2D_T type);
-MeshTexture2D loadMeshTexture2D(DataDeserializer *buffer);
+std::pair<MaterialTexture2D_T, Texture2D> loadMeshTexture2D(DataDeserializer *buffer);
 
 }

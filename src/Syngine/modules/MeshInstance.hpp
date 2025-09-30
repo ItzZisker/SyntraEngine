@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Screenbuffer.hpp"
-
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/Mesh.hpp"
 #include "Syngine/world/Coordination.hpp"
@@ -11,7 +9,7 @@
 
 namespace syng
 {
-class MeshInstance : public FrustumDiscardable, public Coordination, public ShaderRenderable {
+class MeshInstance : public FrustumDiscardable, public Coordination {
 private:
     RenderTable<MeshInstance> *subMeshes = new RenderTable<MeshInstance>();
     Mesh* mesh = nullptr;
@@ -23,9 +21,6 @@ public:
     MeshInstance(std::unordered_map<std::string, Mesh*> subMeshes);
     MeshInstance(std::unordered_map<std::string, Mesh*> subMeshes, Coordination coords);
     ~MeshInstance();
-
-    void render(Shader& shader, Screenbuffer screen, glm::mat4 parentTransform);
-    void render(Shader& shader, Screenbuffer screen = {}) override;
 
     RenderTable<MeshInstance>* getChildren();
     Mesh* getSelf();

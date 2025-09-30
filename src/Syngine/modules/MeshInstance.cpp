@@ -1,7 +1,5 @@
 #include "MeshInstance.hpp"
 #include "Mesh.hpp"
-#include "Screenbuffer.hpp"
-#include "Shader.hpp"
 
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/world/Coordination.hpp"
@@ -52,22 +50,6 @@ void MeshInstance::handle(MeshInstance* meshInstance, glm::vec3& min, glm::vec3&
             handle(child, min, max, unset);
         });
     }
-}
-
-void MeshInstance::render(Shader& shader, Screenbuffer screen, glm::mat4 parentTransform) {
-    glm::mat4 worldTransform = transform * parentTransform;
-
-    if (this->mesh) {
-        this->mesh->render(shader, screen, worldTransform);
-    } else {
-        this->subMeshes->forEach([&](const std::string& key, MeshInstance* subMesh){
-            subMesh->render(shader, screen, worldTransform);
-        });
-    }
-}
-
-void MeshInstance::render(Shader& shader, Screenbuffer screen) {
-    MeshInstance::render(shader, screen, glm::mat4(1.0f));
 }
 
 RenderTable<MeshInstance>* MeshInstance::getChildren() {

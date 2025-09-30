@@ -133,6 +133,14 @@ elseif(UNIX AND NOT APPLE)
     link_directories(${SDL_ROOT}/linux/bin)
 endif()
 
+# == FreeType Config ==
+# set(FREETYPE_ROOT "${CMAKE_SOURCE_DIR}/libs/freetype-2.14.1")
+# if (WIN32)
+#     include_directories(${FREETYPE_ROOT}/win32/include/freetype2)
+# elseif(UNIX AND NOT APPLE)
+#     include_directories(${FREETYPE_ROOT}/linux/include/freetype2)
+# endif()
+
 # === GLAD Config ===
 set(GLAD_ROOT "${CMAKE_SOURCE_DIR}/libs/glad-3.3")
 include_directories(${GLAD_ROOT}/include)
@@ -200,12 +208,14 @@ add_library(Syngine SHARED
     src/Syngine/serialization/DataSerializer.cpp
     src/Syngine/serialization/DataTemplates.cpp
 
+    src/Syngine/modules/BatchRenderer.cpp
+    src/Syngine/modules/Material.cpp
+    #src/Syngine/modules/TextUtil.cpp
     src/Syngine/modules/Texture.cpp
     src/Syngine/modules/Presets.cpp
     src/Syngine/modules/GLObjects.cpp
     src/Syngine/modules/ShadowMapper.cpp
     src/Syngine/modules/Screenbuffer.cpp
-    src/Syngine/modules/CubemapFramebuffer.cpp
     src/Syngine/modules/Framebuffer.cpp
     src/Syngine/modules/Scene.cpp
     src/Syngine/modules/Camera.cpp
@@ -232,8 +242,10 @@ set(common_libs SDL3)
 
 if (UNIX AND NOT APPLE)  # Linux
     list(APPEND common_libs glfw3 OpenGL::OpenGL Xrandr Xi dl)
+    #list(APPEND common_libs ${FREETYPE_ROOT}/linux/lib/libfreetype.a)
 elseif (WIN32)  # Windows
     list(APPEND common_libs opengl32)
+    #list(APPEND common_libs ${FREETYPE_ROOT}/win32/lib/libfreetype.a)
 elseif (APPLE)
     list(APPEND common_libs "-framework OpenGL" "-framework Cocoa" "-framework IOKit" "-framework CoreVideo")
 endif()

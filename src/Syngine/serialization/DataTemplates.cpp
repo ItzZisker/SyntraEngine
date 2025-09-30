@@ -1,6 +1,6 @@
 #include "DataTemplates.hpp"
 #include "DataSerializer.hpp"
-#include "Syngine/modules/Mesh.hpp"
+
 #include <stdexcept>
 
 namespace syng
@@ -22,7 +22,7 @@ void pop(DataDeserializer *buffer, std::string res, uint16_t footer) {
     }
 }
 
-void write_mesh_material(DataSerializer *buffer, MaterialProps material) {
+void write_material_props(DataSerializer *buffer, MaterialProps material) {
     write_glm_vec3(buffer, material.ior);
     write_float(buffer, material.shininess);
     write_float(buffer, material.minOpacity);
@@ -66,7 +66,7 @@ void write_glm_vec2(DataSerializer *buffer, const glm::vec2& val) {
     }
 }
 
-MaterialProps read_mesh_material(DataDeserializer *buffer) {
+MaterialProps read_material_props(DataDeserializer *buffer) {
     MaterialProps res;
     res.ior = read_glm_vec3(buffer);
     res.shininess = read_float(buffer);

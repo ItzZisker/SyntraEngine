@@ -1,6 +1,8 @@
 #include "Presets.hpp"
 #include "Texture.hpp"
 
+#include "Syngine/modules/Mesh.hpp"
+
 #include <filesystem>
 
 using namespace syng;
@@ -21,28 +23,11 @@ void PresetsTexel::TextureFilter(GLenum target, GLenum param) {
     glTexParameteri(target, GL_TEXTURE_MAG_FILTER, param);
 }
 
-Mesh2D* Presets2D_newMeshQuad(Vertex2D corners[4], MeshTexture2D texture) {
-    Vertex2D topLeft, topRight, bottomLeft, bottomRight;
-
-    float maxY = corners[0].position.y;
-    float minY = corners[0].position.y;
-    float maxX = corners[0].position.x;
-    float minX = corners[0].position.x;
-
-    for (int i = 1; i < 4; i++) {
-        if (corners[i].position.y > maxY) maxY = corners[i].position.y;
-        if (corners[i].position.y < minY) minY = corners[i].position.y;
-        if (corners[i].position.x > maxX) maxX = corners[i].position.x;
-        if (corners[i].position.x < minX) minX = corners[i].position.x;
-    }
-
-    for (int i = 0; i < 4; i++) {
-        auto& v = corners[i];
-        if (v.position.y == maxY && v.position.x == minX) topLeft = v;
-        else if (v.position.y == maxY && v.position.x == maxX) topRight = v;
-        else if (v.position.y == minY && v.position.x == minX) bottomLeft = v;
-        else if (v.position.y == minY && v.position.x == maxX) bottomRight = v;
-    }
+Mesh2D* Presets2D_newMeshQuad(Vertex2D min, Vertex2D max, Texture2D texture) {
+    Vertex2D topRight = {{max.position.x, max.position.y}, {max.texCoords.x, max.texCoords.y}};
+    Vertex2D bottomRight = {{max.position.x, min.position.y}, {max.texCoords.x, min.texCoords.y}};
+    Vertex2D bottomLeft = {{min.position.x, min.position.y}, {min.texCoords.x, min.texCoords.y}};
+    Vertex2D topLeft = {{min.position.x, max.position.y}, {min.texCoords.x, max.texCoords.y}};
 
     std::vector<Vertex2D> orderedVertices = {
         topRight,
@@ -51,8 +36,8 @@ Mesh2D* Presets2D_newMeshQuad(Vertex2D corners[4], MeshTexture2D texture) {
         topLeft
     };
     std::vector<GLuint> indices = {
-        0, 1, 3,
-        1, 2, 3
+        2, 1, 3,
+        1, 0, 3
     };
     Mesh2D* res = new Mesh2D(orderedVertices, indices, glm::mat4(1.0f));
     res->setTexture(texture);
@@ -60,12 +45,12 @@ Mesh2D* Presets2D_newMeshQuad(Vertex2D corners[4], MeshTexture2D texture) {
     return res;
 }
 
-Mesh2D* Presets2D::newMeshQuad(Vertex2D corners[4], std::string pathToTexel) {
-    return Presets2D_newMeshQuad(corners, loadMeshTexture2D(pathToTexel.c_str(), Texture_Diffuse));
+Mesh2D* Presets2D::newMeshQuad(Vertex2D min, Vertex2D max, std::string pathToTexel) {
+    return Presets2D_newMeshQuad(min, max, loadTexture2D(pathToTexel.c_str()));
 }
 
-Mesh2D* Presets2D::newMeshQuad(Vertex2D corners[4], GLuint TCB) {
-    return Presets2D_newMeshQuad(corners, {{TCB, ""}, Texture_Diffuse});
+Mesh2D* Presets2D::newMeshQuad(Vertex2D min, Vertex2D max, GLuint TCB) {
+    return Presets2D_newMeshQuad(min, max, {TCB, ""});
 }
 
 void syng::Presets3D::pushVerticesCube(float size, std::vector<glm::vec3>& vertices, std::vector<GLuint>& indices) {

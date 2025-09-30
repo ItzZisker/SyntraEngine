@@ -1,9 +1,12 @@
 #pragma once
 
 #include "DataSerializer.hpp"
+#include "Syngine/modules/Material.hpp"
+
 #include "glm/glm.hpp"
-#include "Syngine/modules/Mesh.hpp"
+
 #include <functional>
+#include <stdint.h>
 #include <vector>
 
 namespace syng
@@ -21,7 +24,7 @@ constexpr void write_uint32(DataSerializer* buffer, uint32_t i) { LittleEndian::
 constexpr void write_uint64(DataSerializer* buffer, uint64_t i) { LittleEndian::write<uint64_t>(buffer, i); };
 constexpr void write_float(DataSerializer* buffer, float f) { LittleEndian::write<float>(buffer, f); };
 
-void write_mesh_material(DataSerializer* buffer, MaterialProps material);
+void write_material_props(DataSerializer* buffer, MaterialProps material);
 void write_string(DataSerializer* buffer, const std::string& value);
 void write_glm_mat3(DataSerializer* buffer, const glm::mat3& val);
 void write_glm_mat4(DataSerializer* buffer, const glm::mat4& val);
@@ -36,7 +39,7 @@ constexpr uint32_t read_uint32(DataDeserializer* buffer) { return LittleEndian::
 constexpr uint64_t read_uint64(DataDeserializer* buffer) { return LittleEndian::read<uint64_t>(buffer); };
 constexpr float read_float(DataDeserializer* buffer) { return LittleEndian::read<float>(buffer); };
 
-MaterialProps read_mesh_material(DataDeserializer* buffer);
+MaterialProps read_material_props(DataDeserializer* buffer);
 std::string read_string(DataDeserializer* buffer);
 glm::mat3 read_glm_mat3(DataDeserializer* buffer);
 glm::mat4 read_glm_mat4(DataDeserializer* buffer);

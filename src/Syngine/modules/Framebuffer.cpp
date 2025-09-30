@@ -99,11 +99,9 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
     if (outputToScreenShader) {
         Vertex2D corners[] = {
             {{-1.0f, -1.0f}, {0.0f, 0.0f}},
-            {{-1.0f, 1.0f}, {0.0f, 1.0f}},
-            {{1.0f, -1.0f}, {1.0f, 0.0f}},
             {{1.0f, 1.0f}, {1.0f, 1.0f}}
         };
-        quad = Presets2D::newMeshQuad(corners, TCB);
+        quad = Presets2D::newMeshQuad(corners[0], corners[1], TCB);
         quad->init();
     }
     if (!outputShader.hasProgram()) {

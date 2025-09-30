@@ -11,6 +11,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <utility>
 
 #ifdef USE_ASSIMP
 #include <assimp/Importer.hpp>
@@ -28,7 +29,11 @@ namespace syng
 constexpr uint16_t PCK_HEADER_MODEL = 100;
 constexpr uint16_t PCK_FOOTER_MODEL = 101;
 
-typedef std::unordered_map<std::string, Mesh*> MeshKeyedMap;
+using MeshKeyedMap = std::unordered_map<std::string, Mesh*>;
+
+using TexelPair = std::pair<MaterialTexture2D_T, Texture2D>;
+using TexelPairs = std::vector<TexelPair>;
+
 class Model;
 
 class PackedWriter {
@@ -55,11 +60,14 @@ public:
 class AssimpReader {
 private:
     std::filesystem::path path;
-    std::vector<MeshTexture2D> cachedTextures;
+    TexelPairs cachedTextures;
 
     void processNode(Model *model, aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform);
     Mesh* processMesh(Model *model, aiMesh *mesh, const aiScene *scene, const glm::mat4& transform);
-    std::vector<MeshTexture2D> loadMaterialTextures(aiMaterial *mat, aiTextureType type, const MeshTexture2D_T &texType);
+    void cacheMaterialTextures(
+        aiMaterial *mat, Material *syngMat,
+        aiTextureType type, const MaterialTexture2D_T &syngType
+    );
 public:
     aiPostProcessSteps postProcessSteps = static_cast<aiPostProcessSteps>(
         aiProcess_Triangulate |
@@ -71,7 +79,7 @@ public:
 
     AssimpReader(const std::filesystem::path& path);
 
-    std::vector<MeshTexture2D>& getCachedTextures();
+    TexelPairs& getCachedTextures();
     void read(Model* model);
 };
 #endif
@@ -99,8 +107,5 @@ public:
     bool isUploaded() { return this->uploaded; };
     void uploadVertices(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential);
     void groupMeshes();
-
-    void pushTexture(const std::string& meshKey, MeshTexture2D texture);
-    void pullTexture(const std::string& meshKey, const std::string& path);
 };
 }

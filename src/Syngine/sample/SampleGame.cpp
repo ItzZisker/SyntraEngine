@@ -3,6 +3,7 @@
 #include "SampleCallbacks.hpp"
 #include "Syngine/engine/Concurrency.hpp"
 #include "Syngine/engine/RenderTable.hpp"
+#include "Syngine/modules/BatchRenderer.hpp"
 #include "Syngine/modules/Model.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "Syngine/serialization/DataSerializer.hpp"
@@ -212,7 +213,11 @@ void SampleGame::createWindow(GameWindow *window) {
         "models/skybox/lightblue/back.png"
     });
     scene->getBatchRenderTable()->add("skybox", skybox);
-    scene->getBatchRenderTable()->add("sceneModel", sceneModelInstance);
+
+    modelBatch = new ModelBatchRenderer(scene);
+    modelBatch->add("sceneModel", sceneModelInstance);
+
+    scene->getBatchRenderTable()->add("modelBatch", modelBatch);
     //scene->getBatchRenderTable()->add("appleModel", appleMeshInstance);
     // DirLight daylight = {
     //     {-0.86f, -1.0f, -0.97f},

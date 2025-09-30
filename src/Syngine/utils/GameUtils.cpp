@@ -115,12 +115,7 @@ bool GameUtils::shouldDiscard(ShaderRenderable* renderable, Scene* scene) {
 }
 
 void GameUtils::renderDV(ShaderRenderable *renderable, Scene_T snapshot, Shader& shader, Screenbuffer screen) {
-    if (GameUtils::shouldDiscard(renderable, snapshot)) {
-        return;
-    }
-    if (ModelInstance* mI = dynamic_cast<ModelInstance*>(renderable)) {
-        mI->renderDV(snapshot, shader, screen);
-    } else {
+    if (!GameUtils::shouldDiscard(renderable, snapshot)) {
         renderable->render(shader, screen);
     }
 }

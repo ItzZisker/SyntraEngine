@@ -62,6 +62,65 @@ public:
     AABB getBounding();
 };
 
+class Coordination2D {
+protected:
+    glm::mat3 transform = glm::mat3(1.0f);
+    glm::vec2 origin = glm::vec2(0.0f);
+    glm::vec2 position = glm::vec2(0.0f);
+    float rotation = 0.0f; // in radians
+    glm::vec2 scale = glm::vec2(1.0f);
+
+    void updateTransform() {
+        glm::mat3 T = glm::mat3(1.0f);
+        T[2] = glm::vec3(position - origin, 1.0f);
+
+        float c = cos(rotation);
+        float s = sin(rotation);
+        glm::mat3 R = glm::mat3(
+            c,  s, 0.0f,
+           -s,  c, 0.0f,
+            0.0f, 0.0f, 1.0f
+        );
+
+        glm::mat3 S = glm::mat3(1.0f);
+        S[0][0] = scale.x;
+        S[1][1] = scale.y;
+
+        glm::mat3 O = glm::mat3(1.0f);
+        O[2] = glm::vec3(-origin, 1.0f);
+
+        this->transform = T * R * S * O;
+    }
+public:
+    Coordination2D(glm::vec2 position = glm::vec2(0.0f), float rotation = 0.0f, glm::vec2 scale = glm::vec2(1.0f)) 
+        : position(position), rotation(rotation), scale(scale) {
+        updateTransform();
+    }
+
+    const glm::mat3& getTransform() const {
+        return transform;
+    }
+    glm::mat4 getTransform4Cpy() const {
+        glm::mat4 transform4x4 = glm::mat4(1.0f);
+        transform4x4[0] = glm::vec4(transform[0], 0.0f);
+        transform4x4[1] = glm::vec4(transform[1], 0.0f);
+        transform4x4[2] = glm::vec4(0,0,1,0);
+        transform4x4[3] = glm::vec4(transform[2], 1.0f);
+        return transform4x4;
+    }
+
+    glm::vec2 getPosition() const { return position; }
+    glm::vec2 getScale() const { return scale; }
+    float getRotation() const { return rotation; }
+    glm::vec2 getOrigin() const { return origin; }
+
+    virtual void setPosition(const glm::vec2& pos) { position = pos; updateTransform(); }
+    virtual void addPosition(const glm::vec2& pos) { position += pos; updateTransform(); }
+    virtual void setScale(const glm::vec2& scl) { scale = scl; updateTransform(); }
+    virtual void setRotation(float rot) { rotation = rot; updateTransform(); }
+    virtual void setOrigin(const glm::vec2& org) { origin = org; updateTransform(); }
+};
+
 class Coordination {
 protected:
     glm::mat4 transform = glm::mat4(1.0f);
@@ -111,81 +170,48 @@ public:
     Coordination(glm::mat4 transform = glm::mat4(1.0f)) {
         decompose(transform);
     }
-
     Coordination(const glm::mat4& transform, const glm::vec3& origin) : origin(origin) {
         decompose(transform);
     }
-
     Coordination(const glm::vec3& position, const glm::vec3& direction, const glm::vec3 up) : position(position), direction(direction), up(up), scale(1.0f) {
         updateTransform();
     }
 
-    virtual float getYaw() const {
+    float getPitch() const { return glm::degrees(asin(getDirection().y)); }
+    float getYaw() const {
         glm::vec3 dir = getDirection();
         return glm::degrees(atan2(dir.x, -dir.z));
     }
 
-    virtual float getPitch() const {
-        return glm::degrees(asin(getDirection().y));
-    }
+    glm::vec3 getUp() const { return glm::normalize(glm::vec3(transform[1])); }
+    glm::vec3 getRight() const { return glm::normalize(glm::cross(getDirection(), getUp())); }
+    glm::vec3 getDirection() const { return glm::normalize(glm::vec3(-transform[2])); }
+    glm::vec3 getPosition() const { return this->position; }
+    glm::vec3 getScale() const { return scale; }
+    const glm::mat4& getTransform() { return this->transform; }
+    glm::vec3 getOrigin() const { return this->origin; }
 
-    virtual glm::vec3 getUp() const {
-        return glm::normalize(glm::vec3(transform[1]));
-    }
-
-    virtual glm::vec3 getRight() const {
-        return glm::normalize(glm::cross(getDirection(), getUp()));
-    }
-
-    virtual glm::vec3 getDirection() const {
-        return glm::normalize(glm::vec3(-transform[2]));
-    }
-
-    virtual glm::vec3 getPosition() const {
-        return this->position;
-    }
-
-    virtual glm::vec3 getScale() const {
-        return scale;
-    }
-
-    virtual const glm::mat4& getTransform() {
-        return this->transform;
-    }
-
-    virtual glm::vec3 getOrigin() const {
-        return this->origin;
-    }
-
-    virtual void setTransform(const glm::mat4& transform) {
-        decompose(transform);
-    }
-
+    virtual void setTransform(const glm::mat4& transform) { decompose(transform); }
     virtual void setOrigin(const glm::vec3& newOrigin) {
         this->origin = newOrigin;
         updateTransform();
     }
-
     virtual void setPosition(const glm::vec3& pos) {
         this->position = pos;
         updateTransform();
     }
-
     virtual void addPosition(const glm::vec3& pos) {
         this->position += pos;
         updateTransform();
     }
-
     virtual void setUp(const glm::vec3& up) {
         this->up = up;
         updateTransform();
     }
-
     virtual void setDirection(const glm::vec3& dir) {
         this->direction = glm::normalize(dir);
         updateTransform();
     }
-
     virtual void setScale(const glm::vec3& scale) {
         this->scale = scale;
         updateTransform();
