@@ -3,6 +3,9 @@ project(Syngine VERSION 0.1.0 LANGUAGES C CXX)
 
 find_package(OpenGL REQUIRED COMPONENTS OpenGL)
 
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(USE_ASSIMP "Enable Assimp support" ON)

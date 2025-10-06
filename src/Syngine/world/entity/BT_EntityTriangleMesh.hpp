@@ -10,14 +10,11 @@
 #include "Syngine/world/entity/BT_Entity.hpp"
 #include "Syngine/engine/RenderTable.hpp"
 
+#include <btBulletDynamicsCommon.h>
 #include <Bullet3Common/b3Vector3.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
-#include <btBulletDynamicsCommon.h>
 #include <BulletCollision/CollisionShapes/btTriangleInfoMap.h>
 #include <BulletCollision/CollisionShapes/btBvhTriangleMeshShape.h>
-
-#include <string>
-#include <unordered_map>
 
 namespace syng
 {
@@ -38,7 +35,7 @@ class BT_EntityTriangleMesh : public BT_Entity
 {
 private:
     std::vector<int> triangleMaterials;
-    std::unordered_map<std::string, MeshInstance*> meshes;
+    MeshInstance *rootNode;
     btTriangleMesh* triangleMesh;
     btTriangleInfoMap* triangleInfoMap;
     btBvhTriangleMeshShape* shape;
@@ -47,7 +44,6 @@ public:
 
     BT_EntityTriangleMesh(ModelInstance* model);
     BT_EntityTriangleMesh(MeshInstance* mesh);
-    BT_EntityTriangleMesh(std::unordered_map<std::string, MeshInstance*> meshes);
     ~BT_EntityTriangleMesh();
 
     int getTrigMaterial(int trigIdx) const;
@@ -59,8 +55,8 @@ public:
         return this->shape;
     }
 
-    const std::unordered_map<std::string, MeshInstance*>& getMeshes() {
-        return this->meshes;
+    MeshInstance* getRootMeshInstance() {
+        return this->rootNode;
     }
 };
 }

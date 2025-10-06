@@ -60,6 +60,12 @@ void write_glm_vec3(DataSerializer *buffer, const glm::vec3& val) {
     }
 }
 
+void write_glm_vec4(DataSerializer *buffer, const glm::vec4& val) {
+    for (uint32_t i = 0; i < 4; i++) {
+        LittleEndian::write(buffer, val[i]);
+    }
+}
+
 void write_glm_vec2(DataSerializer *buffer, const glm::vec2& val) {
     for (uint32_t i = 0; i < 2; i++) {
         LittleEndian::write(buffer, val[i]);
@@ -112,6 +118,14 @@ glm::mat4 read_glm_mat4(DataDeserializer *buffer) {
 glm::vec3 read_glm_vec3(DataDeserializer *buffer) {
     glm::vec3 result(1.0f);
     for (uint32_t i = 0; i < 3; i++) {
+        result[i] = LittleEndian::read<float>(buffer);
+    }
+    return result;
+}
+
+glm::vec4 read_glm_vec4(DataDeserializer *buffer) {
+    glm::vec4 result(1.0f);
+    for (uint32_t i = 0; i < 4; i++) {
         result[i] = LittleEndian::read<float>(buffer);
     }
     return result;

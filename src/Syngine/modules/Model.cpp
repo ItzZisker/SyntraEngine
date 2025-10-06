@@ -1,7 +1,7 @@
 #include "Model.hpp"
 
 #include "Mesh.hpp"
-#include "Syngine/modules/Material.hpp"
+#include "Material.hpp"
 #include "Texture.hpp"
 
 #include "Syngine/serialization/DataSerializer.hpp"
@@ -9,54 +9,45 @@
 #include "Syngine/utils/GameUtils.hpp"
 
 #ifdef USE_ASSIMP
-#include "assimp/matrix4x4.h"
+#include "assimp/vector3.h"
 #endif
 
 #include <filesystem>
 #include <unordered_map>
-#include <ostream>
 #include <cstdint>
+#include <ostream>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace syng;
 
+LocalNode::LocalNode(std::string name, glm::mat4 transform) : name(name), transform(transform) {}
+
+void LocalNode::purgeMeshes() {
+    for (auto nMesh : meshes) delete nMesh.mesh;
+    for (auto child : children) child.purgeMeshes();
+}
+
+bool LocalNode::hasMesh() {
+    return !meshes.empty();
+}
+
+bool LocalNode::isEmpty() {
+    return meshes.empty() && children.empty();
+}
+
 Model::Model() {}
 
 Model::~Model() {
-    meshGroups.clear();
-    for (auto& mesh : meshes) delete mesh.second;
-    meshes.clear();
+    rootNode.purgeMeshes();
     for (Material *mat : materialById) delete mat;
     materialById.clear();
     uploaded = false;
 }
 
 void Model::uploadVertices(CacheApproach::VRAM_Approach approach) {
-    if (meshes.empty()) return;
-    for (const auto& pair : meshes) { pair.second->init(approach); }
-    groupMeshes();
     uploaded = true;
-}
-
-void Model::groupMeshes() {
-    meshGroups.clear();
-    for (const auto& [name, meshPtr] : meshes) {
-        meshGroups[name][name] = meshPtr;
-    }
-    // meshGroups.clear();
-    // std::regex baseNameRegex(R"(^(.*)-\d+$)");
-
-    // for (const auto& [name, meshPtr] : meshes) {
-    //     std::smatch match;
-    //     std::string baseName = name;
-
-    //     if (std::regex_match(name, match, baseNameRegex) && match.size() == 2) {
-    //         baseName = match[1]; // Extract "Cube.042" from "Cube.042-0"
-    //     }
-    //     meshGroups[baseName][name] = meshPtr;
-    // }
 }
 
 void Model::serialize(PackedWriter writer) {
@@ -81,7 +72,7 @@ TexelPairs& AssimpReader::getCachedTextures() {
 }
 
 void AssimpReader::read(Model* model) {
-    if (model->isUploaded() || !model->meshes.empty()) return;
+    if (model->isUploaded() || !model->rootNode.isEmpty()) return;
 
     stbi_set_flip_vertically_on_load(flipTextures);
 
@@ -92,25 +83,40 @@ void AssimpReader::read(Model* model) {
         std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
         return;
     }
-    processNode(model, scene->mRootNode, scene, aiMatrix4x4());
+    processNode(model, scene->mRootNode, scene, model->rootNode, 0);
 }
 
-void AssimpReader::processNode(Model *model, aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform) {
-    aiMatrix4x4 currentTransform = parentTransform * node->mTransformation;
+void AssimpReader::processNode(Model* model, aiNode* node, const aiScene* scene, LocalNode& gNode, int depth) {
+    gNode.name = std::string(node->mName.C_Str());
+    gNode.transform = glm::mat4(GameUtils::convertToGLMMatrix(node->mTransformation));
+
+    std::string indent(depth * 2, ' ');
+    std::cout << indent << "Node: " << gNode.name << "\n";
+    std::cout << indent << "Transform: " << GameUtils::hash_glm_mat4(gNode.transform) << std::endl;
 
     for (uint32_t i = 0; i < node->mNumMeshes; i++) {
-        aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
-        glm::mat4 glmTransform = GameUtils::convertToGLMMatrix(currentTransform);
+        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+        std::string meshName = std::string(mesh->mName.C_Str());
+        if (meshName.empty()) meshName = "Unnamed";
 
-        std::string key = std::string(node->mName.C_Str()) + "_" + std::to_string(i);
-        model->meshes[key] = processMesh(model, mesh, scene, glmTransform);
+        std::cout << indent << "  ├─ Mesh: " << meshName << "\n";
+
+        gNode.meshes.push_back({
+            .name = meshName,
+            .mesh = processMesh(model, mesh, scene),
+        });
     }
+
     for (uint32_t i = 0; i < node->mNumChildren; i++) {
-        processNode(model, node->mChildren[i], scene, currentTransform);
+        LocalNode child("Unnamed");
+        std::cout << indent << "  └─ Child " << i + 1 << ":\n";
+        processNode(model, node->mChildren[i], scene, child, depth + 1);
+        gNode.children.push_back(child);
     }
 }
 
-Mesh* AssimpReader::processMesh(Model *model, aiMesh *mesh, const aiScene *scene, const glm::mat4& transform) {
+
+Mesh* AssimpReader::processMesh(Model *model, aiMesh *mesh, const aiScene *scene) {
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
     TexelPairs textures;
@@ -138,15 +144,12 @@ Mesh* AssimpReader::processMesh(Model *model, aiMesh *mesh, const aiScene *scene
             vec.y = mesh->mTextureCoords[0][i].y;
             vertex.texCoords = vec;
 
-            vector.x = mesh->mTangents[i].x;
-            vector.y = mesh->mTangents[i].y;
-            vector.z = mesh->mTangents[i].z;
-            vertex.tangent = vector;
+            aiVector3D T = mesh->mTangents[i], B = mesh->mBitangents[i];
 
-            vector.x = mesh->mBitangents[i].x;
-            vector.y = mesh->mBitangents[i].y;
-            vector.z = mesh->mBitangents[i].z;
-            vertex.bitangent = vector;
+            glm::vec3 Tglm = glm::vec3(T.x, T.y, T.z);
+            glm::vec3 Bglm = glm::vec3(B.x, B.y, B.z);
+
+            vertex.tangent = glm::vec3(Tglm) * glm::dot(glm::cross(vertex.normal, Tglm), Bglm);
         } else {
             vertex.texCoords = glm::vec2(0.0f, 0.0f);
         }
@@ -209,8 +212,8 @@ Mesh* AssimpReader::processMesh(Model *model, aiMesh *mesh, const aiScene *scene
         }
     }
 
-    Mesh* result = new Mesh(vertices, indices, transform);
-    result->material = model->materialById[mesh->mMaterialIndex];
+    Mesh* result = new Mesh(vertices, indices);
+    result->setMaterial(model->materialById[mesh->mMaterialIndex]);
 
     return result;
 }
@@ -284,7 +287,6 @@ void PackedReader::read(Model* model) {
     uint32_t map_size = DataTemplates::read_uint32(buffer);
     for (uint32_t i = 0; i < map_size; i++) {
         std::string meshKey = DataTemplates::read_string(buffer);
-        glm::mat4 parentToNodeTransform = DataTemplates::read_glm_mat4(buffer);
 
         std::vector<Vertex> vertices = DataTemplates::read_vector<Vertex>(buffer, [&]() {
             Vertex result;
@@ -292,7 +294,6 @@ void PackedReader::read(Model* model) {
             result.normal = DataTemplates::read_glm_vec3(buffer);
             result.texCoords = DataTemplates::read_glm_vec2(buffer);
             result.tangent = DataTemplates::read_glm_vec3(buffer);
-            result.bitangent = DataTemplates::read_glm_vec3(buffer);
             for (uint32_t i = 0; i < MAX_BONE_INFLUENCE; i++) {
                 result.m_BoneIDs[i] = DataTemplates::read_int32(buffer);
                 result.m_Weights[i] = DataTemplates::read_float(buffer);
@@ -305,10 +306,10 @@ void PackedReader::read(Model* model) {
 
         int materialID = DataTemplates::read_int32(buffer);
 
-        Mesh* mesh = new Mesh(vertices, indices, parentToNodeTransform);
-        mesh->material = materialID == -1 ? FallbackMaterial::Default : materialsByID[materialID];
+        Mesh* mesh = new Mesh(vertices, indices);
+        mesh->setMaterial(materialID == -1 ? FallbackMaterial::Default : materialsByID[materialID]);
 
-        model->meshes.insert({meshKey, mesh});
+        //model->meshes.insert({meshKey, mesh});
     }
     model->materialById = materialsByID;
     DataTemplates::pop(buffer, "Model", PCK_FOOTER_MODEL);
@@ -345,32 +346,30 @@ void PackedWriter::write(Model* model) {
         }
     });
 
-    DataTemplates::write_uint32(buffer, model->meshes.size());
-    for (auto& pair : model->meshes) {
-        std::string meshKey = pair.first;
+    // DataTemplates::write_uint32(buffer, model->meshes.size());
+    // for (auto& pair : model->meshes) {
+    //     std::string meshKey = pair.first;
     
-        Mesh* mesh = pair.second;
-        std::vector<Vertex> vertices = mesh->getVertices();
-        std::vector<GLuint> indices = mesh->getIndices();
+    //     Mesh* mesh = pair.second;
+    //     std::vector<Vertex> vertices = mesh->getVertices();
+    //     std::vector<GLuint> indices = mesh->getIndices();
 
-        DataTemplates::write_string(buffer, meshKey);
-        DataTemplates::write_glm_mat4(buffer, mesh->getParentToNodeTransform());
-        DataTemplates::write_vector<Vertex>(buffer, vertices, [&](const Vertex& v){
-            DataTemplates::write_glm_vec3(buffer, v.position);
-            DataTemplates::write_glm_vec3(buffer, v.normal);
-            DataTemplates::write_glm_vec2(buffer, v.texCoords);
-            DataTemplates::write_glm_vec3(buffer, v.tangent);
-            DataTemplates::write_glm_vec3(buffer, v.bitangent);
-            for (uint32_t i = 0; i < MAX_BONE_INFLUENCE; i++) { 
-                DataTemplates::write_int32(buffer, v.m_BoneIDs[i]);
-                DataTemplates::write_float(buffer, v.m_Weights[i]);
-            }
-        });
-        DataTemplates::write_vector<GLuint>(buffer, indices, [&](const GLuint& index){
-            LittleEndian::write<GLuint>(buffer, index);
-        });
-        DataTemplates::write_int32(buffer, mesh->getMaterialId());
-    }
+    //     DataTemplates::write_string(buffer, meshKey);
+    //     DataTemplates::write_vector<Vertex>(buffer, vertices, [&](const Vertex& v){
+    //         DataTemplates::write_glm_vec3(buffer, v.position);
+    //         DataTemplates::write_glm_vec3(buffer, v.normal);
+    //         DataTemplates::write_glm_vec2(buffer, v.texCoords);
+    //         DataTemplates::write_glm_vec3(buffer, v.tangent);
+    //         for (uint32_t i = 0; i < MAX_BONE_INFLUENCE; i++) { 
+    //             DataTemplates::write_int32(buffer, v.m_BoneIDs[i]);
+    //             DataTemplates::write_float(buffer, v.m_Weights[i]);
+    //         }
+    //     });
+    //     DataTemplates::write_vector<GLuint>(buffer, indices, [&](const GLuint& index){
+    //         LittleEndian::write<GLuint>(buffer, index);
+    //     });
+    //     DataTemplates::write_int32(buffer, mesh->getMaterialId());
+    // }
 
     DataTemplates::write_uint16(buffer, PCK_FOOTER_MODEL);
 }

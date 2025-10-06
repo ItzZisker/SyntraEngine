@@ -105,10 +105,6 @@ void main() {
 
     if (parallax) {
         texCoords = calculateParallax(fs_in.TexCoords, normalize(fs_in.TBN * -viewDir));
-
-        // if (texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0) {
-        //     discard;
-        // }
     } else {
         texCoords = fs_in.TexCoords;
     }
@@ -133,17 +129,12 @@ void main() {
     }
 #endif
 
-    // if (parallax) {
-    //     FragColor = vec4(100.0, 0.0, 0.0, opacity);
-    // } else {
-        FragColor = vec4(result, opacity);
-    // }
+    FragColor = vec4(result, opacity);
 }
 
 float sampleShininess(vec2 texCoords) {
     if (roughness) { 
         vec3 texColor = texture(texture_roughness1, texCoords).rgb;
-        //float roughnessValue = dot(texColor, vec3(0.299, 0.587, 0.114));
         return mix(8.0, 32.0, 1.0 - ((texColor.r - 0.5) * max(roughnessConstrant, 0)) + 0.5);
     } else {
         return shininess;
@@ -175,6 +166,11 @@ vec2 calculateParallax(vec2 texCoords, vec3 viewDir) {
     vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
 
     return finalTexCoords;
+}
+
+float calculateSpec(vec3 normal, vec3 halfwayDir, vec2 texCoords) {
+    float shininess = sampleShininess(texCoords);
+    return (( 8.0 + shininess ) / ( 8.0 * 3.14159265 )) * pow(max(dot(normal, halfwayDir), 0.0), shininess);
 }
 
 #if HAS_SHADOWS
@@ -219,9 +215,7 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir, vec2 texCoor
 
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = texture(texture_diffuse1, texCoords).rgb * diff * light.diffuse;
-
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), sampleShininess(texCoords));
-    vec3 specular = texture(texture_specular1, texCoords).rgb * spec * light.specular;
+    vec3 specular = texture(texture_specular1, texCoords).rgb * calculateSpec(normal, halfwayDir, texCoords) * light.specular;
 
     // spotlight (soft edges)
     float theta = dot(lightDir, normalize(-light.direction));
@@ -246,11 +240,10 @@ vec3 calculateDirectionalLight(DirLight light, vec3 normal, vec3 viewDir, vec2 t
     vec3 halfwayDir = normalize(lightDir + viewDir);
 
     float diff = max(dot(normal, lightDir), 0.0);
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), sampleShininess(texCoords));
     
     vec3 ambient = light.ambient * vec3(texture(texture_diffuse1, texCoords));
     vec3 diffuse = light.diffuse * diff * vec3(texture(texture_diffuse1, texCoords));
-    vec3 specular = light.specular * spec * vec3(texture(texture_specular1, texCoords));
+    vec3 specular = light.specular * calculateSpec(normal, halfwayDir, texCoords) * vec3(texture(texture_specular1, texCoords));
 
 #if HAS_SHADOWS
     return (ambient + (1.0 - shadowStrength * calculateShadow(light, normal, fs_in.FragPosLightSpace)) * (diffuse + specular));
@@ -264,15 +257,14 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 viewDir, vec2 texCo
     vec3 lightDir = normalize(light.position - fragPos);
     vec3 halfwayDir = normalize(lightDir + viewDir);
 
+    vec3 ambient = light.ambient * vec3(texture(texture_diffuse1, texCoords));
+
     float diff = max(dot(normal, lightDir), 0.0);
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), sampleShininess(texCoords));
+    vec3 diffuse = light.diffuse * diff * vec3(texture(texture_diffuse1, texCoords));
+    vec3 specular = light.specular * calculateSpec(normal, halfwayDir, texCoords) * vec3(texture(texture_specular1, texCoords));
 
     float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
-
-    vec3 ambient = light.ambient * vec3(texture(texture_diffuse1, texCoords));
-    vec3 diffuse = light.diffuse * diff * vec3(texture(texture_diffuse1, texCoords));
-    vec3 specular = light.specular * spec * vec3(texture(texture_specular1, texCoords));
 
     ambient *= attenuation;
     diffuse *= attenuation;

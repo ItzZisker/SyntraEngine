@@ -3,7 +3,6 @@
 
 #include "Syngine/modules/ModelInstance.hpp"
 #include "Syngine/modules/MeshInstance.hpp"
-#include "Syngine/modules/Mesh.hpp"
 #include "Syngine/world/World.hpp"
 #include "Syngine/world/Coordination.hpp"
 #include "Syngine/utils/GameUtils.hpp"
@@ -12,11 +11,11 @@
 
 using namespace syng;
 
-BT_EntityConvexHull::BT_EntityConvexHull(BT_World* world, float mass, MeshInstance* mesh) 
-    : mass(mass), meshes({{"ROOT", mesh}}) {}
+BT_EntityConvexHull::BT_EntityConvexHull(BT_World* world, float mass, MeshInstance* meI) 
+    : mass(mass), rootNode(meI) {}
 
 BT_EntityConvexHull::BT_EntityConvexHull(BT_World* world, float mass, ModelInstance* model) 
-    : mass(mass), meshes(model->getMeshInstances()->asMap()) {}
+    : mass(mass), rootNode(model->getRoot()) {}
 
 BT_EntityConvexHull::~BT_EntityConvexHull() {
     delete body;
@@ -30,41 +29,28 @@ const glm::mat4 BT_EntityConvexHull::onMotionState() {
 }
 
 void BT_EntityConvexHull::load(bool enablePolyhedral) {
+    pushLeafParents(rootNode, {});
 
     int numPoints = 0;
-    for (const auto& it : meshes) {
-        MeshInstance* instance = it.second;
-        if (instance->getSelf()) {
-            numPoints += instance->getSelf()->getVertices().size();
-        } else {
-            instance->getChildren()->forEach([&](const std::string& key, MeshInstance *child){
-                numPoints += child->getSelf()->getVertices().size();
-            });
-        }
-    }
+    getNumPoints(rootNode, numPoints);
 
     float* points = new float[3 * numPoints];
     int i = 0;
 
-    auto emplaceFunc = [&](glm::mat4 transform, std::vector<Vertex>& vertices) {
-        for (const Vertex& vertex : vertices) {
-            glm::vec4 vec = glm::vec4(vertex.position, 1.0f) * transform;
-            points[i++] = vec[0];
-            points[i++] = vec[1];
-            points[i++] = vec[2];
-        }
-    };
+    for (auto pair : leafParents) {
+        MeshInstance *leaf = pair.first;
+        glm::mat4 transform = getWorldTransform(leaf);
 
-    for (const auto& it : meshes) {
-        MeshInstance* instance = it.second;
-        if (instance->getSelf()) {
-            emplaceFunc(instance->getTransform(), instance->getSelf()->getVertices());
-        } else {
-            instance->getChildren()->forEach([&](const std::string& key, MeshInstance *child){
-                emplaceFunc(instance->getTransform() * child->getTransform(), child->getSelf()->getVertices());
-            });
+        for (auto nMesh : leaf->getMeshes()) {
+            for (const Vertex& vertex : nMesh.mesh->getVertices()) {
+                glm::vec4 vec = glm::vec4(vertex.position, 1.0f) * transform;
+                points[i++] = vec[0];
+                points[i++] = vec[1];
+                points[i++] = vec[2];
+            }
         }
     }
+
     shape = new btConvexHullShape(points, numPoints, 3 * sizeof(float));   
     shape->setMargin(0.05f);
 
@@ -84,5 +70,7 @@ void BT_EntityConvexHull::load(bool enablePolyhedral) {
     if (hasRollingFriction) body->setRollingFriction(rollingFriction);
     body->setFriction(1.0f);
     body->setDamping(0.8f, 0.2f);
+
+    purgeLeafParents();
 }
 #endif

@@ -91,6 +91,29 @@ protected:
 
         this->transform = T * R * S * O;
     }
+private:
+    void decompose(const glm::mat3& m) {
+        this->transform = m;
+        this->position = glm::vec2(m[2]);
+
+        glm::vec2 col0 = glm::vec2(m[0]);
+        glm::vec2 col1 = glm::vec2(m[1]);
+
+        this->scale.x = glm::length(col0);
+        this->scale.y = glm::length(col1);
+
+        if (scale.x != 0) col0 /= scale.x;
+        if (scale.y != 0) col1 /= scale.y;
+
+        this->rotation = atan2(col0.y, col0.x);
+    }
+    void decompose(const glm::mat4& m) {
+        glm::mat3 m3;
+        m3[0] = glm::vec3(m[0]);
+        m3[1] = glm::vec3(m[1]);
+        m3[2] = glm::vec3(m[3]);
+        decompose(m3);
+    }
 public:
     Coordination2D(glm::vec2 position = glm::vec2(0.0f), float rotation = 0.0f, glm::vec2 scale = glm::vec2(1.0f)) 
         : position(position), rotation(rotation), scale(scale) {
@@ -114,6 +137,8 @@ public:
     float getRotation() const { return rotation; }
     glm::vec2 getOrigin() const { return origin; }
 
+    virtual void setTransform(const glm::mat4& transform) { decompose(transform); }
+    virtual void setTransform(const glm::mat3& transform) { decompose(transform); }
     virtual void setPosition(const glm::vec2& pos) { position = pos; updateTransform(); }
     virtual void addPosition(const glm::vec2& pos) { position += pos; updateTransform(); }
     virtual void setScale(const glm::vec2& scl) { scale = scl; updateTransform(); }
@@ -130,7 +155,7 @@ protected:
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 scale = glm::vec3(1.0f);
 
-    void updateTransform() {
+    virtual void updateTransform() {
         glm::vec3 forward = glm::normalize(direction);
         glm::vec3 right = glm::normalize(glm::cross(forward, up));
         glm::vec3 correctedUp = glm::normalize(glm::cross(right, forward));
@@ -147,8 +172,7 @@ protected:
 
         this->transform = T * rotation * S * O;
     }
-private:
-    void decompose(const glm::mat4& transform) {
+    virtual void decompose(const glm::mat4& transform) {
         this->transform = transform;
 
         glm::vec3 position = glm::vec3(transform[3]);
@@ -163,8 +187,6 @@ private:
         this->position = position;
         this->direction = glm::normalize(forward);
         this->up = glm::normalize(upVec);
-
-        updateTransform();
     }
 public:
     Coordination(glm::mat4 transform = glm::mat4(1.0f)) {
@@ -212,7 +234,7 @@ public:
         this->direction = glm::normalize(dir);
         updateTransform();
     }
-    virtual void setScale(const glm::vec3& scale) {
+    virtual void setScale(glm::vec3 scale) {
         this->scale = scale;
         updateTransform();
     }

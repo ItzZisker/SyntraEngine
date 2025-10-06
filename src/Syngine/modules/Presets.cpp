@@ -39,7 +39,7 @@ Mesh2D* Presets2D_newMeshQuad(Vertex2D min, Vertex2D max, Texture2D texture) {
         2, 1, 3,
         1, 0, 3
     };
-    Mesh2D* res = new Mesh2D(orderedVertices, indices, glm::mat4(1.0f));
+    Mesh2D* res = new Mesh2D(orderedVertices, indices);
     res->setTexture(texture);
 
     return res;

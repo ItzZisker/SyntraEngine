@@ -13,7 +13,6 @@ using namespace syng;
 Skybox::Skybox(Scene* scene, Shader& skyboxShader) : scene(scene), shader(skyboxShader) {}
 
 Skybox::~Skybox() {
-    shader.disposeProgram();
     delete cube;
 }
 

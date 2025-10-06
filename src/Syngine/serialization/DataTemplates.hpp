@@ -29,6 +29,7 @@ void write_string(DataSerializer* buffer, const std::string& value);
 void write_glm_mat3(DataSerializer* buffer, const glm::mat3& val);
 void write_glm_mat4(DataSerializer* buffer, const glm::mat4& val);
 void write_glm_vec3(DataSerializer* buffer, const glm::vec3& val);
+void write_glm_vec4(DataSerializer* buffer, const glm::vec4& val);
 void write_glm_vec2(DataSerializer* buffer, const glm::vec2& val);
 
 constexpr bool read_bool(DataDeserializer* buffer) { return buffer->readByte(); }
@@ -44,6 +45,7 @@ std::string read_string(DataDeserializer* buffer);
 glm::mat3 read_glm_mat3(DataDeserializer* buffer);
 glm::mat4 read_glm_mat4(DataDeserializer* buffer);
 glm::vec3 read_glm_vec3(DataDeserializer* buffer);
+glm::vec4 read_glm_vec4(DataDeserializer* buffer);
 glm::vec2 read_glm_vec2(DataDeserializer* buffer);
 
 template<typename T>

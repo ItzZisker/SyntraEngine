@@ -1,17 +1,24 @@
 #pragma once
 
 #include "Syngine/engine/RenderTable.hpp"
-#include "Syngine/modules/Material.hpp"
-#include "Syngine/modules/ModelInstance.hpp"
-#include "Syngine/modules/Scene.hpp"
-#include "Syngine/modules/Screenbuffer.hpp"
-#include "Syngine/modules/Shader.hpp"
+
+#include "Material.hpp"
+#include "ModelInstance.hpp"
+#include "Scene.hpp"
+#include "Screenbuffer.hpp"
+#include "Shader.hpp"
 
 #include <unordered_map>
-#include <map>
 
 namespace syng
 {
+
+class UIBatchRenderer : public ShaderRenderable
+{
+private:
+    Scene *scene;
+
+};
 
 class ModelBatchRenderer : public ShaderRenderable
 {
@@ -30,7 +37,6 @@ public:
     void add(std::string key, ModelInstance *mI);
     void remove(std::string key);
 
-    RenderTable<ModelInstance>* getInstances();
     std::unordered_map<Material*, std::vector<MeshInstance*>>& getMeshesByMaterial(ModelInstance *mI);
 };
 

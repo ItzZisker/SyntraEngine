@@ -7,8 +7,6 @@
 #include "Screenbuffer.hpp"
 #include "Shader.hpp"
 
-#include "Syngine/world/Coordination.hpp"
-
 #include "glm/fwd.hpp"
 
 #include <string>
@@ -16,19 +14,14 @@
 
 using namespace syng;
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, glm::mat4 parenToNodeTransform)
-    : GLVertexElement<Vertex>(vertices, indices), parentToNodeTransform(parenToNodeTransform) {}
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices) : GLVertexElement<Vertex>(vertices, indices) {}
 
-glm::mat4 Mesh::getParentToNodeTransform() {
-    return this->parentToNodeTransform;
+void Mesh::setMaterial(Material *mat) {
+    this->material = mat;
 }
 
-Coordination Mesh::getParentToNodeCoords() {
-    return {getParentToNodeTransform()};
-}
-
-int Mesh::getMaterialId() {
-    return this->material->getID();
+Material* Mesh::getMaterial() {
+    return this->material;
 }
 
 void Mesh::init(CacheApproach::VRAM_Approach approach) {
@@ -40,9 +33,8 @@ void Mesh::init(CacheApproach::VRAM_Approach approach) {
             attribute({1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal)});
             attribute({2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoords)});
             attribute({3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, tangent)});
-            attribute({4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, bitangent)});
-            attribute({5, MAX_BONE_INFLUENCE, GL_INT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, m_BoneIDs), GLPointer_Int32});
-            attribute({6, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, m_Weights)});
+            attribute({4, MAX_BONE_INFLUENCE, GL_INT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, m_BoneIDs), GLPointer_Int32});
+            attribute({5, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, m_Weights)});
             reserve();
         break;
         case CacheApproach::Interleaved:        
@@ -56,7 +48,6 @@ void Mesh::init(CacheApproach::VRAM_Approach approach) {
             float* normals     = new float[vec3fLength];
             float* texCoords   = new float[vec2fLength];
             float* tangents    = new float[vec3fLength];
-            float* biTangents  = new float[vec3fLength];
             float* m_Weights   = new float[boneLength];
             int* m_BoneIDs     = new int[boneLength];
 
@@ -78,10 +69,6 @@ void Mesh::init(CacheApproach::VRAM_Approach approach) {
                 tangents[i * 3 + 1] = v.tangent.y;
                 tangents[i * 3 + 2] = v.tangent.z;
 
-                biTangents[i * 3 + 0] = v.bitangent.x;
-                biTangents[i * 3 + 1] = v.bitangent.y;
-                biTangents[i * 3 + 2] = v.bitangent.z;
-
                 for (int j = 0; j < MAX_BONE_INFLUENCE; ++j) {
                     m_BoneIDs[i * MAX_BONE_INFLUENCE + j] = v.m_BoneIDs[j];
                     m_Weights[i * MAX_BONE_INFLUENCE + j] = v.m_Weights[j];
@@ -98,8 +85,6 @@ void Mesh::init(CacheApproach::VRAM_Approach approach) {
             offset += vec2fLength * sizeof(float);
             dataSub({offset, static_cast<GLsizeiptr>(vec3fLength * sizeof(float)), tangents});
             offset += vec3fLength * sizeof(float);
-            dataSub({offset, static_cast<GLsizeiptr>(vec3fLength * sizeof(float)), biTangents});
-            offset += vec3fLength * sizeof(float);
             dataSub({offset, static_cast<GLsizeiptr>(boneLength * sizeof(int)), m_BoneIDs});
             offset += boneLength * sizeof(int);
             dataSub({offset, static_cast<GLsizeiptr>(boneLength * sizeof(float)), m_Weights});
@@ -115,8 +100,6 @@ void Mesh::init(CacheApproach::VRAM_Approach approach) {
             offset += vec2fLength * sizeof(float);
             attribute({attribIndex++, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
             offset += vec3fLength * sizeof(float);
-            attribute({attribIndex++, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
-            offset += vec3fLength * sizeof(float);
             attribute({attribIndex++, MAX_BONE_INFLUENCE, GL_INT, GL_FALSE, 0, (void*)(offset), GLPointer_Int32});
             offset += boneLength * sizeof(int);
             attribute({attribIndex++, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
@@ -127,28 +110,17 @@ void Mesh::init(CacheApproach::VRAM_Approach approach) {
             delete[] normals;
             delete[] texCoords;
             delete[] tangents;
-            delete[] biTangents;
             delete[] m_Weights;
             delete[] m_BoneIDs;
         break;
     }
 }
 
-Mesh2D::Mesh2D(std::vector<Vertex2D> vertices, std::vector<GLuint> indices, glm::mat4 parentToNodeTransform) : GLVertexElement<Vertex2D>(vertices, indices) {
-    this->parentToNodeTransform = parentToNodeTransform;
-}
+Mesh2D::Mesh2D(std::vector<Vertex2D> vertices, std::vector<GLuint> indices) : GLVertexElement<Vertex2D>(vertices, indices) {}
 
 Mesh2D::~Mesh2D() {
     if (texture_fallback) glDeleteTextures(1, &texture_fallback);
     if (meshTexture.TCB) glDeleteTextures(1, &meshTexture.TCB);
-}
-
-glm::mat4 Mesh2D::getParentToNodeTransform() {
-    return this->parentToNodeTransform;
-}
-
-Coordination Mesh2D::getParentToNodeCoords() {
-    return Coordination(getParentToNodeTransform());
 }
 
 void Mesh2D::setFallbackTCB(GLuint TCB) {

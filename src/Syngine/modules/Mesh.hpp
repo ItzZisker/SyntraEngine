@@ -6,8 +6,6 @@
 #include "Shader.hpp"
 #include "Material.hpp"
 
-#include "Syngine/world/Coordination.hpp"
-
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -19,12 +17,11 @@
 namespace syng
 {
 
-namespace CacheApproach
-{
-enum VRAM_Approach {
-    Sequential,
-    Interleaved
-};
+namespace CacheApproach {
+    enum VRAM_Approach {
+        Sequential,
+        Interleaved
+    };
 }
 
 struct Vertex {
@@ -32,7 +29,6 @@ struct Vertex {
     glm::vec3 normal;
     glm::vec2 texCoords;
     glm::vec3 tangent;
-    glm::vec3 bitangent;
 	int m_BoneIDs[MAX_BONE_INFLUENCE];
 	float m_Weights[MAX_BONE_INFLUENCE];
 };
@@ -44,15 +40,12 @@ struct Vertex2D {
 
 class Mesh : public GLVertexElement<Vertex> {
 private:
-    glm::mat4 parentToNodeTransform;
-public:
     Material *material = FallbackMaterial::Default;
+public:
+    Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices);
 
-    Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, glm::mat4 parentToNodeTransform);
-
-    glm::mat4 getParentToNodeTransform();
-    Coordination getParentToNodeCoords();
-    int getMaterialId();
+    void setMaterial(Material *mat);
+    Material *getMaterial();
 
     void render(Shader& shader, Screenbuffer screen, glm::mat4 transform);
     void init(CacheApproach::VRAM_Approach = CacheApproach::Sequential);
@@ -64,15 +57,11 @@ public:
 // - Unfolded Spherical One-Pass Shadow Maps
 class Mesh2D : public GLVertexElement<Vertex2D> {
 private:
-    glm::mat4 parentToNodeTransform = glm::mat4(1.0f);
     GLuint texture_fallback = 0;
     Texture2D meshTexture = {0};
 public:
-    Mesh2D(std::vector<Vertex2D> vertices, std::vector<GLuint> indices, glm::mat4 parentToNodeTransform);
+    Mesh2D(std::vector<Vertex2D> vertices, std::vector<GLuint> indices);
     ~Mesh2D();
-
-    glm::mat4 getParentToNodeTransform();
-    Coordination getParentToNodeCoords();
 
     void setFallbackTCB(GLuint TCB);
     void setFallbackColor(GLubyte pixel[4]);

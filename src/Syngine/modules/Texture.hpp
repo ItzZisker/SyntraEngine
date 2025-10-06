@@ -23,6 +23,15 @@ constexpr uint16_t PCK_FOOTER_TEX2D_MESH = 107;
 constexpr uint16_t PCK_HEADER_TEXQBMP = 108;
 constexpr uint16_t PCK_FOOTER_TEXQBMP = 109;
 
+// class Texture2D {
+// private:
+//     std::vector<uint8_t> bytes;
+//     GLuint TCB;
+// public:
+//     Texture2D(std::vector<uint8_t> &bytes);
+//     void uploadBytes();
+// }
+
 struct Texture2D {
     GLuint TCB = 0;
     std::string path;
