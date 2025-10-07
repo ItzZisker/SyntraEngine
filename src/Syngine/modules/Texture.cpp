@@ -1,9 +1,10 @@
 #include "Texture.hpp"
 
+#include "Syngine/engine/TaskQueue.hpp"
+
 #include "Syngine/modules/Model.hpp"
 #include "Syngine/modules/Presets.hpp"
 
-#include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/serialization/DataSerializer.hpp"
 #include "Syngine/serialization/DataTemplates.hpp"
 
@@ -11,7 +12,9 @@
 #include <fstream>
 #include <future>
 #include <iostream>
+#include <ostream>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 using namespace syng;
@@ -70,18 +73,35 @@ void TextureWriter::writeTextureCubemap(std::string paths[6], std::vector<uint8_
     DataTemplates::write_uint16(buffer, PCK_FOOTER_TEXQBMP);
 }
 
-void TextureWriter::writeMeshTexture2D(MeshTexture2D meshTex2D) {
+void TextureWriter::writeMeshTexture2D(MaterialTexture2D_T texType, Texture2D texel) {
     DataTemplates::write_uint16(buffer, PCK_HEADER_TEX2D_MESH);
-    TextureWriter::writeTexture2D(meshTex2D.texture);
-    DataTemplates::write_int32(buffer, meshTex2D.type);
+    TextureWriter::writeTexture2D(texel);
+    DataTemplates::write_int32(buffer, texType);
     DataTemplates::write_uint16(buffer, PCK_FOOTER_TEX2D_MESH);
 }
 
-void TextureWriter::writeMeshTexture2D(std::string path, std::vector<uint8_t> bytes, MeshTexture2D_T type) {
+void TextureWriter::writeMeshTexture2D(std::string path, std::vector<uint8_t> bytes, MaterialTexture2D_T type) {
     DataTemplates::write_uint16(buffer, PCK_HEADER_TEX2D_MESH);
     TextureWriter::writeTexture2D(path, bytes);
     DataTemplates::write_int32(buffer, type);
     DataTemplates::write_uint16(buffer, PCK_FOOTER_TEX2D_MESH);
+}
+
+void syng::TCBPlainColor(unsigned int &TCB, unsigned char pixel[4]) {
+    glGenTextures(1, &TCB);
+    glBindTexture(GL_TEXTURE_2D, TCB);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+    PresetsTexel::TextureFilter(GL_TEXTURE_2D, GL_NEAREST);
+    PresetsTexel::TextureParamST(GL_TEXTURE_2D, GL_REPEAT);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+GLuint syng::TCBByPlainColor(unsigned char pixel[4]) {
+    GLuint TCB;
+    std::cout << "TCB before = " << TCB << std::endl;
+    TCBPlainColor(TCB, pixel);
+    std::cout << "TCB after = " << TCB << std::endl;
+    return TCB;
 }
 
 TextureCubemap syng::loadTextureCubemap(std::vector<std::filesystem::path> paths) {
@@ -112,23 +132,12 @@ TextureCubemap syng::loadTextureCubemap(DataDeserializer *buffer) {
     return tex;
 }
 
-MeshTexture2D syng::loadMeshTexture2D(const std::filesystem::path& path, MeshTexture2D_T type) {
-    MeshTexture2D mT;
-    mT.texture.TCB = TCBFromFile(path);
-    mT.texture.path = path.string();
-    mT.type = type;
-    return mT;
-}
-
-MeshTexture2D syng::loadMeshTexture2D(DataDeserializer *buffer) {
+std::pair<MaterialTexture2D_T, Texture2D> syng::loadMeshTexture2D(DataDeserializer *buffer) {
     DataTemplates::push(buffer, "MeshTexture2D", PCK_HEADER_TEX2D_MESH);
-    
-    MeshTexture2D mT;
-    mT.texture = loadTexture2D(buffer);
-    mT.type = static_cast<MeshTexture2D_T>(DataTemplates::read_int32(buffer));
-
+    Texture2D texel = loadTexture2D(buffer);
+    MaterialTexture2D_T texType = static_cast<MaterialTexture2D_T>(DataTemplates::read_int32(buffer));
     DataTemplates::pop(buffer, "MeshTexture2D", PCK_FOOTER_TEX2D_MESH);
-    return mT;
+    return {texType, texel};
 }
 
 Texture2D syng::loadTexture2D(const std::filesystem::path& path) {
@@ -164,16 +173,16 @@ GLuint syng::TCBFromBytes(uint8_t *raw, int width, int height, int nrComponents)
         case 4: format = GL_RGBA; break;
         default: return 0;
     }
-    GLenum internalFormat = (nrComponents == 3) ? GL_SRGB8 : (nrComponents == 4) ? GL_RGBA8 : GL_R8;
+    GLenum internalFormat = (nrComponents == 3) ? GL_RGB8 : (nrComponents == 4) ? GL_RGBA8 : GL_R8;
 
     glGenTextures(1, &TCB);
     glBindTexture(GL_TEXTURE_2D, TCB);
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, raw);
-    //glGenerateMipmap(GL_TEXTURE_2D);
+    glGenerateMipmap(GL_TEXTURE_2D);
 
     PresetsTexel::TextureParamST(GL_TEXTURE_2D, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     return TCB;
 }

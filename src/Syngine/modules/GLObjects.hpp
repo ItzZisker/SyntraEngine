@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Syngine/utils/GameUtils.hpp"
+#include "glad/glad.h"
 
 #include <stdexcept>
 #include <vector>
@@ -45,6 +45,7 @@ public:
     ~GLVertex() {
         if (VBO) glDeleteBuffers(1, &VBO);
         if (VAO) glDeleteVertexArrays(1, &VAO);
+        vertices.clear();
     }
 
     void attribute(GLVertexAttribute attribute) {
@@ -63,7 +64,7 @@ public:
         return isReserved();
     }
 
-    virtual void reserve() {
+    virtual void reserve(GLenum bufferUsage = GL_STATIC_DRAW) {
         if (isReserved()) return;
 
         glGenVertexArrays(1, &VAO);
@@ -82,7 +83,7 @@ public:
             bufferSize = static_cast<GLsizeiptr>(vertices.size() * sizeof(V));
         }
 
-        glBufferData(GL_ARRAY_BUFFER, bufferSize, dataSubs.empty() ? &vertices[0] : nullptr, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, bufferSize, dataSubs.empty() ? &vertices[0] : nullptr, bufferUsage);
 
         for (const GLDataSub &sub : dataSubs) {
             glBufferSubData(GL_ARRAY_BUFFER, sub.offset, sub.size, sub.data);
@@ -135,6 +136,7 @@ public:
 
     ~GLVertexElement() {
         if (EBO) glDeleteBuffers(1, &EBO);
+        indices.clear();
     }
 
     bool isReserved() override {
@@ -145,13 +147,13 @@ public:
         return GLVertexElement::isReserved();
     }
     
-    void reserve() override {
+    void reserve(GLenum bufferUsage = GL_STATIC_DRAW) override {
         if (isReserved()) return;
         GLVertex<V>::reserve();
         glBindVertexArray(this->VAO);
         glGenBuffers(1, &this->EBO);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices[0], GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices[0], bufferUsage);
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

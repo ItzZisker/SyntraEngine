@@ -9,8 +9,6 @@
 #include "Syngine/modules/Scene.hpp"
 #include "Syngine/modules/Shader.hpp"
 
-#include "glm/glm.hpp"
-
 namespace syng
 {
 class Framebuffer : public Screenbuffer, public WindowRenderable {

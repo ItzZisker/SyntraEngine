@@ -22,7 +22,44 @@ namespace syng
 class BT_Entity : public Coordination, public WindowRenderable {
 protected:
     btRigidBody* body;
+    std::unordered_map<MeshInstance*, std::vector<MeshInstance*>> leafParents;
     std::unordered_map<std::string, std::function<void(const glm::mat4&)>> motionStateFunctions;
+
+    void getNumPoints(MeshInstance *meI, int& lastNumPoints) {
+        for (auto nMesh : meI->getMeshes()) {
+            lastNumPoints += nMesh.mesh->getVertices().size();
+        }
+        for (auto child : meI->getChildren()) {
+            getNumPoints(child, lastNumPoints);
+        }
+    }
+
+    void pushLeafParents(MeshInstance *meI, std::vector<MeshInstance*> parentList) {
+        leafParents.insert({meI, parentList});
+        for (MeshInstance *child : meI->getChildren()) {
+            parentList.push_back(meI);
+            pushLeafParents(child, parentList);
+            parentList.pop_back();
+        }
+    }
+
+    void purgeLeafParents() {
+        for (auto parentList : leafParents) {
+            parentList.second.clear();
+        }
+        leafParents.clear();
+    }
+
+    glm::mat4 getWorldTransform(MeshInstance* leaf) {
+        glm::mat4 world = glm::mat4(1.0f);
+        auto& ancestry = leafParents[leaf];
+
+        world *= leaf->getTransform();
+        for (auto node : ancestry) {
+            world *= node->getTransform();
+        }
+        return world;
+    }
 public:
     btRigidBody* getBody() {
         return this->body;

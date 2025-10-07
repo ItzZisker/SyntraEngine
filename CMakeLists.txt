@@ -3,6 +3,9 @@ project(Syngine VERSION 0.1.0 LANGUAGES C CXX)
 
 find_package(OpenGL REQUIRED COMPONENTS OpenGL)
 
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(USE_ASSIMP "Enable Assimp support" ON)
@@ -133,6 +136,14 @@ elseif(UNIX AND NOT APPLE)
     link_directories(${SDL_ROOT}/linux/bin)
 endif()
 
+# == FreeType Config ==
+# set(FREETYPE_ROOT "${CMAKE_SOURCE_DIR}/libs/freetype-2.14.1")
+# if (WIN32)
+#     include_directories(${FREETYPE_ROOT}/win32/include/freetype2)
+# elseif(UNIX AND NOT APPLE)
+#     include_directories(${FREETYPE_ROOT}/linux/include/freetype2)
+# endif()
+
 # === GLAD Config ===
 set(GLAD_ROOT "${CMAKE_SOURCE_DIR}/libs/glad-3.3")
 include_directories(${GLAD_ROOT}/include)
@@ -200,12 +211,14 @@ add_library(Syngine SHARED
     src/Syngine/serialization/DataSerializer.cpp
     src/Syngine/serialization/DataTemplates.cpp
 
+    src/Syngine/modules/BatchRenderer.cpp
+    src/Syngine/modules/Material.cpp
+    #src/Syngine/modules/TextUtil.cpp
     src/Syngine/modules/Texture.cpp
     src/Syngine/modules/Presets.cpp
     src/Syngine/modules/GLObjects.cpp
     src/Syngine/modules/ShadowMapper.cpp
     src/Syngine/modules/Screenbuffer.cpp
-    src/Syngine/modules/CubemapFramebuffer.cpp
     src/Syngine/modules/Framebuffer.cpp
     src/Syngine/modules/Scene.cpp
     src/Syngine/modules/Camera.cpp
@@ -232,8 +245,10 @@ set(common_libs SDL3)
 
 if (UNIX AND NOT APPLE)  # Linux
     list(APPEND common_libs glfw3 OpenGL::OpenGL Xrandr Xi dl)
+    #list(APPEND common_libs ${FREETYPE_ROOT}/linux/lib/libfreetype.a)
 elseif (WIN32)  # Windows
     list(APPEND common_libs opengl32)
+    #list(APPEND common_libs ${FREETYPE_ROOT}/win32/lib/libfreetype.a)
 elseif (APPLE)
     list(APPEND common_libs "-framework OpenGL" "-framework Cocoa" "-framework IOKit" "-framework CoreVideo")
 endif()
@@ -252,10 +267,18 @@ endif()
 
 target_link_libraries(${PROJECT_NAME} ${common_libs})
 
-set_target_properties(Syngine PROPERTIES
-    PREFIX ""
-    OUTPUT_NAME "Syng"
-)
+if (WIN32)
+    set_target_properties(Syngine PROPERTIES
+        PREFIX ""
+        OUTPUT_NAME "Syng"
+        VERSION ${PROJECT_VERSION}
+    )
+else()
+    set_target_properties(Syngine PROPERTIES
+        OUTPUT_NAME "Syng"
+        VERSION ${PROJECT_VERSION}
+    )
+endif()
 
 add_executable(sample_executable
     src/Syngine/sample/SampleCallbacks.cpp

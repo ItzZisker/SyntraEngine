@@ -4,6 +4,8 @@
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/engine/TaskQueue.hpp"
 #include "Syngine/modules/Shader.hpp"
+#include "Syngine/modules/Material.hpp"
+#include "Syngine/modules/Texture.hpp"
 
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_video.h"
@@ -90,6 +92,12 @@ int GameWindow::initLoop() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     initialized = true;
+
+    FallbackTexture::Diffuse = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
+    FallbackTexture::Specular = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
+    FallbackTexture::Normal = {TCBByPlainColor((uint8_t[4]){128, 128, 255, 255}), ""};
+    FallbackTexture::Height = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
+    FallbackTexture::Rough = {TCBByPlainColor((uint8_t[4]){128, 128, 128, 255}), ""};
 
     onCreate(width, height, false);
     for (auto& task : initTasks) {

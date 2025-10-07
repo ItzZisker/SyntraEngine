@@ -1,90 +1,94 @@
 #include "ModelInstance.hpp"
 
-#include "Model.hpp"
-#include "Mesh.hpp"
 #include "MeshInstance.hpp"
+#include "Model.hpp"
 #include "Scene.hpp"
-#include "Shader.hpp"
-#include "Screenbuffer.hpp"
 
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/world/Coordination.hpp"
-#include "Syngine/utils/GameUtils.hpp"
 
-#include <unordered_map>
+#include <vector>
 
 using namespace syng;
 
-ModelInstance::ModelInstance(Model* model) : model(model) {
-    meshInstances = new RenderTable<MeshInstance>();
-    for (auto& basePair : model->meshGroups) {
-        std::string baseName = basePair.first;
-        std::unordered_map<std::string, Mesh*> baseMap = basePair.second;
+ModelInstance::ModelInstance(Model* model) : model(model), root(new MeshInstance{model->rootNode}) {
+    pushLeafParents(root, {});
+}
 
-        meshInstances->add(baseName, new MeshInstance(baseMap));
+void ModelInstance::pushLeafParents(MeshInstance *meI, std::vector<MeshInstance*> parentList) {
+    if (!meI->getMeshes().empty()) {
+        leafParents.insert({meI, parentList});
+    }
+    for (MeshInstance *child : meI->getChildren()) {
+        parentList.push_back(meI);
+        pushLeafParents(child, parentList);
+        parentList.pop_back();
     }
 }
 
-ModelInstance::~ModelInstance() {
-    meshInstances->wipeAll();
-    delete meshInstances;
+glm::mat4 ModelInstance::getWorldTransform(MeshInstance* leaf, bool cacheFinalTransform) {
+    if (isTransformCached(leaf) && !leaf->isMarkedDirty()) {
+        return getCachedWorldTransform(leaf);
+    }
+
+    glm::mat4 world = this->transform;
+    auto& ancestry = leafParents[leaf];
+
+    int i = 0;
+    for (auto node : ancestry) {
+        world *= node->getTransform();
+        node->markDirty(false);
+    }
+    world *= leaf->getTransform();
+    leaf->markDirty(false);
+
+    if (cacheFinalTransform) {
+        cachedLeafFinalTransform.emplace(leaf, world);
+    }
+    return world;
+}
+
+glm::mat4 ModelInstance::getCachedWorldTransform(MeshInstance *leaf) {
+    return isTransformCached(leaf) ? cachedLeafFinalTransform[leaf] : glm::mat4(1.0f);
+}
+
+bool ModelInstance::isTransformCached(MeshInstance *leaf) {
+    return cachedLeafFinalTransform.find(leaf) != cachedLeafFinalTransform.end();
 }
 
 bool ModelInstance::shouldDiscard(Scene_T snapshot, const glm::mat4& transform) {
     bool shouldDiscard = true;
-    meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance){
-        if (meshInstance->getSelf()) {
-            if (!meshInstance->shouldDiscard(snapshot, meshInstance->getSelf()->getParentToNodeTransform() * transform)) {
-                shouldDiscard = false;
-            }
+    for (auto& pair : leafParents) {
+        glm::mat4 meshTransform(1.0f);
+        MeshInstance *leaf = pair.first;
+        if (isTransformCached(leaf) && !leaf->isMarkedDirty()) {
+            meshTransform = getCachedWorldTransform(leaf);
         } else {
-            if (!meshInstance->shouldDiscard(snapshot, transform)) {
-                shouldDiscard = false;
-            }
+            meshTransform = getWorldTransform(leaf);
         }
-    });
+        if (!leaf->shouldDiscard(snapshot, this->transform * meshTransform)) {
+            shouldDiscard = false;
+            break;
+        }
+    }
     return shouldDiscard;
 }
 
-void renderNonDiscardable(MeshInstance* meshInstance, Shader& shader, Scene_T snapshot, Screenbuffer screen, glm::mat4 parentTransform = glm::mat4(1.0f)) {
-    if (meshInstance->getSelf()) { // ROOT
-        if (!meshInstance->shouldDiscard(snapshot, meshInstance->getTransform() * parentTransform)) {
-            meshInstance->render(shader, screen, parentTransform);
-        }
-    } else {
-        meshInstance->getChildren()->forEach([&](const std::string key, MeshInstance *child){
-            renderNonDiscardable(child, shader, snapshot, screen, meshInstance->getTransform());
-        });
+void ModelInstance::setDiscard(MeshInstance* meI, bool shouldDiscard) {
+    auto it = discarded.find(meI);
+    if (!shouldDiscard && it != discarded.end()) {
+        discarded.erase(it);
+    } else if (shouldDiscard && it == discarded.end()) {
+        discarded.insert(meI);
     }
 }
 
-void ModelInstance::renderDV(Scene_T snapshot, Shader& shader, Screenbuffer screen) {
-    if (model->isLoaded()) {
-        meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance) {
-            if (!shouldDiscard(key)) renderNonDiscardable(meshInstance, shader, snapshot, screen);
-        });
-    }
+bool ModelInstance::shouldDiscard(MeshInstance* meI) {
+    return discarded.find(meI) != discarded.end();
 }
 
-void ModelInstance::render(Shader& shader, Screenbuffer screen) {
-    if (model->isLoaded()) {
-        meshInstances->forEach([&](const std::string& key, MeshInstance* meshInstance) {
-            if (!shouldDiscard(key)) meshInstance->render(shader, screen);
-        });
-    }
-}
-
-void ModelInstance::setDiscard(std::string mIKey, bool shouldDiscard) {
-    discardedInstances[mIKey] = shouldDiscard;
-}
-
-bool ModelInstance::shouldDiscard(std::string mIKey) {
-    auto p = discardedInstances.find(mIKey);
-    return p != discardedInstances.end() && p->second;
-}
-
-RenderTable<MeshInstance>* ModelInstance::getMeshInstances() {
-    return this->meshInstances;
+MeshInstance* ModelInstance::getRoot() {
+    return this->root;
 }
 
 Model* ModelInstance::getModel() {

@@ -12,13 +12,17 @@
 #ifdef USE_ASSIMP
 #include "assimp/matrix4x4.h"
 #endif
+
 #include <glm/glm.hpp>
 
 #include <string>
 
 namespace syng::GameUtils
 {
-    long currentTime();
+    uint64_t fnv1a64(const void* data, size_t size);
+    std::string hash_glm_mat4(const glm::mat4& m);
+
+    long currentNanoTime();
 
     void debugGLError();
     void debugGLError(const std::string& comment);

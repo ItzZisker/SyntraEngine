@@ -2,8 +2,6 @@
 #include "Skybox.hpp"
 #include "Presets.hpp"
 
-#include "Syngine/utils/GameUtils.hpp"
-
 using namespace syng;
 
 ShadowMapper::ShadowMapper(Shader& depthShader, GLuint width, GLuint height, glm::mat4 lightProj, glm::mat4 lightView) :

@@ -13,8 +13,8 @@ namespace PresetsTexel
 
 namespace Presets2D
 {
-    Mesh2D* newMeshQuad(Vertex2D corners[4], std::string pathToTexel = "");
-    Mesh2D* newMeshQuad(Vertex2D corners[4], GLuint TCB);
+    Mesh2D* newMeshQuad(Vertex2D min, Vertex2D max, std::string pathToTexel = "");
+    Mesh2D* newMeshQuad(Vertex2D min, Vertex2D max, GLuint TCB);
 }
 
 namespace Presets3D

@@ -1,6 +1,6 @@
 #include "DataTemplates.hpp"
 #include "DataSerializer.hpp"
-#include "Syngine/modules/Mesh.hpp"
+
 #include <stdexcept>
 
 namespace syng
@@ -22,7 +22,7 @@ void pop(DataDeserializer *buffer, std::string res, uint16_t footer) {
     }
 }
 
-void write_mesh_material(DataSerializer *buffer, MaterialProps material) {
+void write_material_props(DataSerializer *buffer, MaterialProps material) {
     write_glm_vec3(buffer, material.ior);
     write_float(buffer, material.shininess);
     write_float(buffer, material.minOpacity);
@@ -60,13 +60,19 @@ void write_glm_vec3(DataSerializer *buffer, const glm::vec3& val) {
     }
 }
 
+void write_glm_vec4(DataSerializer *buffer, const glm::vec4& val) {
+    for (uint32_t i = 0; i < 4; i++) {
+        LittleEndian::write(buffer, val[i]);
+    }
+}
+
 void write_glm_vec2(DataSerializer *buffer, const glm::vec2& val) {
     for (uint32_t i = 0; i < 2; i++) {
         LittleEndian::write(buffer, val[i]);
     }
 }
 
-MaterialProps read_mesh_material(DataDeserializer *buffer) {
+MaterialProps read_material_props(DataDeserializer *buffer) {
     MaterialProps res;
     res.ior = read_glm_vec3(buffer);
     res.shininess = read_float(buffer);
@@ -112,6 +118,14 @@ glm::mat4 read_glm_mat4(DataDeserializer *buffer) {
 glm::vec3 read_glm_vec3(DataDeserializer *buffer) {
     glm::vec3 result(1.0f);
     for (uint32_t i = 0; i < 3; i++) {
+        result[i] = LittleEndian::read<float>(buffer);
+    }
+    return result;
+}
+
+glm::vec4 read_glm_vec4(DataDeserializer *buffer) {
+    glm::vec4 result(1.0f);
+    for (uint32_t i = 0; i < 4; i++) {
         result[i] = LittleEndian::read<float>(buffer);
     }
     return result;

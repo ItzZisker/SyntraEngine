@@ -1,14 +1,17 @@
 #include "GameUtils.hpp"
 
-#include "Syngine/modules/ModelInstance.hpp"
 #include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/world/Coordination.hpp"
 
-#include "LinearMath/btTransform.h"
+#include <glad/glad.h>
+
 #include "glm/fwd.hpp"
 #include "glm/gtc/quaternion.hpp"
-#include <glad/glad.h>
+
+#include "LinearMath/btTransform.h"
+
 #include <iostream>
+#include <sstream>
 #include <chrono>
 
 #ifdef USE_ASSIMP
@@ -17,9 +20,25 @@
 
 using namespace syng;
 
-long GameUtils::currentTime() {
+uint64_t GameUtils::fnv1a64(const void* data, size_t size) {
+    const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data);
+    uint64_t hash = 1469598103934665603ULL; // FNV offset basis
+    for (size_t i = 0; i < size; ++i) {
+        hash ^= bytes[i];
+        hash *= 1099511628211ULL; // FNV prime
+    }
+    return hash;
+}
+
+std::string GameUtils::hash_glm_mat4(const glm::mat4& m) {
+    std::ostringstream oss;
+    oss << std::hex << fnv1a64(&m[0][0], sizeof(glm::mat4));
+    return oss.str();
+}
+
+long GameUtils::currentNanoTime() {
     namespace sc = std::chrono;
-    return sc::duration_cast<sc::milliseconds>(
+    return sc::duration_cast<sc::nanoseconds>(
         sc::system_clock::now().time_since_epoch()
     ).count();;
 }
@@ -115,12 +134,7 @@ bool GameUtils::shouldDiscard(ShaderRenderable* renderable, Scene* scene) {
 }
 
 void GameUtils::renderDV(ShaderRenderable *renderable, Scene_T snapshot, Shader& shader, Screenbuffer screen) {
-    if (GameUtils::shouldDiscard(renderable, snapshot)) {
-        return;
-    }
-    if (ModelInstance* mI = dynamic_cast<ModelInstance*>(renderable)) {
-        mI->renderDV(snapshot, shader, screen);
-    } else {
+    if (!GameUtils::shouldDiscard(renderable, snapshot)) {
         renderable->render(shader, screen);
     }
 }

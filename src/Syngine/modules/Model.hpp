@@ -19,24 +19,46 @@
 #endif
 
 #include <filesystem>
-#include <unordered_map>
 #include <string>
 #include <vector>
+#include <utility>
 
 namespace syng
 {
 constexpr uint16_t PCK_HEADER_MODEL = 100;
 constexpr uint16_t PCK_FOOTER_MODEL = 101;
 
-typedef std::unordered_map<std::string, Mesh*> MeshKeyedMap;
+using TexelPair = std::pair<MaterialTexture2D_T, Texture2D>;
+using TexelPairs = std::vector<TexelPair>;
+
 class Model;
+
+struct NamedMesh {
+    std::string name = "NONE";
+    Mesh* mesh = nullptr;
+};
+
+class LocalNode {
+public:
+    std::string name = "NONE";
+    glm::mat4 transform = glm::mat4(1.0f);
+    
+    std::vector<LocalNode> children = {};
+    std::vector<NamedMesh> meshes = {};
+
+    LocalNode(std::string name, glm::mat4 transform = glm::mat4(1.0f));
+
+    void purgeMeshes();
+
+    bool hasMesh();
+    bool isEmpty();
+};
 
 class PackedWriter {
 private:
     DataSerializer* buffer;
 public:
     PackedWriter(DataSerializer* buffer);
-
     void write(Model* model);
 };
 
@@ -47,7 +69,6 @@ public:
     bool flipTextures = false;
 
     PackedReader(DataDeserializer* buffer);
-
     void read(Model* model);
 };
 
@@ -55,11 +76,14 @@ public:
 class AssimpReader {
 private:
     std::filesystem::path path;
-    std::vector<MeshTexture2D> cachedTextures;
+    TexelPairs cachedTextures;
 
-    MeshKeyedMap processNode(aiNode *node, const aiScene *scene, const aiMatrix4x4& parentTransform);
-    Mesh* processMesh(aiMesh *mesh, const aiScene *scene, const glm::mat4& transform);
-    std::vector<MeshTexture2D> loadMaterialTextures(aiMaterial *mat, aiTextureType type, const MeshTexture2D_T &texType);
+    void processNode(Model *model, aiNode *node, const aiScene *scene, LocalNode& wmt, int depth);
+    Mesh* processMesh(Model *model, aiMesh *mesh, const aiScene *scene);
+    void cacheMaterialTextures(
+        aiMaterial *mat, Material *syngMat,
+        aiTextureType type, const MaterialTexture2D_T &syngType
+    );
 public:
     aiPostProcessSteps postProcessSteps = static_cast<aiPostProcessSteps>(
         aiProcess_Triangulate |
@@ -71,18 +95,17 @@ public:
 
     AssimpReader(const std::filesystem::path& path);
 
-    std::vector<MeshTexture2D>& getCachedTextures();
+    TexelPairs& getCachedTextures();
     void read(Model* model);
 };
 #endif
 
-class Model
-{
-private:
-    bool loaded = false;
+class Model {
+protected:
+    bool uploaded = false;
 public:
-    MeshKeyedMap meshes;
-    std::unordered_map<std::string, MeshKeyedMap> meshGroups;
+    LocalNode rootNode = {"ROOT"};
+    std::vector<Material*> materialById;
 
     Model();
     ~Model();
@@ -95,11 +118,7 @@ public:
     void readAssimp(AssimpReader reader);
 #endif
 
-    bool isLoaded() { return this->loaded; };
-    void load(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential);
-    void groupMeshes();
-
-    void pushTexture(const std::string& meshKey, MeshTexture2D texture);
-    void pullTexture(const std::string& meshKey, const std::string& path);
+    bool isUploaded() { return this->uploaded; };
+    void uploadVertices(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential);
 };
 }

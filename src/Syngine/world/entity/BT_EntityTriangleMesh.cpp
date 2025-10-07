@@ -1,4 +1,5 @@
 #include "BT_EntityTriangleMesh.hpp"
+
 #ifdef USE_BULLET
 
 #include "Syngine/modules/Mesh.hpp"
@@ -12,19 +13,15 @@
 #include <BulletCollision/CollisionShapes/btTriangleInfoMap.h>
 #include <BulletCollision/CollisionShapes/btTriangleMesh.h>
 
-#include <iostream>
 #include <vector>
 
 using namespace syng;
 
 BT_EntityTriangleMesh::BT_EntityTriangleMesh(ModelInstance* model) 
-    : meshes(model->getMeshInstances()->asMap()) {}
-
-BT_EntityTriangleMesh::BT_EntityTriangleMesh(std::unordered_map<std::string, MeshInstance*> meshes) 
-    : meshes(meshes) {}
+    : rootNode(model->getRoot()) {}
 
 BT_EntityTriangleMesh::BT_EntityTriangleMesh(MeshInstance* mesh) 
-    : meshes({{"ROOT", mesh}}) {}
+    : rootNode(mesh) {}
 
 BT_EntityTriangleMesh::~BT_EntityTriangleMesh() {
     delete body;
@@ -38,26 +35,13 @@ const glm::mat4 BT_EntityTriangleMesh::onMotionState() {
 }
 
 void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
-    for (const auto& it : meshes) {
-        MeshInstance* instance = it.second;
-        if (instance->getSelf()) {
-            if (!instance->getSelf()->isLoaded()) {
-                std::cerr << "ERROR::Entity::<UNLOADED_MESH>::SELF::" << it.first << std::endl;
-                return;
-            }
-        } else {
-            instance->getChildren()->forEach([&](const std::string& key, MeshInstance* meshInstance){                
-                if (!meshInstance->getSelf()->isLoaded()) {
-                    std::cerr << "ERROR::Entity::<UNLOADED_MESH>::" << key << std::endl;
-                    return;
-                }
-            });
-        }
-    }
+    if (body) return;
+    pushLeafParents(rootNode, {});
+
     triangleMesh = new btTriangleMesh();
     triangleInfoMap = new btTriangleInfoMap();
 
-    auto emplaceFunc = [&](glm::mat4 transform, std::vector<Vertex>& vertices, std::vector<GLuint>& indices) {
+    auto emplaceFunc = [&](int materialId, glm::mat4 transform, std::vector<Vertex>& vertices, std::vector<GLuint>& indices) {
         for (size_t i = 0; i < indices.size(); i += 3) {
             glm::vec3 v0 = glm::vec3(transform * glm::vec4(vertices[indices[i]].position, 1.0f));
             glm::vec3 v1 = glm::vec3(transform * glm::vec4(vertices[indices[i + 1]].position, 1.0f));
@@ -69,19 +53,34 @@ void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
                 btVector3(v2.x, v2.y, v2.z),
                 true
             );
+            triangleMaterials.push_back(materialId);
         }
     };
 
-    for (const auto& it : meshes) {
-        MeshInstance* instance = it.second;
-        Mesh* self = instance->getSelf();
-        if (self) {
-            emplaceFunc(instance->getTransform(), self->getVertices(), self->getIndices());
-        } else {
-            instance->getChildren()->forEach([&](const std::string& key, MeshInstance* child){
-                Mesh* self = child->getSelf();
-                emplaceFunc(instance->getTransform() * child->getTransform(), self->getVertices(), self->getIndices());
-            });
+    for (auto pair : leafParents) {
+        MeshInstance *leaf = pair.first;
+        glm::mat4 transform = getWorldTransform(leaf);
+
+        for (auto nMesh : leaf->getMeshes()) {
+            Mesh *mesh = nMesh.mesh;
+
+            int materialID = mesh->getMaterial()->getID();
+            auto vertices = mesh->getVertices();
+            auto indices = mesh->getIndices();
+
+            for (size_t i = 0; i < indices.size(); i += 3) {
+                glm::vec3 v0 = glm::vec3(transform * glm::vec4(vertices[indices[i]].position, 1.0f));
+                glm::vec3 v1 = glm::vec3(transform * glm::vec4(vertices[indices[i + 1]].position, 1.0f));
+                glm::vec3 v2 = glm::vec3(transform * glm::vec4(vertices[indices[i + 2]].position, 1.0f));
+
+                triangleMesh->addTriangle(
+                    btVector3(v0.x, v0.y, v0.z),
+                    btVector3(v1.x, v1.y, v1.z),
+                    btVector3(v2.x, v2.y, v2.z),
+                    true
+                );
+                triangleMaterials.push_back(materialID);
+            }
         }
     }
 
@@ -97,6 +96,13 @@ void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
 
     body = new btRigidBody(rigidBodyCI);
     body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
+    body->setUserPointer(this);
+
+    purgeLeafParents();
+}
+
+int BT_EntityTriangleMesh::getTrigMaterial(int trigIdx) const {
+    return triangleMaterials[trigIdx];
 }
 
 #endif

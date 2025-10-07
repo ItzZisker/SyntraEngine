@@ -12,8 +12,6 @@
 #include <SDL3/SDL_video.h>
 #include <glm/ext/matrix_clip_space.hpp>
 
-#include <iostream>
-#include <ostream>
 #include <string>
 
 using namespace syng;

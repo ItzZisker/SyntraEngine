@@ -1,7 +1,6 @@
 #pragma once
 
 #include "MeshInstance.hpp"
-#include "Screenbuffer.hpp"
 #include "Model.hpp"
 #include "Scene.hpp"
 
@@ -12,31 +11,38 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <set>
 #include <unordered_map>
-#include <string>
 
 namespace syng
 {
-class ModelInstance : public Discardable, public ShaderRenderable {
+
+class ModelInstance : public Coordination, public Discardable {
 private:
     Model* model;
-    RenderTable<MeshInstance>* meshInstances;
-    std::unordered_map<std::string, bool> discardedInstances;
+
+    MeshInstance* root;
+    std::unordered_map<MeshInstance*, std::vector<MeshInstance*>> leafParents;
+    std::unordered_map<MeshInstance*, glm::mat4> cachedLeafFinalTransform;
+
+    std::set<MeshInstance*> discarded;
+
+    void pushLeafParents(MeshInstance *meI, std::vector<MeshInstance*> parentList);
 public:
     ModelInstance(Model* model);
 
-    ~ModelInstance();
+    glm::mat4 getWorldTransform(MeshInstance* leaf, bool cacheFinalTransform = true);
+    glm::mat4 getCachedWorldTransform(MeshInstance *leaf);
 
-    void renderDV(Scene_T snapshot, Shader& shader, Screenbuffer screen);
-    void render(Shader& shader, Screenbuffer screen = {}) override;
+    bool isTransformCached(MeshInstance *leaf);
 
-    void setDiscard(std::string mIKey, bool shouldDiscard);
+    void setDiscard(MeshInstance* meI, bool shouldDiscard);
 
-    bool shouldDiscard(std::string mIKey);
+    bool shouldDiscard(MeshInstance* meI);
     bool shouldDiscard(Scene_T snapshot, const glm::mat4& transform) override;
 
-    RenderTable<MeshInstance>* getMeshInstances();
-
+    MeshInstance* getRoot();
     Model* getModel();
 };
+
 }
