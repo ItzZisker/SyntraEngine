@@ -22,7 +22,7 @@ private:
     GLenum TCBFormat = GL_RGB;
     GLenum TCBFiltering = GL_LINEAR;
     AntiAliasing AA = AA_OFF;
-    syng::HDR HDR = HDR_OFF;
+    syng::HDR hdr = HDR_OFF;
 
     Mesh2D* quad;
     unsigned int MSOUT_FBO = 0, MS_TCB = 0;

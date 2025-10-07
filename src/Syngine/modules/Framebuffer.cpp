@@ -162,7 +162,7 @@ void Framebuffer::setTCBFiltering(GLenum filterType) {
 }
 
 void Framebuffer::setHDR(class syng::HDR hdr) {
-    this->HDR = hdr;
+    this->hdr = hdr;
 }
 
 void Framebuffer::addInitTask(std::function<void(Framebuffer *)> task) {
@@ -200,9 +200,9 @@ void Framebuffer::render(Screenbuffer screen) {
 
         outputShader.use();
         outputShader.setTexture("screenTexture", GL_TEXTURE_2D, 0, TCB);
-        outputShader.setBool("hdrEnabled", HDR.isEnabled());
-        if (HDR.isEnabled()) {
-            outputShader.setFloat("hdrExposure", HDR.exposure);
+        outputShader.setBool("hdrEnabled", hdr.isEnabled());
+        if (hdr.isEnabled()) {
+            outputShader.setFloat("hdrExposure", hdr.exposure);
         }
         if (AA.isFastApproximate()) {
             float reduceMin, reduceMul, spanMax;
@@ -236,7 +236,7 @@ GLenum Framebuffer::getTCBFormat() {
 }
 
 class syng::HDR Framebuffer::getHDR() {
-    return this->HDR;
+    return this->hdr;
 }
 
 unsigned int Framebuffer::getRBO() {
