@@ -22,7 +22,7 @@ private:
     GLenum TCBFormat = GL_RGB;
     GLenum TCBFiltering = GL_LINEAR;
     AntiAliasing AA = AA_OFF;
-    HDR HDR = HDR_OFF;
+    syng::HDR HDR = HDR_OFF;
 
     Mesh2D* quad;
     unsigned int MSOUT_FBO = 0, MS_TCB = 0;
@@ -44,7 +44,7 @@ public:
     void setAntiAliasing(AntiAliasing AA);
     void setTCBFormat(GLenum format);
     void setTCBFiltering(GLenum filterType);
-    void setHDR(class HDR hdr);
+    void setHDR(class syng::HDR hdr);
 
     void addInitTask(std::function<void(Framebuffer *)> task);
     void addRenderTask(std::function<void(Framebuffer *)> task);

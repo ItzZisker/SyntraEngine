@@ -161,7 +161,7 @@ void Framebuffer::setTCBFiltering(GLenum filterType) {
     if (!created) TCBFiltering = filterType;
 }
 
-void Framebuffer::setHDR(class HDR hdr) {
+void Framebuffer::setHDR(class syng::HDR hdr) {
     this->HDR = hdr;
 }
 
@@ -235,7 +235,7 @@ GLenum Framebuffer::getTCBFormat() {
     return this->TCBFormat;
 }
 
-class HDR Framebuffer::getHDR() {
+class syng::HDR Framebuffer::getHDR() {
     return this->HDR;
 }
 
