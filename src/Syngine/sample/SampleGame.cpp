@@ -5,6 +5,7 @@
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/BatchRenderer.hpp"
 #include "Syngine/modules/Model.hpp"
+#include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "Syngine/modules/Framebuffer.hpp"
 #include "Syngine/modules/Mesh.hpp"
@@ -18,10 +19,11 @@
 #include "imgui_impl_sdl3.h"
 
 #include <filesystem>
-#include <iostream>
 #include <string>
 #include <vector>
 
+#define SCR_WIDTH  1360
+#define SCR_HEIGHT 1024
 
 /* TODO:
  *   === SEIZURE PROGRAM (Lethal-like Coop Video Game) ===
@@ -54,10 +56,10 @@
  *   - [ ] < Game UI (VHS Style Menus? idk) >
  *   - [ ] < Networking (via ASIO) + ANSI Server >
  *   - [ ] < Produce (Demo via itch.io, Paid on Steam) >
- */ 
+ */
 
 int SampleGame::launch() {
-    window = new GameWindow("Sample", {1360, 1024});
+    window = new GameWindow("Sample", {SCR_WIDTH, SCR_HEIGHT});
     window->attrib(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
     window->addInitTask([&](GameWindow *window){ 
         createImGUI();
@@ -88,24 +90,21 @@ void SampleGame::createWindow(GameWindow *window) {
 
     Model* sceneModel = new Model();
 
-    sceneModel->readAssimp({"models/outdoor lab/test/scenetest.gltf"});
+    sceneModel->readAssimp({"models/Sponza/glTF/Sponza.gltf"});
     sceneModel->uploadVertices(CacheApproach::Interleaved);
-
-    sceneModelInstance = new ModelInstance(sceneModel); // TODO: Nothing renders at all, not sure if its a transform problem or etc, I'm happy cuz AI couldn't fix it. for atleast 5 hours chatting
-    // sceneModelInstance->getMeshInstances()->forEach([](const std::string& key, MeshInstance* meshInstance){
-    //     meshInstance->setScale(glm::vec3(2.0f));
-    // });
 
     batchShader.read("shaders/batchVertex.glsl", "shaders/batchFrag.glsl");
     screenShader.read("shaders/screenVertex.glsl", "shaders/screenFrag.glsl");
 
-    scene = new Scene(camera, batchShader, screenShader);
-    scene->getBatchShader().use();
-    scene->getBatchShader().setVec2f("screenSize", 320, 240);
-    scene->setZBufferLayout(0.1f, 100.0f);
+    Scene_T props = {
+        .width = SCR_WIDTH,
+        .height = SCR_HEIGHT,
+        .zNear = 0.1f,
+        .zFar = 100.0f
+    };
+    scene = new Scene(camera, batchShader, screenShader, props);
 
     skyboxShader.read("shaders/skyboxVertex.glsl", "shaders/skyboxFrag.glsl");
-
     skybox = new Skybox(scene, skyboxShader);
     skybox->hdrBoost = glm::vec3(hdrSkyBoost);
     skybox->load({
@@ -118,10 +117,12 @@ void SampleGame::createWindow(GameWindow *window) {
     });
     scene->getBatchRenderTable()->add("skybox", skybox);
 
+    sceneModelInstance = new ModelInstance(sceneModel);
+
     modelBatch = new ModelBatchRenderer(scene);
     modelBatch->add("sceneModel", sceneModelInstance);
-
     scene->getBatchRenderTable()->add("modelBatch", modelBatch);
+
     DirLight nightlight = {
         {-0.86f, -1.0f, -0.97f},
         {0.5f, 0.5f, 0.5f},
@@ -140,37 +141,20 @@ void SampleGame::createWindow(GameWindow *window) {
     window->addEventHandler(scene);
     window->addEventHandler(mouseEventHandler);
 
-    framebuffer_VHS = new Framebuffer(scene);
-    framebuffer_VHS->addRenderTask([&](Framebuffer* buffer){
-        Shader& outputShader = buffer->getOutputShader();
-        outputShader.use();
-        outputShader.setFloat("time", SDL_GetTicks() / 1000.0f);
-    });
-    framebuffer_VHS->setTCBFormat(GL_RGBA16F);
-    framebuffer_VHS->setTCBFiltering(GL_NEAREST);
-    framebuffer_VHS->setHDR({0.036f});
-    framebuffer_VHS->setAntiAliasing(AA_OFF);
-    framebuffer_VHS->getRenderTable()->add("scene", scene);
-    framebuffer_VHS->create(1360, 1024, true);
-
     framebuffer = new Framebuffer(scene);
-    //framebuffer->getRenderTable()->add("reflectives", cubemapFramebuffer);
-    framebuffer->setAntiAliasing(AA_OFF);
-    framebuffer->addRenderTask([&](Framebuffer* buffer){
-        framebuffer_VHS->render(*buffer);
-    });
-    framebuffer->create(1360, 1024, true);
+    framebuffer->setTCBFormat(GL_RGBA16F);
+    framebuffer->setTCBFiltering(GL_LINEAR);
+    framebuffer->setHDR({0.036f});
+    framebuffer->setAntiAliasing(AA_FXAAx4);
+    framebuffer->getRenderTable()->add("scene", scene);
+    framebuffer->create(SCR_WIDTH, SCR_HEIGHT, true);
 
     window->getWindowRenderTable()->add("overWorld", overWorld);
-    //window->getWindowRenderTable()->add("appleEntity", appleEntity);
-    //window->getWindowRenderTable()->add("sceneEntity", sceneEntity);
-    window->getWindowRenderTable()->add("framebuffer", framebuffer_VHS);
+    window->getWindowRenderTable()->add("framebuffer", framebuffer);
     window->getWindowRenderTable()->add("keyHandler", keyHandler);
 
     SDL_GL_SetSwapInterval(0);
     SDL_SetWindowRelativeMouseMode(window->getSDLWindowPtr(), true);
-
-    std::cout << "init done\n";
 }
 
 void SampleGame::renderImGUI() {
@@ -183,32 +167,15 @@ void SampleGame::renderImGUI() {
     ImGui::Begin("Debug");
     ImGui::Text("FPS: %.0f", (window->getLastFrameTime() == 0) ? 999.0f : 1.0f / window->getLastFrameTime());
 
-    // if (ImGui::Button("Reset")) {
-    //     window->getWindowRenderTable()->wipe("appleEntity");
-
-    //     appleEntity = new BT_EntityConvexHull(overWorld, 0.2f, appleHMeshInstance);
-    //     appleEntity->load();
-
-    //     window->getWindowRenderTable()->add("appleEntity", appleEntity);
-    // }
-    // ImGui::SliderFloat("IOR R", &appleMeshInstance->getMesh()->material.ior.x, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
-    // ImGui::SliderFloat("IOR G", &appleMeshInstance->getMesh()->material.ior.y, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
-    // ImGui::SliderFloat("IOR B", &appleMeshInstance->getMesh()->material.ior.z, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
-    // ImGui::SliderFloat("F0", &appleMeshInstance->getMesh()->material.F0, 0.001f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-    // ImGui::SliderFloat("Opacity (Scene)", &sceneModelInstance->getMeshInstances()->get("Cube")->getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
-    //ImGui::SliderFloat("Opacity", &appleMeshInstance->getMesh()->material.opacity, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-    //ImGui::SliderFloat("FOV (Reflectives)", &cubemapFramebuffer->fieldOfView, 80.0f, 100.0f, "%.3f");
     ImGui::SliderFloat("Light X", &lX, -20.0f, 20.0f, "%.3f");
     ImGui::SliderFloat("Light Y", &lY, -20.0f, 20.0f, "%.3f");
     ImGui::SliderFloat("Light Z", &lZ, -20.0f, 20.0f, "%.3f");
+    ImGui::SliderFloat("Scene X", &pX, -20.0f, 20.0f, "%.3f");
+    ImGui::SliderFloat("Scene Y", &pY, -20.0f, 20.0f, "%.3f");
+    ImGui::SliderFloat("Scene Z", &pZ, -20.0f, 20.0f, "%.3f");
     ImGui::SliderFloat("HDR Boost (Skybox)", &hdrSkyBoost, 0.0f, 100.0f, "%.3f");
     ImGui::SliderFloat("HDR Exposure", &hdrExposure, 0.0f, 0.1f, "%.3f");
-    ImGui::SliderFloat("Roughness Constrant", &roughnessConstrant, 0.1f, 10.0f, "%.3f");
-    // ImGui::SliderFloat("Shadow Bias Min", &shadowMapper->biasMin, 0.001f, 1.0f, "%.3f");
-    // ImGui::SliderFloat("Shadow Bias Max", &shadowMapper->biasMax, 0.001f, 1.0f, "%.3f");
-    // ImGui::SliderFloat("Shadow PCF Scale", &shadowMapper->pcfScale, 0.1f, 10.0f, "%.3f");
-    // ImGui::SliderInt("Shadow PCF Radius", (int*) &shadowMapper->pcfRadius, 1, 10);
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
 
     ImGui::End();
@@ -222,21 +189,14 @@ void SampleGame::renderETC() {
     skybox->hdrBoost = glm::vec3(hdrSkyBoost);
     scene->getBatchShader().use();
     scene->getBatchShader().setFloat("roughnessConstrant", roughnessConstrant);
-    framebuffer_VHS->setHDR({hdrExposure});
+    framebuffer->setHDR({hdrExposure});
     PointLight pl = {{lX, lY, lZ}};
     pl.ambient = {0.05f, 0.05f, 0.05f};
     pl.diffuse = {0.8f, 0.8f, 0.5f};
     pl.specular = {1.0f, 1.0f, 0.6f};
     pl.boost(25.0f);
     scene->setPointLight(0, pl);
-    static float dT = (float) (window->getLastFrameTime() / 4.0);
-    dT += (window->getLastFrameTime() / 4.0);
-    //sceneModelInstance->getMeshInstances()->get("Cube.001")->setDirection({sin(dT), 0.0f, cos(dT)});
-    // sceneModelInstance->getMeshInstances()->forEach([](const std::string& key, MeshInstance* meshInstance){
-    //     meshInstance->getChildren()->forEach([&](const std::string &skey, MeshInstance *smeI){
-    //         smeI->setDirection({sin(dT), 0.0f, cos(dT)});
-    //     });
-    // });
+    sceneModelInstance->setPosition({pX, pY, pZ});
 }
 
 void SampleGame::cleanup() {

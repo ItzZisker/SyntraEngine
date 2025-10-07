@@ -46,7 +46,13 @@ Model::~Model() {
     uploaded = false;
 }
 
+void uploadNodeTraversal(LocalNode &node, CacheApproach::VRAM_Approach &approach) {
+    for (auto mesh : node.meshes) mesh.mesh->init(approach);
+    for (auto child : node.children) uploadNodeTraversal(child, approach);
+}
+
 void Model::uploadVertices(CacheApproach::VRAM_Approach approach) {
+    uploadNodeTraversal(rootNode, approach);
     uploaded = true;
 }
 

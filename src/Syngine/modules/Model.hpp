@@ -35,7 +35,7 @@ class Model;
 
 struct NamedMesh {
     std::string name = "NONE";
-    Mesh *mesh = nullptr;
+    Mesh* mesh = nullptr;
 };
 
 class LocalNode {

@@ -11,11 +11,11 @@
 
 using namespace syng;
 
-void drawNonDiscardable(MeshInstance* meI, Shader& batchShader, Scene_T snapshot, glm::mat4 finalTransform) {
-  //  if (!meI->shouldDiscard(snapshot, finalTransform)) {
+void drawNonDiscardable(NamedMesh &subMesh, MeshInstance* parent, Shader& batchShader, Scene_T snapshot, glm::mat4 finalTransform) {
+   if (!parent->shouldDiscard(snapshot, finalTransform)) {
         batchShader.setMatrix4("model", finalTransform, 1, GL_FALSE);
-        for (auto& subMesh : meI->getMeshes()) subMesh.mesh->draw();
-   // }
+        subMesh.mesh->draw();
+   }
 }
 
 ModelBatchRenderer::ModelBatchRenderer(Scene *scene) : scene(scene) {}
@@ -78,9 +78,13 @@ void ModelBatchRenderer::render(Shader& batchShader, Screenbuffer screen) {
 
             batchShader.setBool("parallax", heightNr > 1  && material->props.hasDisplacement);
             batchShader.setBool("roughness", roughNr > 1 && material->props.hasRoughness);
-        
-            for (MeshInstance *meI : spair.second) {
-                drawNonDiscardable(meI, batchShader, scene->getSnapshot(), mI->getTransform() * mI->getWorldTransform(meI));
+
+            ByInstanceMap &byInstance = spair.second;
+            for (auto& tpair : byInstance) {
+                MeshInstance *parent = tpair.first;
+                glm::mat4 finalTransform = mI->getTransform() * mI->getWorldTransform(parent);
+                for (auto& nmesh : tpair.second)
+                    drawNonDiscardable(nmesh, parent, batchShader, scene->getSnapshot(), finalTransform);
             }
         }
     }
@@ -88,12 +92,15 @@ void ModelBatchRenderer::render(Shader& batchShader, Screenbuffer screen) {
 }
 
 void ModelBatchRenderer::addMeshInstanceByMaterial(ModelInstance *mI, MeshInstance *meI) {
-    if (meI->hasMeshes()) {
-        Material *material = meI->getMeshes()[0].mesh->getMaterial();
+    for (auto& nmesh : meI->getMeshes()) {
+        Material *material = nmesh.mesh->getMaterial();
         if (allByMaterials[mI].find(material) == allByMaterials[mI].end()) {
             allByMaterials[mI].insert({material, {}});;
         }
-        allByMaterials[mI][material].push_back(meI);
+        if (allByMaterials[mI][material].find(meI) == allByMaterials[mI][material].end()) {
+            allByMaterials[mI][material].insert({meI, {}});
+        }
+        allByMaterials[mI][material][meI].push_back(nmesh);
     }
     for (auto child : meI->getChildren()) {
         addMeshInstanceByMaterial(mI, child);
@@ -111,7 +118,7 @@ void ModelBatchRenderer::remove(std::string key) {
     allByMaterials.erase(allByMaterials.find(mI));
 }
 
-std::unordered_map<Material*, std::vector<MeshInstance*>>& ModelBatchRenderer::getMeshesByMaterial(ModelInstance *mI) {
-    static std::unordered_map<Material*, std::vector<MeshInstance*>> empty = {};
+BatchMap& ModelBatchRenderer::getMeshesByMaterial(ModelInstance *mI) {
+    static BatchMap empty = {};
     return allByMaterials.find(mI) == allByMaterials.end() ? empty : allByMaterials[mI];
 }

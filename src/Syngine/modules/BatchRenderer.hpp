@@ -7,11 +7,16 @@
 #include "Scene.hpp"
 #include "Screenbuffer.hpp"
 #include "Shader.hpp"
+#include "Syngine/modules/Model.hpp"
 
 #include <unordered_map>
+#include <vector>
 
 namespace syng
 {
+
+using ByInstanceMap = std::unordered_map<MeshInstance*, std::vector<NamedMesh>>;
+using BatchMap = std::unordered_map<Material*, ByInstanceMap>;
 
 class UIBatchRenderer : public ShaderRenderable
 {
@@ -25,7 +30,7 @@ class ModelBatchRenderer : public ShaderRenderable
 private:
     Scene *scene;
 
-    std::unordered_map<ModelInstance*, std::unordered_map<Material*, std::vector<MeshInstance*>>> allByMaterials;
+    std::unordered_map<ModelInstance*, BatchMap> allByMaterials;
     RenderTable<ModelInstance>* instances = new RenderTable<ModelInstance>;
 
     void addMeshInstanceByMaterial(ModelInstance *mI, MeshInstance *meI);
@@ -37,7 +42,7 @@ public:
     void add(std::string key, ModelInstance *mI);
     void remove(std::string key);
 
-    std::unordered_map<Material*, std::vector<MeshInstance*>>& getMeshesByMaterial(ModelInstance *mI);
+    BatchMap& getMeshesByMaterial(ModelInstance *mI);
 };
 
 };

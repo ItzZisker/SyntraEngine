@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstring>
 #include <type_traits>
-#include <string>
 #include <vector>
 
 namespace syng

@@ -28,6 +28,7 @@ public:
     Skybox *skybox;
 
     float lX = 0.0f, lY = 2.0f, lZ = 0.0f;
+    float pX = 0.0f, pY = 0.0f, pZ = 0.0f;
     float gamma = 1.1f;
     float yaw = 0, pitch = 0;
     float hdrExposure = 0.036f;
