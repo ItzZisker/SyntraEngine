@@ -118,7 +118,7 @@ if (USE_BULLET AND NOT EXISTS ${BULLET_INSTALL})
     )
     execute_process(
         COMMAND ninja install
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build
     )
 endif()
 
@@ -168,13 +168,13 @@ include_directories(${STB_ROOT})
 # === Assimp Config ===
 if (USE_ASSIMP)
     if (WIN32)
-        list(APPEND common_libs "${ASSIMP_INSTALL}/lib/libassimp.dll")
+        list(APPEND common_libs "${ASSIMP_INSTALL}/bin/libassimp-6.dll")
+        link_directories(${ASSIMP_INSTALL}/lib)
     elseif(UNIX AND NOT APPLE)
         list(APPEND common_libs "${ASSIMP_INSTALL}/lib/libassimp.so")
     endif()
     add_compile_definitions(USE_ASSIMP)
     include_directories(${ASSIMP_INSTALL}/include)
-    link_directories(${ASSIMP_INSTALL}/lib)
 endif()
 
 # === Bullet3 Config ===
