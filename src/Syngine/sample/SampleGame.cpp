@@ -10,6 +10,7 @@
 #include "Syngine/modules/Framebuffer.hpp"
 #include "Syngine/modules/Mesh.hpp"
 #include "Syngine/modules/Scene.hpp"
+#include "Syngine/modules/ShadowMapper.hpp"
 #include "Syngine/world/Coordination.hpp"
 
 #include "glm/fwd.hpp"
@@ -108,12 +109,12 @@ void SampleGame::createWindow(GameWindow *window) {
     skybox = new Skybox(scene, skyboxShader);
     skybox->hdrBoost = glm::vec3(hdrSkyBoost);
     skybox->load({
-        "models/skybox/lightblue/right.png",
-        "models/skybox/lightblue/left.png",
-        "models/skybox/lightblue/top.png",
-        "models/skybox/lightblue/bottom.png",
-        "models/skybox/lightblue/front.png",
-        "models/skybox/lightblue/back.png"
+        "models/skybox/daylight/right.bmp",
+        "models/skybox/daylight/left.bmp",
+        "models/skybox/daylight/top.bmp",
+        "models/skybox/daylight/bottom.bmp",
+        "models/skybox/daylight/front.bmp",
+        "models/skybox/daylight/back.bmp"
     });
     scene->getBatchRenderTable()->add("skybox", skybox);
 
@@ -123,18 +124,26 @@ void SampleGame::createWindow(GameWindow *window) {
     modelBatch->add("sceneModel", sceneModelInstance);
     scene->getBatchRenderTable()->add("modelBatch", modelBatch);
 
-    DirLight nightlight = {
+    DirLight dayLight = {
         {-0.86f, -1.0f, -0.97f},
-        {0.5f, 0.5f, 0.5f},
-        {0.5f, 0.5f, 0.75f},
-        {0.6f, 0.6f, 0.85f}
+        {0.7f, 0.7f, 0.4f},
+        {0.5f, 0.5f, 0.3f},
+        {0.6f, 0.6f, 0.45f}
     };
-    nightlight.ambient *= 25.0f * (hdrSkyBoost / 100.0f);
-    nightlight.diffuse *= 35.0f * (hdrSkyBoost / 100.0f);
-    nightlight.specular *= 60.0f * (hdrSkyBoost / 100.0f);
-    scene->setDirectionalLight(nightlight);
-    scene->setPointLights({{{lX, lY, lZ}}});
+    dayLight.ambient *= 25.0f * (hdrSkyBoost / 20.0f);
+    dayLight.diffuse *= 35.0f * (hdrSkyBoost / 20.0f);
+    dayLight.specular *= 60.0f * (hdrSkyBoost / 20.0f);
+    scene->setDirectionalLight(dayLight);
     scene->reloadShaders();
+
+    depthShader.read("shaders/depthVertex.glsl", "shaders/depthFrag.glsl");
+    shadowMapper = new ShadowMapper(depthShader, 4096);
+    shadowMapper->strength *= 2;
+    shadowMapper->biasMax *= 0.18f;
+    shadowMapper->biasMin *= 0.05f;
+    shadowMapper->create();
+    scene->withShadows(shadowMapper);
+
     keyHandler = new SampleKeyHandler(this);
     mouseEventHandler = new SampleMouseEventHandler(this);
 
@@ -155,6 +164,10 @@ void SampleGame::createWindow(GameWindow *window) {
 
     SDL_GL_SetSwapInterval(0);
     SDL_SetWindowRelativeMouseMode(window->getSDLWindowPtr(), true);
+
+    appleModel = new Model();
+    appleModel->readAssimp({"models/apple2/apple.obj"});
+    appleModel->uploadVertices(CacheApproach::Interleaved);
 }
 
 void SampleGame::renderImGUI() {
@@ -168,12 +181,6 @@ void SampleGame::renderImGUI() {
     ImGui::Text("FPS: %.0f", (window->getLastFrameTime() == 0) ? 999.0f : 1.0f / window->getLastFrameTime());
 
     ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-    ImGui::SliderFloat("Light X", &lX, -20.0f, 20.0f, "%.3f");
-    ImGui::SliderFloat("Light Y", &lY, -20.0f, 20.0f, "%.3f");
-    ImGui::SliderFloat("Light Z", &lZ, -20.0f, 20.0f, "%.3f");
-    ImGui::SliderFloat("Scene X", &pX, -20.0f, 20.0f, "%.3f");
-    ImGui::SliderFloat("Scene Y", &pY, -20.0f, 20.0f, "%.3f");
-    ImGui::SliderFloat("Scene Z", &pZ, -20.0f, 20.0f, "%.3f");
     ImGui::SliderFloat("HDR Boost (Skybox)", &hdrSkyBoost, 0.0f, 100.0f, "%.3f");
     ImGui::SliderFloat("HDR Exposure", &hdrExposure, 0.0f, 0.1f, "%.3f");
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
@@ -186,17 +193,10 @@ void SampleGame::renderImGUI() {
 
 void SampleGame::renderETC() {
     scene->setGamma(gamma);
-    skybox->hdrBoost = glm::vec3(hdrSkyBoost);
     scene->getBatchShader().use();
     scene->getBatchShader().setFloat("roughnessConstrant", roughnessConstrant);
+    skybox->hdrBoost = glm::vec3(hdrSkyBoost);
     framebuffer->setHDR({hdrExposure});
-    PointLight pl = {{lX, lY, lZ}};
-    pl.ambient = {0.05f, 0.05f, 0.05f};
-    pl.diffuse = {0.8f, 0.8f, 0.5f};
-    pl.specular = {1.0f, 1.0f, 0.6f};
-    pl.boost(25.0f);
-    scene->setPointLight(0, pl);
-    sceneModelInstance->setPosition({pX, pY, pZ});
 }
 
 void SampleGame::cleanup() {

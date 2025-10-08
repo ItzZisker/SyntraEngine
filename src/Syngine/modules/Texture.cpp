@@ -98,9 +98,7 @@ void syng::TCBPlainColor(unsigned int &TCB, unsigned char pixel[4]) {
 
 GLuint syng::TCBByPlainColor(unsigned char pixel[4]) {
     GLuint TCB;
-    std::cout << "TCB before = " << TCB << std::endl;
     TCBPlainColor(TCB, pixel);
-    std::cout << "TCB after = " << TCB << std::endl;
     return TCB;
 }
 

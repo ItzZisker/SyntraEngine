@@ -3,7 +3,9 @@
 #include "SampleCallbacks.hpp"
 
 #include "Syngine/Syngine.hpp"
+
 #include "Syngine/engine/RenderTable.hpp"
+
 #include "Syngine/modules/BatchRenderer.hpp"
 #include "Syngine/modules/Framebuffer.hpp"
 #include "Syngine/modules/Model.hpp"
@@ -12,7 +14,10 @@
 #include "Syngine/modules/Shader.hpp"
 #include "Syngine/modules/ShadowMapper.hpp"
 #include "Syngine/modules/Skybox.hpp"
+
 #include "Syngine/world/World.hpp"
+#include "Syngine/world/entity/BT_EntityConvexHull.hpp"
+#include "Syngine/world/entity/BT_EntityTriangleMesh.hpp"
 
 using namespace syng;
 
@@ -27,12 +32,10 @@ public:
     Framebuffer *framebuffer, *framebuffer_VHS;
     Skybox *skybox;
 
-    float lX = 0.0f, lY = 2.0f, lZ = 0.0f;
-    float pX = 0.0f, pY = 0.0f, pZ = 0.0f;
     float gamma = 1.1f;
     float yaw = 0, pitch = 0;
-    float hdrExposure = 0.036f;
-    float hdrSkyBoost = 5.0f;
+    float hdrExposure = 0.06f;
+    float hdrSkyBoost = 30.0f;
     float roughnessConstrant = 1.0f;
     bool mouseCaptured = true;
     bool firstMouse;
@@ -46,10 +49,10 @@ public:
     ModelInstance *sceneModelInstance;
     MeshInstance *appleHMeshInstance, *appleMeshInstance;
 
-    Shader batchShader, screenShader, skyboxShader;
+    Shader batchShader, screenShader, skyboxShader, depthShader;
 
-    //BT_EntityConvexHull* appleEntity;
-    //BT_EntityTriangleMesh* sceneEntity;
+    BT_EntityConvexHull* appleEntity;
+    BT_EntityTriangleMesh* sceneEntity;
 
     int launch();
 private:

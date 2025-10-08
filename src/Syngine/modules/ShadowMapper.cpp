@@ -1,5 +1,4 @@
 #include "ShadowMapper.hpp"
-#include "Skybox.hpp"
 #include "Presets.hpp"
 
 using namespace syng;
@@ -24,6 +23,7 @@ ShadowMapper::ShadowMapper(Shader& depthShader, GLuint uv) : ShadowMapper(depthS
 ShadowMapper::~ShadowMapper() {
     glDeleteFramebuffers(1, &depthMapFBO);
     glDeleteTextures(1, &depthMapTCB);
+    delete depthRendertable;
 }
 
 void ShadowMapper::create() {
@@ -56,9 +56,8 @@ void ShadowMapper::renderDepth(Screenbuffer screen, Scene *scene) {
 
     Screenbuffer shadowScreen(depthMapFBO, shadowWidth, shadowHeight);
     auto renderFunc = [&](const std::string& key, ShaderRenderable* renderable){
-        if (!dynamic_cast<Skybox*>(renderable)) {
-            renderable->render(depthShader, shadowScreen);
-        }
+        DepthRenderable *depthInstance = dynamic_cast<DepthRenderable*>(renderable);
+        if (depthInstance) depthInstance->renderDepth(depthShader, shadowScreen);
     };
     glCullFace(GL_FRONT);
     

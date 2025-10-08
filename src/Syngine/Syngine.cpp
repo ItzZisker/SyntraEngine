@@ -34,6 +34,13 @@ GameWindow::GameWindow(std::string title, WindowSize initialSize) {
     attrib(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
 #endif
 
+    addInitTask([](GameWindow *window){
+        FallbackTexture::Diffuse = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
+        FallbackTexture::Specular = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
+        FallbackTexture::Normal = {TCBByPlainColor((uint8_t[4]){128, 128, 255, 255}), ""};
+        FallbackTexture::Height = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
+        FallbackTexture::Rough = {TCBByPlainColor((uint8_t[4]){128, 128, 128, 255}), ""};
+    });
     addRenderTask([](GameWindow *window) {
         static Uint64 previousCounter = SDL_GetPerformanceCounter();
         Uint64 currentCounter = SDL_GetPerformanceCounter();
@@ -93,29 +100,17 @@ int GameWindow::initLoop() {
 
     initialized = true;
 
-    FallbackTexture::Diffuse = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
-    FallbackTexture::Specular = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
-    FallbackTexture::Normal = {TCBByPlainColor((uint8_t[4]){128, 128, 255, 255}), ""};
-    FallbackTexture::Height = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
-    FallbackTexture::Rough = {TCBByPlainColor((uint8_t[4]){128, 128, 128, 255}), ""};
-
     onCreate(width, height, false);
-    for (auto& task : initTasks) {
-        task(this);
-    }
+    for (auto& task : initTasks) task(this);
     while (initialized) {
         TaskQueue::Instance().executeAll();
-        for (auto& task : renderTasks) {
-            task(this);
-        }
+        for (auto& task : renderTasks) task(this);
         SDL_GL_SwapWindow(sdlWindow);
         lastFrameEvents.clear();
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             lastFrameEvents.push_back(event);
-            for (auto& handler : eventHandlers) {
-                handler->onEvent(event);
-            }
+            for (auto& handler : eventHandlers) handler->onEvent(event);
             switch (event.type) {
                 case SDL_EVENT_QUIT:
                     closeWindow();

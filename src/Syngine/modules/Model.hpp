@@ -78,7 +78,7 @@ private:
     std::filesystem::path path;
     TexelPairs cachedTextures;
 
-    void processNode(Model *model, aiNode *node, const aiScene *scene, LocalNode& wmt, int depth);
+    void processNode(Model *model, aiNode *node, const aiScene *scene, LocalNode& wmt);
     Mesh* processMesh(Model *model, aiMesh *mesh, const aiScene *scene);
     void cacheMaterialTextures(
         aiMaterial *mat, Material *syngMat,

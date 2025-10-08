@@ -5,6 +5,7 @@
 #include "Mesh.hpp"
 #include "MeshInstance.hpp"
 #include "Model.hpp"
+#include "Syngine/modules/Screenbuffer.hpp"
 #include "Texture.hpp"
 
 #include <vector>
@@ -19,6 +20,21 @@ void drawNonDiscardable(NamedMesh &subMesh, MeshInstance* parent, Shader& batchS
 }
 
 ModelBatchRenderer::ModelBatchRenderer(Scene *scene) : scene(scene) {}
+
+void ModelBatchRenderer::renderDepth(Shader &depthShader, Screenbuffer screen) {
+    for (auto& fpair : allByMaterials) {
+        ModelInstance *mI = fpair.first;
+        for (auto& spair : fpair.second) {
+            ByInstanceMap &byInstance = spair.second;
+            for (auto& tpair : byInstance) {
+                MeshInstance *parent = tpair.first;
+                glm::mat4 finalTransform = mI->getTransform() * mI->getWorldTransform(parent);
+                for (auto& nmesh : tpair.second)
+                    drawNonDiscardable(nmesh, parent, depthShader, scene->getSnapshot(), finalTransform);
+            }
+        }
+    }
+}
 
 void ModelBatchRenderer::render(Shader& batchShader, Screenbuffer screen) {
     glBindFramebuffer(GL_FRAMEBUFFER, screen.getFBO());

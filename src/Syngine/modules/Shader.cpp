@@ -7,7 +7,9 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <ostream>
 #include <regex>
+#include <string>
 
 using namespace syng;
 
@@ -52,13 +54,15 @@ Shader ShaderDecoder::decode() {
     return ShaderDecoder::decodeLazy().publish();
 }
 
-Shader::Shader(LazyShader lazy) : vertexCode(lazy.vertexCode), fragmentCode(lazy.fragmentCode), geometryCode(lazy.geometryCode) {}
+Shader::Shader(LazyShader lazy) :
+    vertexBase(lazy.vertexCode), fragmentBase(lazy.fragmentCode), geometryBase(lazy.geometryCode),
+    vertexCode(lazy.vertexCode), fragmentCode(lazy.fragmentCode), geometryCode(lazy.geometryCode) {}
 
 void Shader::read(DataDeserializer *buffer) {
     LazyShader lazy = ShaderDecoder(buffer).decodeLazy();
-    this->vertexCode = lazy.vertexCode;
-    this->fragmentCode = lazy.fragmentCode;
-    this->geometryCode = lazy.geometryCode;
+    this->vertexBase = this->vertexCode = lazy.vertexCode;
+    this->fragmentBase = this->fragmentCode = lazy.fragmentCode;
+    this->geometryBase = this->geometryCode = lazy.geometryCode;
 }
 
 void Shader::read(std::filesystem::path vertexPath, std::filesystem::path fragmentPath, std::filesystem::path geometryPath) {
@@ -95,13 +99,13 @@ void Shader::read(std::filesystem::path vertexPath, std::filesystem::path fragme
             gShaderFile.close();
         }
 
-        vertexCode = vShaderStream.str();
-        fragmentCode = fShaderStream.str();
+        vertexBase = vertexCode = vShaderStream.str();
+        fragmentBase = fragmentCode = fShaderStream.str();
 
         if (!geometryPath.empty()) {
-            geometryCode = gShaderStream.str();
+            geometryBase = geometryCode = gShaderStream.str();
         } else {
-            geometryCode = "";
+            geometryBase = geometryCode = "";
         }
     } catch (std::ifstream::failure e) {
         std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ::" << e.what() << ", ERR=" << e.code() << std::endl;
@@ -110,26 +114,25 @@ void Shader::read(std::filesystem::path vertexPath, std::filesystem::path fragme
 
 void Shader::init(std::map<std::string, std::string> variables) {
     this->variables = variables;
-    
+
+    this->vertexCode = this->vertexBase;
+    this->fragmentCode = this->fragmentBase;
+    this->geometryCode = this->geometryBase;
+
     for (const auto& pair : variables) {
         std::regex pattern("\\$\\{" + pair.first + "=(.+?)\\}");
-
-        vertexCode = std::regex_replace(vertexCode, pattern, pair.second);
+        vertexCode   = std::regex_replace(vertexCode, pattern, pair.second);
         fragmentCode = std::regex_replace(fragmentCode, pattern, pair.second);
-
-        if (!geometryCode.empty()) {
+        if (!geometryCode.empty())
             geometryCode = std::regex_replace(geometryCode, pattern, pair.second);
-        }
     }
 
-    std::regex pattern(R"(\$\{[^=]+=(.+?)\})");
+    std::regex cleanupPattern(R"(\$\{[^=]+=(.+?)\})");
 
-    vertexCode = std::regex_replace(vertexCode, pattern, "$1");
-    fragmentCode = std::regex_replace(fragmentCode, pattern, "$1");
-
-    if (!geometryCode.empty()) {
-        geometryCode = std::regex_replace(fragmentCode, pattern, "$1");
-    }
+    vertexCode   = std::regex_replace(vertexCode, cleanupPattern, "$1");
+    fragmentCode = std::regex_replace(fragmentCode, cleanupPattern, "$1");
+    if (!geometryCode.empty())
+        geometryCode = std::regex_replace(geometryCode, cleanupPattern, "$1");
 
     const char *vShaderCode = vertexCode.c_str();
     const char *fShaderCode = fragmentCode.c_str();

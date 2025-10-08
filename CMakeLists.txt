@@ -11,21 +11,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(USE_ASSIMP "Enable Assimp support" ON)
 option(USE_BULLET "Enable Bullet3 Physics support" ON)
 
-if(USE_ASSIMP)
-    add_compile_definitions(USE_ASSIMP)
-endif()
-if(USE_BULLET)
-    add_compile_definitions(USE_BULLET)
-endif()
+set(BULLET_INSTALL "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build/install")
+set(ASSIMP_INSTALL "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build/install")
 
-if (USE_ASSIMP AND NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build/lib")
-    message(STATUS "Building Assimp...")
+if (USE_ASSIMP AND NOT EXISTS ${ASSIMP_INSTALL})
+    message(STATUS "Verifying Assimp build...")
     execute_process(
         COMMAND ${CMAKE_COMMAND}
             -B build
-            -G Ninja
-            -DCMAKE_C_COMPILER=clang
-            -DCMAKE_CXX_COMPILER=clang++
+            -DCMAKE_INSTALL_PREFIX=./build/install
             -DASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT=ON
             -DASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT=ON
             -DASSIMP_BUILD_ASSIMP_TOOLS=ON
@@ -57,13 +51,17 @@ if (USE_ASSIMP AND NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build/lib")
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2
     )
     execute_process(
-        COMMAND ninja
+        COMMAND make install
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build
+    )
+    execute_process(
+        COMMAND ninja install
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build
     )
 endif()
 
-if (USE_BULLET AND NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build/lib")
-    message(STATUS "Building Bullet...")
+if (USE_BULLET AND NOT EXISTS ${BULLET_INSTALL})
+    message(STATUS "Verifying Bullet3 build...")
 
     set(BULLET_EXTRA_ARGS "")
     if(UNIX AND NOT APPLE) # Linux
@@ -73,9 +71,7 @@ if (USE_BULLET AND NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build/lib")
     execute_process(
         COMMAND ${CMAKE_COMMAND}
             -B build
-            -G Ninja
-            -DCMAKE_C_COMPILER=clang
-            -DCMAKE_CXX_COMPILER=clang++
+            -DCMAKE_INSTALL_PREFIX=./build/install
             -DBUILD_BULLET2_DEMOS=OFF
             -DBUILD_BULLET3=ON
             -DBUILD_BULLET_ROBOTICS_EXTRA=OFF
@@ -116,32 +112,49 @@ if (USE_BULLET AND NOT EXISTS "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build/lib")
             ${BULLET_EXTRA_ARGS}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/bullet3-3.25
     )
-
     execute_process(
-        COMMAND ninja
+        COMMAND make install
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/bullet3-3.25/build
+    )
+    execute_process(
+        COMMAND ninja install
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2/build
     )
 endif()
 
 # Include headers
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
+# Initialize common libraries (OpenGL & SDL3)
+set(common_libs "")
+
+if (UNIX AND NOT APPLE)  # Linux
+    list(APPEND common_libs OpenGL::OpenGL Xrandr Xi dl)
+elseif (WIN32)  # Windows
+    list(APPEND common_libs opengl32)
+elseif (APPLE)
+    list(APPEND common_libs "-framework OpenGL" "-framework Cocoa" "-framework IOKit" "-framework CoreVideo")
+endif()
+
 # === SDL Config ===
 set(SDL_ROOT "${CMAKE_SOURCE_DIR}/libs/sdl-3.2.18")
 if (WIN32)
     include_directories(${SDL_ROOT}/windows/include)
+    list(APPEND common_libs ${SDL_ROOT}/windows/bin/SDL3.dll)
     link_directories(${SDL_ROOT}/windows/lib)
 elseif(UNIX AND NOT APPLE)
     include_directories(${SDL_ROOT}/linux/include)
-    link_directories(${SDL_ROOT}/linux/bin)
+    list(APPEND common_libs ${SDL_ROOT}/linux/bin/libSDL3.so.0.2.18)
 endif()
 
 # == FreeType Config ==
 # set(FREETYPE_ROOT "${CMAKE_SOURCE_DIR}/libs/freetype-2.14.1")
 # if (WIN32)
 #     include_directories(${FREETYPE_ROOT}/win32/include/freetype2)
+#     list(APPEND common_libs ${FREETYPE_ROOT}/win32/lib/libfreetype.a)
 # elseif(UNIX AND NOT APPLE)
 #     include_directories(${FREETYPE_ROOT}/linux/include/freetype2)
+#     list(APPEND common_libs ${FREETYPE_ROOT}/linux/lib/libfreetype.a)
 # endif()
 
 # === GLAD Config ===
@@ -154,29 +167,38 @@ include_directories(${STB_ROOT})
 
 # === Assimp Config ===
 if (USE_ASSIMP)
-    set(ASSIMP_ROOT "${CMAKE_SOURCE_DIR}/libs/assimp-6.0.2")
-    include_directories(${ASSIMP_ROOT}/include)
-    include_directories(${ASSIMP_ROOT}/build/include)
-    link_directories(${ASSIMP_ROOT}/build/lib)
+    if (WIN32)
+        list(APPEND common_libs "${ASSIMP_INSTALL}/lib/libassimp.dll")
+    elseif(UNIX AND NOT APPLE)
+        list(APPEND common_libs "${ASSIMP_INSTALL}/lib/libassimp.so")
+    endif()
+    add_compile_definitions(USE_ASSIMP)
+    include_directories(${ASSIMP_INSTALL}/include)
+    link_directories(${ASSIMP_INSTALL}/lib)
 endif()
 
 # === Bullet3 Config ===
 if (USE_BULLET)
-    set(BULLET3_ROOT "${CMAKE_SOURCE_DIR}/libs/bullet3-3.25")
-    include_directories(${BULLET3_ROOT}/src)
+    add_compile_definitions(USE_BULLET)
+    include_directories(${BULLET_INSTALL}/include/bullet)
     set(BULLET_LIBS
-        "${BULLET3_ROOT}/build/lib/libBullet2FileLoader.a"
-        "${BULLET3_ROOT}/build/lib/libBullet3OpenCL_clew.a"
-        "${BULLET3_ROOT}/build/lib/libBullet3Common.a"
-        "${BULLET3_ROOT}/build/lib/libBullet3Geometry.a"
-        "${BULLET3_ROOT}/build/lib/libBulletCollision.a"
-        "${BULLET3_ROOT}/build/lib/libBullet3Collision.a"
-        "${BULLET3_ROOT}/build/lib/libBulletInverseDynamics.a"
-        "${BULLET3_ROOT}/build/lib/libBulletDynamics.a"
-        "${BULLET3_ROOT}/build/lib/libBullet3Dynamics.a"
-        "${BULLET3_ROOT}/build/lib/libBulletSoftBody.a"
-        "${BULLET3_ROOT}/build/lib/libLinearMath.a"
+        "${BULLET_INSTALL}/lib/libBullet2FileLoader.a"
+        "${BULLET_INSTALL}/lib/libBullet3OpenCL_clew.a"
+        "${BULLET_INSTALL}/lib/libBullet3Common.a"
+        "${BULLET_INSTALL}/lib/libBullet3Geometry.a"
+        "${BULLET_INSTALL}/lib/libBulletCollision.a"
+        "${BULLET_INSTALL}/lib/libBullet3Collision.a"
+        "${BULLET_INSTALL}/lib/libBulletInverseDynamics.a"
+        "${BULLET_INSTALL}/lib/libBulletDynamics.a"
+        "${BULLET_INSTALL}/lib/libBullet3Dynamics.a"
+        "${BULLET_INSTALL}/lib/libBulletSoftBody.a"
+        "${BULLET_INSTALL}/lib/libLinearMath.a"
     )
+    if (WIN32)
+        list(APPEND common_libs -Wl,--start-group "${BULLET_LIBS}" -Wl,--end-group)
+    else()
+        list(APPEND common_libs -Wl,--whole-archive ${BULLET_LIBS} -Wl,--no-whole-archive)
+    endif()
 endif()
 
 # === GLM Config ===
@@ -201,7 +223,7 @@ include(CTest)
 enable_testing()
 
 # Define library files
-add_library(Syngine SHARED
+add_library(${PROJECT_NAME} SHARED
     src/Syngine/Syngine.cpp
 
     src/Syngine/engine/RenderTable.cpp
@@ -211,9 +233,9 @@ add_library(Syngine SHARED
     src/Syngine/serialization/DataSerializer.cpp
     src/Syngine/serialization/DataTemplates.cpp
 
+    #src/Syngine/modules/TextUtil.cpp
     src/Syngine/modules/BatchRenderer.cpp
     src/Syngine/modules/Material.cpp
-    #src/Syngine/modules/TextUtil.cpp
     src/Syngine/modules/Texture.cpp
     src/Syngine/modules/Presets.cpp
     src/Syngine/modules/GLObjects.cpp
@@ -240,41 +262,16 @@ add_library(Syngine SHARED
     src/Syngine/utils/glad.c
 )
 
-# Initialize common libraries
-set(common_libs SDL3)
-
-if (UNIX AND NOT APPLE)  # Linux
-    list(APPEND common_libs glfw3 OpenGL::OpenGL Xrandr Xi dl)
-    #list(APPEND common_libs ${FREETYPE_ROOT}/linux/lib/libfreetype.a)
-elseif (WIN32)  # Windows
-    list(APPEND common_libs opengl32)
-    #list(APPEND common_libs ${FREETYPE_ROOT}/win32/lib/libfreetype.a)
-elseif (APPLE)
-    list(APPEND common_libs "-framework OpenGL" "-framework Cocoa" "-framework IOKit" "-framework CoreVideo")
-endif()
-
-if (USE_ASSIMP)
-    list(APPEND common_libs assimp)
-endif()
-
-if (USE_BULLET)
-    if (WIN32)
-        list(APPEND common_libs -Wl,--start-group "${BULLET_LIBS}" -Wl,--end-group)
-    else()
-        list(APPEND common_libs -Wl,--whole-archive ${BULLET_LIBS} -Wl,--no-whole-archive)
-    endif()
-endif()
-
 target_link_libraries(${PROJECT_NAME} ${common_libs})
 
 if (WIN32)
-    set_target_properties(Syngine PROPERTIES
+    set_target_properties(${PROJECT_NAME} PROPERTIES
         PREFIX ""
         OUTPUT_NAME "Syng"
         VERSION ${PROJECT_VERSION}
     )
 else()
-    set_target_properties(Syngine PROPERTIES
+    set_target_properties(${PROJECT_NAME} PROPERTIES
         OUTPUT_NAME "Syng"
         VERSION ${PROJECT_VERSION}
     )
@@ -285,4 +282,4 @@ add_executable(sample_executable
     src/Syngine/sample/SampleGame.cpp
     ${IMGUI_SRC}
 )
-target_link_libraries(sample_executable Syngine)
+target_link_libraries(sample_executable ${PROJECT_NAME})

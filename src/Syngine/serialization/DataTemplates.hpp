@@ -16,13 +16,13 @@ namespace DataTemplates
 void push(DataDeserializer *buffer, std::string res, uint16_t header);
 void pop(DataDeserializer *buffer, std::string res, uint16_t footer);
 
-constexpr void write_bool(DataSerializer* buffer, bool b) { uint8_t bytes[1] = {b}; buffer->write(bytes, 1); }
-constexpr void write_int32(DataSerializer* buffer, int32_t i) { LittleEndian::write<int32_t>(buffer, i); };
-constexpr void write_int64(DataSerializer* buffer, int64_t i) { LittleEndian::write<int64_t>(buffer, i); };
-constexpr void write_uint16(DataSerializer* buffer, uint16_t i) { LittleEndian::write<uint16_t>(buffer, i); };
-constexpr void write_uint32(DataSerializer* buffer, uint32_t i) { LittleEndian::write<uint32_t>(buffer, i); };
-constexpr void write_uint64(DataSerializer* buffer, uint64_t i) { LittleEndian::write<uint64_t>(buffer, i); };
-constexpr void write_float(DataSerializer* buffer, float f) { LittleEndian::write<float>(buffer, f); };
+inline void write_bool(DataSerializer* buffer, bool b) { uint8_t bytes[1] = {b}; buffer->write(bytes, 1); }
+inline void write_int32(DataSerializer* buffer, int32_t i) { LittleEndian::write<int32_t>(buffer, i); };
+inline void write_int64(DataSerializer* buffer, int64_t i) { LittleEndian::write<int64_t>(buffer, i); };
+inline void write_uint16(DataSerializer* buffer, uint16_t i) { LittleEndian::write<uint16_t>(buffer, i); };
+inline void write_uint32(DataSerializer* buffer, uint32_t i) { LittleEndian::write<uint32_t>(buffer, i); };
+inline void write_uint64(DataSerializer* buffer, uint64_t i) { LittleEndian::write<uint64_t>(buffer, i); };
+inline void write_float(DataSerializer* buffer, float f) { LittleEndian::write<float>(buffer, f); };
 
 void write_material_props(DataSerializer* buffer, MaterialProps material);
 void write_string(DataSerializer* buffer, const std::string& value);
@@ -32,13 +32,13 @@ void write_glm_vec3(DataSerializer* buffer, const glm::vec3& val);
 void write_glm_vec4(DataSerializer* buffer, const glm::vec4& val);
 void write_glm_vec2(DataSerializer* buffer, const glm::vec2& val);
 
-constexpr bool read_bool(DataDeserializer* buffer) { return buffer->readByte(); }
-constexpr int32_t read_int32(DataDeserializer* buffer) { return LittleEndian::read<int32_t>(buffer); };
-constexpr int64_t read_int64(DataDeserializer* buffer) { return LittleEndian::read<int64_t>(buffer); };
-constexpr uint16_t read_uint16(DataDeserializer* buffer) { return LittleEndian::read<uint16_t>(buffer); };
-constexpr uint32_t read_uint32(DataDeserializer* buffer) { return LittleEndian::read<uint32_t>(buffer); };
-constexpr uint64_t read_uint64(DataDeserializer* buffer) { return LittleEndian::read<uint64_t>(buffer); };
-constexpr float read_float(DataDeserializer* buffer) { return LittleEndian::read<float>(buffer); };
+inline bool read_bool(DataDeserializer* buffer) { return buffer->readByte(); }
+inline int32_t read_int32(DataDeserializer* buffer) { return LittleEndian::read<int32_t>(buffer); };
+inline int64_t read_int64(DataDeserializer* buffer) { return LittleEndian::read<int64_t>(buffer); };
+inline uint16_t read_uint16(DataDeserializer* buffer) { return LittleEndian::read<uint16_t>(buffer); };
+inline uint32_t read_uint32(DataDeserializer* buffer) { return LittleEndian::read<uint32_t>(buffer); };
+inline uint64_t read_uint64(DataDeserializer* buffer) { return LittleEndian::read<uint64_t>(buffer); };
+inline float read_float(DataDeserializer* buffer) { return LittleEndian::read<float>(buffer); };
 
 MaterialProps read_material_props(DataDeserializer* buffer);
 std::string read_string(DataDeserializer* buffer);

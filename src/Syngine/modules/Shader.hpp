@@ -46,6 +46,7 @@ private:
     std::map<std::string, std::string> variables;
     GLuint ID = 0;
 public:
+    std::string vertexBase, fragmentBase, geometryBase;
     std::string vertexCode, fragmentCode, geometryCode;
 
     Shader() = default;

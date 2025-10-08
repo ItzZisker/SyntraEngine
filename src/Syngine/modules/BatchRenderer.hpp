@@ -25,7 +25,7 @@ private:
 
 };
 
-class ModelBatchRenderer : public ShaderRenderable
+class ModelBatchRenderer : public ShaderRenderable, public DepthRenderable
 {
 private:
     Scene *scene;
@@ -37,6 +37,7 @@ private:
 public:
     ModelBatchRenderer(Scene *scene);
 
+    void renderDepth(Shader& depthShader, Screenbuffer screen) override;
     void render(Shader& batchShader, Screenbuffer screen) override;
 
     void add(std::string key, ModelInstance *mI);
