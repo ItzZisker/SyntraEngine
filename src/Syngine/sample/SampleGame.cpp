@@ -27,7 +27,7 @@
 #define SCR_HEIGHT 1024
 
 /* TODO:
- *   === SEIZURE PROGRAM (Lethal-like Coop Video Game) ===
+ *   === SEIZURE PROGRAM (Lethal-like COOP Video Game from scratch) ===
  *
  *   - [*] Window Resize Viewport bugfix
  *   - [*] Make shaders variables replaceable (AKA Configurable)
@@ -39,23 +39,31 @@
  *   - [*] Move classes/global functions to "syng" namespace
  *   - [*] Rename Bullet-dependent Classes Starting with "BT_" and PhysX with "PX_"
  *   - [*] Opacity Support + Blending Objects (Supports both Skybox & Objects behind)
- *   - [*] Rebuild Bullet linked all in one libBullet3.dll (Impossible, linked them statically, much more cleaner)
+ *   - [*] Rebuild Bullet linked all in one libBullet3.dll (Impossible, linked them statically, much cleaner)
+ *   - [*] Test/Load Sample GLTF Models by Standard
  *   - [*] GLVertex, GLVertexElement, GLObjects, cleaner vertex read/write to GPU
- *   - [-] Scene2D ( ), Mesh2D (*)
- *   - [ ] Deferred Shading
- *   - [ ] Unfolded one-pass spherical Point Shadow Maps
+ *   - [*] Model mesh-tree traversal, each mesh has its own local transform (*) -> MeshInstances followed by ModelInstances (*)
+ *   - [*] Anti-Aliasing: MSAA (*) -> FXAA (*)
+ *   - [ ] Global Asset Manager: Read/Write Shaders ( ), Read/Write Materials (Textures + Metadata + PBR) ( ), Read/Write Models ( ), Read/Write Meshes ( ) <bind/release meshes in model>
+ *   - [ ] Batching: Reduce GPU State Changes by once binding to materials for each mesh (*) -> Batched VAO Model Instances (BVMI) ( ) -> BVMI + Atlased Textures ( )
+ *   - [ ] UI Rendering: Text Rendering ( ) -> Mesh2D "Quads, static buttons, images etc." (-) -> Batched Mesh2D, Text, etc (defined by U.V. template) ( )
  *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows (*) -> Cascaded Shadow Mapping ( )
+ *   - [-] One Draw call Particles ( ) | Gamma correction (*) -> HDR (*) -> Bloom ( ) -> Normal Mapping (*) -> Parallax Mapping (*)
+ *   - [ ] Make an "install" task in CMake for publishing Syngine + Bullet + etc. dependent headers + shared libs.
+ *   - [ ] Multi Shader Support for Scene and inherited renderable objects
+ *   - [ ] Deferred Rendererer as a an object in the scene rendering tree
+ *   - [ ] Unfolded one-pass spherical Point Shadow Maps
  *   - [ ] SSAO (+ < Game Menu Option >)
- *   - [ ] Anti-Aliasing
- *   - [-] Flame Particles ( ) | Gamma correction (*) -> HDR (*) -> Bloom ( ) -> Normal Mapping (*) -> Parallax Mapping (*) -> PBR Textures ( )
- *   - [ ] Test/Load Sample GLTF Models by Standard
- *   - [ ] < Make format parser for mesh nodes name (Using gltf's custom properties + assimp) (ECH_: Entity Convex Hull, ETM_: Entity Triangle Mesh, PF_: FlameParticle, [B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh) >
+ *   - [ ] Physics-Based Rendering
+ *   - [-] Web Support (Emscripten)
+ *   - [ ] Android Support (Or maybe Java port by JNI)
+ *   - [ ] < Make format parser for special nodes name (Using gltf's custom properties + assimp) ([B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh) >
  *   - [ ] < Room to Room Lighting System > (Filter lights for specific meshes in a room, so meshes behind the walls won't get lit, Only usable for static pointlights)
- *   - [ ] < Serialize/Deserialize Game Data >
- *   - [ ] < Review https://github.com/kcat/openal-soft for 3D Audio >
- *   - [ ] < Game Modeling + Design (Low Poly? High Constrast colors?) >
- *   - [ ] < Game UI (VHS Style Menus? idk) >
- *   - [ ] < Networking (via ASIO) + ANSI Server >
+ *   - [*] < Serialize/Deserialize Game Data > (SynPack format "assets.spk")
+ *   - [-] < Review https://github.com/kcat/openal-soft for 3D Audio > -> Implement Gaming Audio System in Syngine ( )
+ *   - [-] < Game Modeling + Design (Low Poly? High Constrast colors?) >
+ *   - [-] < Game UI (VHS Style Menus? idk) >
+ *   - [ ] < Networking (via ASIO & protobuf) + ANSI Server >
  *   - [ ] < Produce (Demo via itch.io, Paid on Steam) >
  */
 
