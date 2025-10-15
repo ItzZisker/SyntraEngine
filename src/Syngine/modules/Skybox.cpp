@@ -3,7 +3,7 @@
 #include "Presets.hpp"
 
 #include <stb_image.h>
-#include <glad/glad.h>
+#include "Syngine/ports/GLPort.h"
 
 #include <filesystem>
 #include <vector>
@@ -18,6 +18,8 @@ Skybox::~Skybox() {
 
 void Skybox::load() {
     shader.init();
+    shader.use();
+    shader.setVec3f("hdrBoost", hdrBoost);
 
     std::vector<glm::vec3> vertices;
     std::vector<GLuint> indices;

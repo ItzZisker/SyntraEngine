@@ -13,8 +13,7 @@
           "New-Item -ItemType Directory -Force -Path 'shaders','models'; ",
           "Copy-Item -Recurse -Force '${workspaceFolder}/libs/sdl-3.2.18/bin/*' .; ",
           "Copy-Item -Recurse -Force '${workspaceFolder}/libs/assimp-6.0.2/build/bin/*' .; ",
-          "Copy-Item -Recurse -Force '${workspaceFolder}/shaders/*' shaders; ",
-          "Copy-Item -Recurse -Force '${workspaceFolder}/models/*' models; ",
+          "Copy-Item -Recurse -Force '${workspaceFolder}/assets/*' assets; ",
           "ninja; ",
           "Start-Process -NoNewWindow -Wait 'sample_executable.exe'"
         ]
@@ -26,8 +25,7 @@
           "mkdir -p shaders models;",
           "cp -ru ${workspaceFolder}/libs/sdl-3.2.18/bin/* .;",
           "cp -ru ${workspaceFolder}/libs/assimp-6.0.2/build/bin/* .;",
-          "cp -ru ${workspaceFolder}/shaders/* shaders/;",
-          "cp -ru ${workspaceFolder}/models/* models/;",
+          "cp -ru ${workspaceFolder}/assets/* assets/;",
           "ninja;",
           "./sample_executable"
         ]

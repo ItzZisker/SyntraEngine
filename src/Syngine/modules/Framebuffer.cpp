@@ -36,7 +36,9 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
 
     switch (TCBFormat) {
         case GL_RGB:
+#ifndef __EMSCRIPTEN__
         case GL_RGB16:
+#endif
         case GL_RGB16F:
         case GL_RGB16I:
         case GL_RGB16UI:
@@ -46,7 +48,9 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
             TCBBaseFormat = GL_RGB;
             break;
         case GL_RGBA:
+#ifndef __EMSCRIPTEN__
         case GL_RGBA16:
+#endif
         case GL_RGBA16F:
         case GL_RGBA16I:
         case GL_RGBA16UI:
@@ -63,6 +67,7 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
     glGenFramebuffers(1, &FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
+#ifndef __EMSCRIPTEN__
     if (AA.isMultiSample()) {
         glGenTextures(1, &MS_TCB);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, MS_TCB);
@@ -72,7 +77,7 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
         glGenFramebuffers(1, &MSOUT_FBO);
         glBindFramebuffer(GL_FRAMEBUFFER, MSOUT_FBO);
     }
-
+#endif
     glGenTextures(1, &TCB);
     glBindTexture(GL_TEXTURE_2D, TCB);
     glTexImage2D(GL_TEXTURE_2D, 0, TCBFormat, width_, height_, 0, TCBBaseFormat, GL_UNSIGNED_BYTE, NULL);
@@ -83,12 +88,14 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
 
     glGenRenderbuffers(1, &RBO);
     glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-    
-    if (AA.isMultiSample()) {
+
+#ifndef __EMSCRIPTEN__
+    if (AA.isMultiSample())
         glRenderbufferStorageMultisample(GL_RENDERBUFFER, AA.getMultiSamples(), GL_DEPTH24_STENCIL8, width_, height_);
-    } else {
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width_, height_);
-    }
+    else 
+#endif
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width_, height_);
+
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
     for (auto& func : initTasks) {
@@ -185,11 +192,13 @@ void Framebuffer::render(Screenbuffer screen) {
     for (auto& func : renderTasks) {
         func(this);
     }
+#ifndef __EMSCRIPTEN__
     if (AA.isMultiSample()) {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, MSOUT_FBO);
         glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
+#endif
     glBindFramebuffer(GL_FRAMEBUFFER, screen.getFBO());
 
     if (outputToParent) {

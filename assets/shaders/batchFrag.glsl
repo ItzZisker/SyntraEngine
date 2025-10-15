@@ -49,9 +49,9 @@ uniform DirLight dirLight;
 
 uniform vec3 cameraPos;
 
-uniform float roughnessConstrant = 4.0;
-uniform bool roughness = false;
-uniform bool parallax = false;
+uniform float roughnessConstrant;
+uniform bool roughness;
+uniform bool parallax;
 
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_specular1;
@@ -59,20 +59,20 @@ uniform sampler2D texture_normal1;
 uniform sampler2D texture_height1;
 uniform sampler2D texture_roughness1;
 
-uniform float opacity = 1.0;
-uniform float specularStrength = 1.0;
-uniform float shininess = 32.0;
-uniform float parallaxMinLayers = 8.0;
-uniform float parallaxMaxLayers = 32.0;
-uniform float height_scale = 0.05;
+uniform float opacity;
+uniform float specularStrength;
+uniform float shininess;
+uniform float parallaxMinLayers;
+uniform float parallaxMaxLayers;
+uniform float height_scale;
 
 #if HAS_SHADOWS
 uniform sampler2D shadowMap;
-uniform float shadowStrength = 0.5;
-uniform float shadowBiasMax = 0.05;
-uniform float shadowBiasMin = 0.005;
-uniform float shadowPCFScale = 1.0;
-uniform int shadowPCFRadius = 10;
+uniform float shadowStrength;
+uniform float shadowBiasMax;
+uniform float shadowBiasMin;
+uniform float shadowPCFScale;
+uniform int shadowPCFRadius;
 #endif
 
 in VS_OUT {

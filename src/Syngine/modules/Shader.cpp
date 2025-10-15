@@ -164,6 +164,7 @@ void Shader::init(std::map<std::string, std::string> variables) {
     }
 
     if (gShaderCode != nullptr) {
+#ifndef __EMSCRIPTEN__ // Emscripten WebGL doesn't support geometry shaders
         geometry = glCreateShader(GL_GEOMETRY_SHADER);
         glShaderSource(geometry, 1, &gShaderCode, NULL);
         glCompileShader(geometry);
@@ -171,15 +172,20 @@ void Shader::init(std::map<std::string, std::string> variables) {
         glGetShaderiv(geometry, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(geometry, 512, NULL, infoLog);
-            std::cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << std::endl;
+            std::cerr << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << std::endl;
         }
+#else
+        std::cerr << "ERROR::SHADER::GEOMETRY::UNSUPPORTED\n" << std::endl;
+#endif
     }
 
     ID = glCreateProgram();
 
     glAttachShader(ID, vertex);
     glAttachShader(ID, fragment);
+#ifndef __EMSCRIPTEN__
     if (geometry) glAttachShader(ID, geometry);
+#endif
     glLinkProgram(ID);
 
     glGetProgramiv(ID, GL_LINK_STATUS, &success);
@@ -191,7 +197,9 @@ void Shader::init(std::map<std::string, std::string> variables) {
 
     glDeleteShader(vertex);
     glDeleteShader(fragment);
+#ifndef __EMSCRIPTEN__
     if (geometry) glDeleteShader(geometry);
+#endif
 }
 
 std::string Shader::getVariable(std::string key) {

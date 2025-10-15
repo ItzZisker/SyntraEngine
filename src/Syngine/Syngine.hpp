@@ -16,7 +16,8 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
-#include <glad/glad.h>
+
+#include "Syngine/ports/GLPort.h"
 
 #include <functional>
 #include <unordered_map>
@@ -24,6 +25,15 @@
 
 namespace syng
 {
+
+#ifdef __EMSCRIPTEN__
+inline void JS_GL_LOG(const std::string& msg) {
+    EM_ASM({ console.log("[SG_WEBGL] " + UTF8ToString($0)); }, msg.c_str());
+}
+#else
+inline void JS_GL_LOG(const std::string& msg) {}
+#endif
+
 struct WindowSize {
     int width, height;
 };
@@ -55,6 +65,7 @@ public:
 
     bool isInitialized();
     void attrib(SDL_GLAttr attr, int value);
+    void attribMSAA(int samples = 4);
     int initLoop();
 
     void addEventHandler(SDL_EventHandler *handler);

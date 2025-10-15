@@ -106,8 +106,35 @@ void Scene::updateProjection() {
 void Scene::updateUniforms() {
     screenShader.use();
     screenShader.setVec2f("screenSize", snapshot.width, snapshot.height);
+    screenShader.setFloat("gamma", gamma);
+
+    screenShader.setBool("hdrEnabled", false); // Default HDR values
+    screenShader.setFloat("hdrExposure", 3.25f);
 
     batchShader.use();
+
+    batchShader.setBool("fxaaEnabled", false); // Default FXAA4 values
+    batchShader.setFloat("fxaaReduceMin", 1.0f / 128.0f);
+    batchShader.setFloat("fxaaReduceMul", 1.0f / 8.0f);
+    batchShader.setFloat("fxaaSpanMax", 8.0f);
+
+    batchShader.setFloat("roughnessConstrant", 4.0f); // Default roughness/parallax constrant
+    batchShader.setBool("roughness", false);
+    batchShader.setBool("parallax", false);
+
+    batchShader.setFloat("shadowStrength", 0.5f); // Default shadow values
+    batchShader.setFloat("shadowBiasMax", 0.05f);
+    batchShader.setFloat("shadowBiasMin", 0.005f);
+    batchShader.setFloat("shadowPCFScale", 1.0f);
+    batchShader.setInt("shadowPCFRadius", 10);
+
+    batchShader.setFloat("opacity", 1.0f); // Default material misc values
+    batchShader.setFloat("specularStrength", 1.0f);
+    batchShader.setFloat("shininess", 32.0f);
+    batchShader.setFloat("parallaxMinLayers", 8.0f);
+    batchShader.setFloat("parallaxMaxLayers", 32.0f);
+    batchShader.setFloat("height_scale", 0.05f);
+
     batchShader.setVec3f("dirLight.direction", dirLight.direction);
     batchShader.setVec3f("dirLight.ambient", dirLight.ambient);
     batchShader.setVec3f("dirLight.diffuse", dirLight.diffuse);

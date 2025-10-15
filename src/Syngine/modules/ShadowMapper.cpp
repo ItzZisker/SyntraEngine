@@ -6,19 +6,17 @@ using namespace syng;
 ShadowMapper::ShadowMapper(Shader& depthShader, GLuint width, GLuint height, glm::mat4 lightProj, glm::mat4 lightView) :
         shadowWidth(width), shadowHeight(height), lightProjection(lightProj), lightView(lightView), depthShader(depthShader) {}
 
-ShadowMapper::ShadowMapper(Shader& depthShader, GLuint width, GLuint height) :
+ShadowMapper::ShadowMapper(Shader& depthShader, GLuint uv, glm::vec3 center, glm::vec3 lightDir, glm::vec3 lightPos) :
+        ShadowMapper(depthShader, uv, uv, center, lightDir, lightPos) {}
+
+ShadowMapper::ShadowMapper(Shader& depthShader, GLuint width, GLuint height, glm::vec3 center, glm::vec3 lightDir, glm::vec3 lightPos) :
         ShadowMapper(depthShader, width, height, {}, {}) {
-    glm::vec3 lightDir = glm::normalize(glm::vec3(-0.5f, -1.0f, -0.5f));
-    glm::vec3 lightPos = -lightDir * 10.0f;
     glm::vec3 target = glm::vec3(0.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-
-    float near_plane = 0.1f, far_plane = 75.0f;
-    this->lightView = glm::lookAt(lightPos, target, up);
+    float near_plane = 0.1f, far_plane = 100.0f;
+    this->lightView = glm::lookAt(lightPos, center, up);
     this->lightProjection = glm::ortho(-30.0f, 30.0f, -30.0f, 30.0f, near_plane, far_plane); 
 }
-
-ShadowMapper::ShadowMapper(Shader& depthShader, GLuint uv) : ShadowMapper(depthShader, uv, uv) {}
 
 ShadowMapper::~ShadowMapper() {
     glDeleteFramebuffers(1, &depthMapFBO);
@@ -36,12 +34,16 @@ void ShadowMapper::create() {
     PresetsTexel::TextureFilter(GL_TEXTURE_2D, GL_NEAREST);
     PresetsTexel::TextureParamST(GL_TEXTURE_2D, GL_CLAMP_TO_BORDER);
 
-    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
+#ifndef __EMSCRIPTEN__ // Emscripten WebGL doesn't support borders
+    float borderColor[] = {1.0, 1.0, 1.0, 1.0};
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+#endif
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapTCB, 0);
+#ifndef __EMSCRIPTEN__
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
+#endif
     glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 }
 

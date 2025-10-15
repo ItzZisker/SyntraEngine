@@ -7,7 +7,7 @@
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/world/Coordination.hpp"
 
-#include <glad/glad.h>
+#include "Syngine/ports/GLPort.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 

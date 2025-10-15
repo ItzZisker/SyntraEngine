@@ -1,5 +1,6 @@
 #include "Texture.hpp"
 
+#include "Syngine/Syngine.hpp"
 #include "Syngine/engine/TaskQueue.hpp"
 
 #include "Syngine/modules/Model.hpp"
@@ -171,17 +172,37 @@ GLuint syng::TCBFromBytes(uint8_t *raw, int width, int height, int nrComponents)
         case 4: format = GL_RGBA; break;
         default: return 0;
     }
+#ifndef __EMSCRIPTEN__
     GLenum internalFormat = (nrComponents == 3) ? GL_RGB8 : (nrComponents == 4) ? GL_RGBA8 : GL_R8;
+#else
+    GLenum internalFormat = (nrComponents == 3) ? GL_RGB : (nrComponents == 4) ? GL_RGBA : GL_RED;
+#endif
 
     glGenTextures(1, &TCB);
     glBindTexture(GL_TEXTURE_2D, TCB);
+
+    JS_GL_LOG("push: TCB=" + std::to_string(TCB) + ", internalFormat=" + std::to_string(internalFormat));
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, raw);
+    JS_GL_LOG("pop: TCB=" + std::to_string(TCB));
+
+#ifdef __EMSCRIPTEN__
+    // if (format == GL_RGBA || format == GL_RGB || format == GL_SRGB8_ALPHA8) {
+    //     glGenerateMipmap(GL_TEXTURE_2D);
+    //     PresetsTexel::TextureParamST(GL_TEXTURE_2D, GL_REPEAT);
+    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // } else {
+        PresetsTexel::TextureParamST(GL_TEXTURE_2D, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // }
+#else
     glGenerateMipmap(GL_TEXTURE_2D);
 
     PresetsTexel::TextureParamST(GL_TEXTURE_2D, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
+#endif
     return TCB;
 }
 

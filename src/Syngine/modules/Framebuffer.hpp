@@ -25,7 +25,9 @@ private:
     syng::HDR hdr = HDR_OFF;
 
     Mesh2D* quad;
+#ifndef __EMSCRIPTEN__
     unsigned int MSOUT_FBO = 0, MS_TCB = 0;
+#endif
     unsigned int RBO = 0, TCB = 0;
 
     glm::vec3 fallbackColor = {0.1f, 0.5f, 0.5f};

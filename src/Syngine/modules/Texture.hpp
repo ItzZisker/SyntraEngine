@@ -3,7 +3,7 @@
 #include "Syngine/serialization/DataSerializer.hpp"
 #include "assimp/material.h"
 
-#include <glad/glad.h>
+#include "Syngine/ports/GLPort.h"
 
 #include <filesystem>
 #include <future>

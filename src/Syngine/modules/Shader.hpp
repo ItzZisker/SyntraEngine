@@ -2,7 +2,7 @@
 
 #include "Syngine/serialization/DataSerializer.hpp"
 
-#include <glad/glad.h>
+#include "Syngine/ports/GLPort.h"
 #include <glm/glm.hpp>
 
 #include <filesystem>

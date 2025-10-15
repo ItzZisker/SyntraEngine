@@ -9,8 +9,10 @@ namespace syng {
     const AntiAliasing AA_FXAAx1 = {FXAA_1};
     const AntiAliasing AA_FXAAx2 = {FXAA_2};
     const AntiAliasing AA_FXAAx4 = {FXAA_4};
+#ifndef __EMSCRIPTEN__
     const AntiAliasing AA_MSAAx2 = {MSAA_2};
     const AntiAliasing AA_MSAAx4 = {MSAA_4};
+#endif
 }
 
 Screenbuffer::Screenbuffer(GLuint FBO) : FBO(FBO) {}

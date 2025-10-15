@@ -6,7 +6,8 @@
 #include "Shader.hpp"
 #include "Material.hpp"
 
-#include <glad/glad.h>
+#include "Syngine/ports/GLPort.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 

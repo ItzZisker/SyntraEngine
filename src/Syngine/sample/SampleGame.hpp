@@ -21,16 +21,21 @@
 
 using namespace syng;
 
+static const int maxFrameCount = 30;
+
 class SampleGame {
 public:
     GameWindow *window;
     Camera *camera;
     Scene *scene;
 
-    ModelBatchRenderer *modelBatch;
+    MaterialBatchRenderer *materialBatch;
     ShadowMapper *shadowMapper;
     Framebuffer *framebuffer, *framebuffer_VHS;
     Skybox *skybox;
+
+    float framerate[maxFrameCount];
+    int frameCount;
 
     float gamma = 1.1f;
     float yaw = 0, pitch = 0;

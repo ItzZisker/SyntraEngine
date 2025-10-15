@@ -13,7 +13,7 @@
 #include "Syngine/modules/ShadowMapper.hpp"
 #include "Syngine/world/Coordination.hpp"
 
-#include "glm/fwd.hpp"
+#include "glm/fwd.hpp" 
 
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
@@ -77,12 +77,14 @@ int SampleGame::launch() {
 }
 
 void SampleGame::createImGUI() {
+#ifndef __EMSCRIPTEN__
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     ImGui::StyleColorsDark();
     ImGui_ImplSDL3_InitForOpenGL(window->getSDLWindowPtr(), window->getGLContext());
-    ImGui_ImplOpenGL3_Init("#version 330");
+    ImGui_ImplOpenGL3_Init("#version 330 core");
+#endif
 }
 
 void SampleGame::createWindow(GameWindow *window) {
@@ -91,11 +93,11 @@ void SampleGame::createWindow(GameWindow *window) {
 
     Model* sceneModel = new Model();
 
-    sceneModel->readAssimp({"models/Sponza/glTF/Sponza.gltf"});
+    sceneModel->readAssimp({"assets/models/Sponza/glTF/Sponza.gltf"});
     sceneModel->uploadVertices(CacheApproach::Interleaved);
 
-    batchShader.read("shaders/batchVertex.glsl", "shaders/batchFrag.glsl");
-    screenShader.read("shaders/screenVertex.glsl", "shaders/screenFrag.glsl");
+    batchShader.read("assets/shaders/batchVertex.glsl", "assets/shaders/batchFrag.glsl");
+    screenShader.read("assets/shaders/screenVertex.glsl", "assets/shaders/screenFrag.glsl");
 
     Scene_T props = {
         .width = SCR_WIDTH,
@@ -105,24 +107,25 @@ void SampleGame::createWindow(GameWindow *window) {
     };
     scene = new Scene(camera, batchShader, screenShader, props);
 
-    skyboxShader.read("shaders/skyboxVertex.glsl", "shaders/skyboxFrag.glsl");
+    skyboxShader.read("assets/shaders/skyboxVertex.glsl", "assets/shaders/skyboxFrag.glsl");
     skybox = new Skybox(scene, skyboxShader);
     skybox->hdrBoost = glm::vec3(hdrSkyBoost);
     skybox->load({
-        "models/skybox/daylight/right.bmp",
-        "models/skybox/daylight/left.bmp",
-        "models/skybox/daylight/top.bmp",
-        "models/skybox/daylight/bottom.bmp",
-        "models/skybox/daylight/front.bmp",
-        "models/skybox/daylight/back.bmp"
+        "assets/skybox/daylight/right.bmp",
+        "assets/skybox/daylight/left.bmp",
+        "assets/skybox/daylight/top.bmp",
+        "assets/skybox/daylight/bottom.bmp",
+        "assets/skybox/daylight/front.bmp",
+        "assets/skybox/daylight/back.bmp"
     });
     scene->getBatchRenderTable()->add("skybox", skybox);
 
     sceneModelInstance = new ModelInstance(sceneModel);
 
-    modelBatch = new ModelBatchRenderer(scene);
-    modelBatch->add("sceneModel", sceneModelInstance);
-    scene->getBatchRenderTable()->add("modelBatch", modelBatch);
+    materialBatch = new MaterialBatchRenderer(scene);
+    materialBatch->add(sceneModelInstance);
+    materialBatch->sort(DEFAULT_BATCH_SORT);
+    scene->getBatchRenderTable()->add("materialBatch", materialBatch);
 
     DirLight dayLight = {
         {-0.86f, -1.0f, -0.97f},
@@ -136,8 +139,10 @@ void SampleGame::createWindow(GameWindow *window) {
     scene->setDirectionalLight(dayLight);
     scene->reloadShaders();
 
-    depthShader.read("shaders/depthVertex.glsl", "shaders/depthFrag.glsl");
-    shadowMapper = new ShadowMapper(depthShader, 4096);
+    glm::vec3 lightDir = glm::normalize(glm::vec3(-0.5f, -1.0f, -0.5f));
+    glm::vec3 lightPos = -lightDir * 50.0f;
+    depthShader.read("assets/shaders/depthVertex.glsl", "assets/shaders/depthFrag.glsl");
+    shadowMapper = new ShadowMapper(depthShader, 4096, glm::vec3(0.0f), lightDir, lightPos);
     shadowMapper->strength *= 2;
     shadowMapper->biasMax *= 0.18f;
     shadowMapper->biasMin *= 0.05f;
@@ -166,19 +171,28 @@ void SampleGame::createWindow(GameWindow *window) {
     SDL_SetWindowRelativeMouseMode(window->getSDLWindowPtr(), true);
 
     appleModel = new Model();
-    appleModel->readAssimp({"models/apple2/apple.obj"});
+    appleModel->readAssimp({"assets/models/apple2/apple.obj"});
     appleModel->uploadVertices(CacheApproach::Interleaved);
 }
 
 void SampleGame::renderImGUI() {
+#ifndef __EMSCRIPTEN__
     window->forEachFrameEvents([](const SDL_Event event){ImGui_ImplSDL3_ProcessEvent(&event);});
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
 
+    frameCount++;
+    if (frameCount >= maxFrameCount) frameCount = 0;
+    framerate[frameCount] = (window->getLastFrameTime() == 0) ? 999.0f : 1.0f / window->getLastFrameTime();
+
+    float FPS = 0;
+    for (int i = 0; i < maxFrameCount; i++) FPS += framerate[i];
+    FPS /= maxFrameCount;
+
     ImGui::NewFrame();
     ImGui::Begin("Debug");
-    ImGui::Text("FPS: %.0f", (window->getLastFrameTime() == 0) ? 999.0f : 1.0f / window->getLastFrameTime());
+    ImGui::Text("FPS: %.0f", FPS);
 
     ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
     ImGui::SliderFloat("HDR Boost (Skybox)", &hdrSkyBoost, 0.0f, 100.0f, "%.3f");
@@ -189,6 +203,7 @@ void SampleGame::renderImGUI() {
     ImGui::Render();
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+#endif
 }
 
 void SampleGame::renderETC() {
@@ -200,9 +215,11 @@ void SampleGame::renderETC() {
 }
 
 void SampleGame::cleanup() {
+#ifndef __EMSCRIPTEN__
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
+#endif
 }
 
 int main() {

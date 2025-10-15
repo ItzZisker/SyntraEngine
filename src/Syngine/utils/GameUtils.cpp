@@ -3,7 +3,7 @@
 #include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/world/Coordination.hpp"
 
-#include <glad/glad.h>
+#include "Syngine/ports/GLPort.h"
 
 #include "glm/fwd.hpp"
 #include "glm/gtc/quaternion.hpp"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "glad/glad.h"
+#include "Syngine/ports/GLPort.h"
 
 #include <stdexcept>
 #include <vector>
@@ -97,7 +97,12 @@ public:
                     glVertexAttribPointer(att.index, att.size, att.type, att.normalized, att.stride, att.pointer);
                 break;
                 case GLPointer_Int32:
+#ifndef __EMSCRIPTEN__
                     glVertexAttribIPointer(att.index, att.size, att.type, att.stride, att.pointer);
+#else
+                    glVertexAttribIPointer(att.index, att.size, att.type, att.stride, att.pointer);
+                    //glVertexAttribPointer(att.index, att.size, GL_FLOAT, att.normalized, att.stride, att.pointer);
+#endif
                 break;
                 case GLPointer_Int64:
                     throw std::runtime_error("GLPointer_Int64 is unsupported on GL330");

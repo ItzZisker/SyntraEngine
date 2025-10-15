@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glad/glad.h>
+#include "Syngine/ports/GLPort.h"
 
 namespace syng
 {
@@ -10,8 +10,10 @@ enum AA_Method {
     FXAA_1,
     FXAA_2,
     FXAA_4,
+#ifndef __EMSCRIPTEN__ // Emscripten WebGL doesn't support MSAA on offscreen framebuffers
     MSAA_2,
     MSAA_4,
+#endif
     IMPL
 };
 
@@ -21,15 +23,15 @@ protected:
     AntiAliasing() : method(IMPL) {}
 public:
     AntiAliasing(AA_Method method) : method(method) {}
-
+#ifndef __EMSCRIPTEN__
     bool isMultiSample() {
         return method == MSAA_2 || method == MSAA_4;
     }
-
+#endif
     bool isFastApproximate() {
         return method == FXAA_1 || method == FXAA_2 || method == FXAA_4;
     }
-
+#ifndef __EMSCRIPTEN__
     unsigned int getMultiSamples() {
         switch (method) {
             case MSAA_2: return 2;
@@ -37,7 +39,7 @@ public:
             default: return 0;
         }
     }
-
+#endif
     void getFXAAVars(float* reduceMin, float* reduceMul, float* spanMax) {
         switch (method) {
             case FXAA_1:
@@ -82,8 +84,10 @@ extern const AntiAliasing AA_OFF;
 extern const AntiAliasing AA_FXAAx1;
 extern const AntiAliasing AA_FXAAx2;
 extern const AntiAliasing AA_FXAAx4;
+#ifndef __EMSCRIPTEN__
 extern const AntiAliasing AA_MSAAx2;
 extern const AntiAliasing AA_MSAAx4;
+#endif
 
 class SetupObject {
 protected:
