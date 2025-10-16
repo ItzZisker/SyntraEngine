@@ -23,8 +23,8 @@
 #include <string>
 #include <vector>
 
-#define SCR_WIDTH  1360
-#define SCR_HEIGHT 1024
+#define SCR_WIDTH  1024
+#define SCR_HEIGHT 768
 
 /* TODO:
  *   === SEIZURE PROGRAM (Lethal-like COOP Video Game from scratch) ===
@@ -104,8 +104,13 @@ void SampleGame::createWindow(GameWindow *window) {
     sceneModel->readAssimp({"assets/models/Sponza/glTF/Sponza.gltf"});
     sceneModel->uploadVertices(CacheApproach::Interleaved);
 
+#ifdef __EMSCRIPTEN__
+    batchShader.read("assets/shaders/ES/batchVertex.glsl", "assets/shaders/ES/batchFrag.glsl");
+    screenShader.read("assets/shaders/ES/screenVertex.glsl", "assets/shaders/ES/screenFrag.glsl");
+#else
     batchShader.read("assets/shaders/batchVertex.glsl", "assets/shaders/batchFrag.glsl");
     screenShader.read("assets/shaders/screenVertex.glsl", "assets/shaders/screenFrag.glsl");
+#endif
 
     Scene_T props = {
         .width = SCR_WIDTH,
@@ -115,7 +120,11 @@ void SampleGame::createWindow(GameWindow *window) {
     };
     scene = new Scene(camera, batchShader, screenShader, props);
 
+#ifdef __EMSCRIPTEN__
+    skyboxShader.read("assets/shaders/ES/skyboxVertex.glsl", "assets/shaders/ES/skyboxFrag.glsl");
+#else
     skyboxShader.read("assets/shaders/skyboxVertex.glsl", "assets/shaders/skyboxFrag.glsl");
+#endif
     skybox = new Skybox(scene, skyboxShader);
     skybox->hdrBoost = glm::vec3(hdrSkyBoost);
     skybox->load({
@@ -141,15 +150,21 @@ void SampleGame::createWindow(GameWindow *window) {
         {0.5f, 0.5f, 0.3f},
         {0.6f, 0.6f, 0.45f}
     };
-    dayLight.ambient *= 25.0f * (hdrSkyBoost / 20.0f);
-    dayLight.diffuse *= 35.0f * (hdrSkyBoost / 20.0f);
-    dayLight.specular *= 60.0f * (hdrSkyBoost / 20.0f);
+#ifndef __EMSCRIPTEN__
+    // dayLight.ambient *= 25.0f * (hdrSkyBoost / 20.0f);
+    // dayLight.diffuse *= 35.0f * (hdrSkyBoost / 20.0f);
+    // dayLight.specular *= 60.0f * (hdrSkyBoost / 20.0f);
+#endif
     scene->setDirectionalLight(dayLight);
     scene->reloadShaders();
 
     glm::vec3 lightDir = glm::normalize(glm::vec3(-0.5f, -1.0f, -0.5f));
     glm::vec3 lightPos = -lightDir * 50.0f;
+#ifdef __EMSCRIPTEN__
+    depthShader.read("assets/shaders/ES/depthVertex.glsl", "assets/shaders/ES/depthFrag.glsl");
+#else
     depthShader.read("assets/shaders/depthVertex.glsl", "assets/shaders/depthFrag.glsl");
+#endif
     shadowMapper = new ShadowMapper(depthShader, 4096, glm::vec3(0.0f), lightDir, lightPos);
     shadowMapper->strength *= 2;
     shadowMapper->biasMax *= 0.18f;
@@ -164,9 +179,11 @@ void SampleGame::createWindow(GameWindow *window) {
     window->addEventHandler(mouseEventHandler);
 
     framebuffer = new Framebuffer(scene);
-    framebuffer->setTCBFormat(GL_RGBA16F);
     framebuffer->setTCBFiltering(GL_LINEAR);
-    framebuffer->setHDR({0.036f});
+#ifndef __EMSCRIPTEN__
+    // framebuffer->setTCBFormat(GL_RGBA16F);
+    // framebuffer->setHDR({0.036f});
+#endif
     framebuffer->setAntiAliasing(AA_FXAAx4);
     framebuffer->getRenderTable()->add("scene", scene);
     framebuffer->create(SCR_WIDTH, SCR_HEIGHT, true);
@@ -177,10 +194,6 @@ void SampleGame::createWindow(GameWindow *window) {
 
     SDL_GL_SetSwapInterval(0);
     SDL_SetWindowRelativeMouseMode(window->getSDLWindowPtr(), true);
-
-    appleModel = new Model();
-    appleModel->readAssimp({"assets/models/apple2/apple.obj"});
-    appleModel->uploadVertices(CacheApproach::Interleaved);
 }
 
 void SampleGame::renderImGUI() {
@@ -218,8 +231,8 @@ void SampleGame::renderETC() {
     scene->setGamma(gamma);
     scene->getBatchShader().use();
     scene->getBatchShader().setFloat("roughnessConstrant", roughnessConstrant);
-    skybox->hdrBoost = glm::vec3(hdrSkyBoost);
-    framebuffer->setHDR({hdrExposure});
+    //skybox->hdrBoost = glm::vec3(hdrSkyBoost);
+    //framebuffer->setHDR({hdrExposure});
 }
 
 void SampleGame::cleanup() {

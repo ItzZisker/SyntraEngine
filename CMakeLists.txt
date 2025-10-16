@@ -20,7 +20,11 @@ if (WEB)
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
 
     # EMCMake command for Emscripten build for static-dependent libs
-    set(EMCMAKE_COMMAND emcmake.bat)
+    if (WIN32)
+        set(EMCMAKE_COMMAND emcmake.bat)
+    else()
+        set(EMCMAKE_COMMAND emcmake)
+    endif()
 
     # Emscripten OpenGL/WebGL
     set(OpenGL_GL_PREFERENCE GLVND)
@@ -154,15 +158,14 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # Include emsdk headers for Emscripten
-include_directories(${CMAKE_HOME_DIRECTORY}/emsdk/upstream/emscripten/system/include)
 if (WEB)
-    include_directories(${EMSCRIPTEN_ROOT_PATH}/upstream/emscripten/system/include)
+    include_directories(${EMSCRIPTEN_ROOT_PATH}/cache/sysroot/include)
 endif()
 
 # Initialize common libraries (OpenGL & SDL3)
 set(common_libs "")
 
-if (WEB) # Emscripten automatically links WebGL though Emulated GLES calls
+if (WEB) # Emscripten automatically links WebGL through Emulated GLES calls
     set(OPENGL_LIBS "")
 else()
     find_package(OpenGL REQUIRED COMPONENTS OpenGL)
@@ -176,8 +179,8 @@ else()
 endif()
 
 # === SDL Config ===
+set(SDL_ROOT "${CMAKE_SOURCE_DIR}/libs/sdl-3.2.18")
 if (NOT WEB) # Emscripten doesn't need linking against SDL, instead its emulated
-    set(SDL_ROOT "${CMAKE_SOURCE_DIR}/libs/sdl-3.2.18")
     if (WIN32)
         include_directories(${SDL_ROOT}/windows/include)
         list(APPEND common_libs ${SDL_ROOT}/windows/bin/SDL3.dll)
@@ -186,6 +189,9 @@ if (NOT WEB) # Emscripten doesn't need linking against SDL, instead its emulated
         include_directories(${SDL_ROOT}/linux/include)
         list(APPEND common_libs ${SDL_ROOT}/linux/bin/libSDL3.so.0.2.18)
     endif()
+else()
+    set(SDL_WEB "${SDL_ROOT}/wasm")
+    include_directories(${SDL_WEB}/include)
 endif()
 
 # == FreeType Config ==
@@ -267,6 +273,7 @@ set(IMGUI_SRC
     ${IMGUI_ROOT}/imgui_tables.cpp
     ${IMGUI_ROOT}/backends/imgui_impl_opengl3.cpp
     ${IMGUI_ROOT}/backends/imgui_impl_sdl3.cpp
+    ${IMGUI_ROOT}/backends/imgui_impl_sdl3.cpp
 )
 include_directories(${IMGUI_ROOT})
 include_directories(${IMGUI_ROOT}/backends)
@@ -338,10 +345,10 @@ add_executable(sample_executable
 if (WEB)
     target_link_libraries(sample_executable PRIVATE
         ${PROJECT_NAME}
+        ${SDL_WEB}/bin/libSDL3.a
         "--preload-file assets@/assets"
         "-s MIN_WEBGL_VERSION=2"
         "-s MAX_WEBGL_VERSION=2"
-        "-s USE_SDL=3"
         "-s USE_WEBGL2=1"
         "-s FULL_ES3=1"
         "-s ALLOW_MEMORY_GROWTH=1"
