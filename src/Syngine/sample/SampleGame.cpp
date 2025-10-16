@@ -56,7 +56,7 @@
  *   - [ ] SSAO (+ < Game Menu Option >)
  *   - [ ] Physics-Based Rendering
  *   - [-] Web Support (Emscripten)
- *   - [ ] Android Support (Or maybe Java port by JNI)
+ *   - [ ] Android Support (Fully based off C++ using Android NDK)
  *   - [ ] < Make format parser for special nodes name (Using gltf's custom properties + assimp) ([B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh) >
  *   - [ ] < Room to Room Lighting System > (Filter lights for specific meshes in a room, so meshes behind the walls won't get lit, Only usable for static pointlights)
  *   - [*] < Serialize/Deserialize Game Data > (SynPack format "assets.spk")
