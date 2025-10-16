@@ -2,14 +2,18 @@
 
 ![logo](extra/1.png)
 
-Syntra Engine is a lightweight, User Friendly, Beta (Work in progress) 3D game engine built with OpenGL. It’s designed to be optimized, modular, and easy to integrate into custom projects.
+Syntra Engine is a modular, cross-platform Indie game engine, Beta (Work in progress) 3D/2D game engine built using OpenGL.
+
+Currently supported platforms:
+- Windows x86_64
+- Unix/Unix-like Operating Systems (Linux, Mac, BSD, etc.)
+- WebAssembly (WebGL 2)
+
+Todo:
+- Android (NDK)
 
 ## Sponza
 ![Sponza](extra/Sponza.PNG)
-
-Goals:
-
-- An Engine Built for my horror/shooter games, a very basic. TODO in sample/sample.cpp
 
 ## Manual Build
 
