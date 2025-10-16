@@ -27,13 +27,34 @@ GameWindow::GameWindow(std::string title, WindowSize initialSize) {
     this->width = initialSize.width;
     this->height = initialSize.height;
 
+#ifdef __EMSCRIPTEN__
+    attrib(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    attrib(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    attrib(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+
+    attrib(SDL_GL_RED_SIZE, 32);
+    attrib(SDL_GL_GREEN_SIZE, 32);
+    attrib(SDL_GL_BLUE_SIZE, 32);
+    attrib(SDL_GL_ALPHA_SIZE, 32);
+
+    attrib(SDL_GL_DEPTH_SIZE, 24);
+    attrib(SDL_GL_STENCIL_SIZE, 8);
+#else
     attrib(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     attrib(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     attrib(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #ifdef __APPLE__
     attrib(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
 #endif
+#endif
 
+    addInitTask([](GameWindow *window){
+        FallbackTexture::Diffuse = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
+        FallbackTexture::Specular = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
+        FallbackTexture::Normal = {TCBByPlainColor((uint8_t[4]){128, 128, 255, 255}), ""};
+        FallbackTexture::Height = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
+        FallbackTexture::Rough = {TCBByPlainColor((uint8_t[4]){128, 128, 128, 255}), ""};
+    });
     addRenderTask([](GameWindow *window) {
         static Uint64 previousCounter = SDL_GetPerformanceCounter();
         Uint64 currentCounter = SDL_GetPerformanceCounter();
@@ -59,16 +80,24 @@ bool GameWindow::isInitialized() {
 }
 
 void GameWindow::attrib(SDL_GLAttr attr, int value) {
-    if (initialized)
-        SDL_GL_SetAttribute(attr, value);
-    else
-        window_attributes.insert({attr, value});
+    if (!initialized) window_attributes.insert({attr, value});
+}
+
+void GameWindow::attribMSAA(int samples) {
+    if (!initialized) {
+        window_attributes.insert({SDL_GL_MULTISAMPLEBUFFERS, 1});
+        window_attributes.insert({SDL_GL_MULTISAMPLESAMPLES, samples});
+    }
 }
 
 int GameWindow::initLoop() {
     if (SDL_Init(SDL_INIT_VIDEO) <= 0) {
         std::cerr << "Syngine: Failed to initialize SDL3: " << SDL_GetError() << std::endl;
         return -2;
+    }
+
+    for (auto pair : window_attributes) {
+        SDL_GL_SetAttribute((SDL_GLAttr) pair.first, pair.second);
     }
 
     SDL_Window *sdlWindow = SDL_CreateWindow(title.c_str(), width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
@@ -82,10 +111,12 @@ int GameWindow::initLoop() {
 
     SDL_GL_MakeCurrent(sdlWindow, glContext);
 
+#ifndef __EMSCRIPTEN__ // skip GLAD — WebGL context already provides all functions.
     if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress)) {
         std::cerr << "Syngine: Failed to initialize GLAD" << std::endl;
         return -4;
     }
+#endif
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -93,29 +124,17 @@ int GameWindow::initLoop() {
 
     initialized = true;
 
-    FallbackTexture::Diffuse = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
-    FallbackTexture::Specular = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
-    FallbackTexture::Normal = {TCBByPlainColor((uint8_t[4]){128, 128, 255, 255}), ""};
-    FallbackTexture::Height = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
-    FallbackTexture::Rough = {TCBByPlainColor((uint8_t[4]){128, 128, 128, 255}), ""};
-
     onCreate(width, height, false);
-    for (auto& task : initTasks) {
-        task(this);
-    }
+    for (auto& task : initTasks) task(this);
     while (initialized) {
         TaskQueue::Instance().executeAll();
-        for (auto& task : renderTasks) {
-            task(this);
-        }
+        for (auto& task : renderTasks) task(this);
         SDL_GL_SwapWindow(sdlWindow);
         lastFrameEvents.clear();
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             lastFrameEvents.push_back(event);
-            for (auto& handler : eventHandlers) {
-                handler->onEvent(event);
-            }
+            for (auto& handler : eventHandlers) handler->onEvent(event);
             switch (event.type) {
                 case SDL_EVENT_QUIT:
                     closeWindow();

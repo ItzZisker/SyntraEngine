@@ -7,7 +7,7 @@
 
 #include "glm/glm.hpp"
 
-#include <glad/glad.h>
+#include "Syngine/ports/GLPort.h"
 
 #include <unordered_map>
 #include <filesystem>

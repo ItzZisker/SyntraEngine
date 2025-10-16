@@ -73,6 +73,7 @@ Texture2D FallbackTexture::get(MaterialTexture2D_T type) {
         case Texture_Normal: return FallbackTexture::Normal;
         case Texture_Height: return FallbackTexture::Height;
         case Texture_Rough: return FallbackTexture::Rough;
+        default: return {0, "NONE"};
     }
 }
 

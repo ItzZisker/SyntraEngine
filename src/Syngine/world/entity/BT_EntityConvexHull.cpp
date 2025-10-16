@@ -3,7 +3,6 @@
 
 #include "Syngine/modules/ModelInstance.hpp"
 #include "Syngine/modules/MeshInstance.hpp"
-#include "Syngine/world/World.hpp"
 #include "Syngine/world/Coordination.hpp"
 #include "Syngine/utils/GameUtils.hpp"
 
@@ -11,10 +10,10 @@
 
 using namespace syng;
 
-BT_EntityConvexHull::BT_EntityConvexHull(BT_World* world, float mass, MeshInstance* meI) 
+BT_EntityConvexHull::BT_EntityConvexHull(float mass, MeshInstance* meI) 
     : mass(mass), rootNode(meI) {}
 
-BT_EntityConvexHull::BT_EntityConvexHull(BT_World* world, float mass, ModelInstance* model) 
+BT_EntityConvexHull::BT_EntityConvexHull(float mass, ModelInstance* model) 
     : mass(mass), rootNode(model->getRoot()) {}
 
 BT_EntityConvexHull::~BT_EntityConvexHull() {

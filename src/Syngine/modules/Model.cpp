@@ -89,23 +89,17 @@ void AssimpReader::read(Model* model) {
         std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
         return;
     }
-    processNode(model, scene->mRootNode, scene, model->rootNode, 0);
+    processNode(model, scene->mRootNode, scene, model->rootNode);
 }
 
-void AssimpReader::processNode(Model* model, aiNode* node, const aiScene* scene, LocalNode& gNode, int depth) {
+void AssimpReader::processNode(Model* model, aiNode* node, const aiScene* scene, LocalNode& gNode) {
     gNode.name = std::string(node->mName.C_Str());
     gNode.transform = glm::mat4(GameUtils::convertToGLMMatrix(node->mTransformation));
-
-    std::string indent(depth * 2, ' ');
-    std::cout << indent << "Node: " << gNode.name << "\n";
-    std::cout << indent << "Transform: " << GameUtils::hash_glm_mat4(gNode.transform) << std::endl;
 
     for (uint32_t i = 0; i < node->mNumMeshes; i++) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
         std::string meshName = std::string(mesh->mName.C_Str());
         if (meshName.empty()) meshName = "Unnamed";
-
-        std::cout << indent << "  ├─ Mesh: " << meshName << "\n";
 
         gNode.meshes.push_back({
             .name = meshName,
@@ -115,8 +109,7 @@ void AssimpReader::processNode(Model* model, aiNode* node, const aiScene* scene,
 
     for (uint32_t i = 0; i < node->mNumChildren; i++) {
         LocalNode child("Unnamed");
-        std::cout << indent << "  └─ Child " << i + 1 << ":\n";
-        processNode(model, node->mChildren[i], scene, child, depth + 1);
+        processNode(model, node->mChildren[i], scene, child);
         gNode.children.push_back(child);
     }
 }

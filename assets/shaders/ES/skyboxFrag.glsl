@@ -1,10 +1,12 @@
-#version 330 core
+#version 300 es
+precision highp float;
+precision highp int;
 
 out vec4 FragColor;
 
 in vec3 TexCoords;
 
-uniform vec3 hdrBoost = vec3(1.0, 1.0, 1.0);
+uniform vec3 hdrBoost;
 uniform samplerCube skybox;
 
 void main()

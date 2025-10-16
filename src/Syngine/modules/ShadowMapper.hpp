@@ -21,8 +21,8 @@ public:
     GLfloat pcfScale = 1.0f;
     glm::mat4 lightProjection, lightView;
 
-    ShadowMapper(Shader& depthShader, GLuint uv = 1024);
-    ShadowMapper(Shader& depthShader, GLuint width, GLuint height);
+    ShadowMapper(Shader& depthShader, GLuint uv, glm::vec3 center, glm::vec3 lightDir, glm::vec3 lightPos);
+    ShadowMapper(Shader& depthShader, GLuint width, GLuint height, glm::vec3 center, glm::vec3 lightDir, glm::vec3 lightPos);
     ShadowMapper(Shader& depthShader, GLuint width, GLuint height, glm::mat4 lightProj, glm::mat4 lightView);
     ~ShadowMapper();
 

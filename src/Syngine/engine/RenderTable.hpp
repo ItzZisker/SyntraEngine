@@ -31,6 +31,13 @@ public:
     virtual ~ShaderRenderable() = default;
 };
 
+class DepthRenderable
+{
+public:
+    virtual void renderDepth(Shader& depthShader, Screenbuffer screen = {}) = 0;
+    virtual ~DepthRenderable() = default;
+};
+
 class DuplexRenderable : public ShaderRenderable, public WindowRenderable {
 public:
     virtual ~DuplexRenderable() = default;

@@ -6,7 +6,8 @@
 
 #include "Syngine/serialization/DataSerializer.hpp"
 
-#include <glad/glad.h>
+#include "Syngine/ports/GLPort.h"
+
 #include <stb_image.h>
 
 #include <glm/glm.hpp>
@@ -78,7 +79,7 @@ private:
     std::filesystem::path path;
     TexelPairs cachedTextures;
 
-    void processNode(Model *model, aiNode *node, const aiScene *scene, LocalNode& wmt, int depth);
+    void processNode(Model *model, aiNode *node, const aiScene *scene, LocalNode& wmt);
     Mesh* processMesh(Model *model, aiMesh *mesh, const aiScene *scene);
     void cacheMaterialTextures(
         aiMaterial *mat, Material *syngMat,
@@ -110,8 +111,6 @@ public:
     Model();
     ~Model();
 
-    void draw(Shader &shader);
-
     void serialize(PackedWriter writer);
     void readPacked(PackedReader reader);
 #ifdef USE_ASSIMP
@@ -119,6 +118,6 @@ public:
 #endif
 
     bool isUploaded() { return this->uploaded; };
-    void uploadVertices(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential);
+    virtual void uploadVertices(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential);
 };
 }

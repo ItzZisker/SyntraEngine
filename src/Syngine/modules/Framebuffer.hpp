@@ -22,10 +22,12 @@ private:
     GLenum TCBFormat = GL_RGB;
     GLenum TCBFiltering = GL_LINEAR;
     AntiAliasing AA = AA_OFF;
-    HDR HDR = HDR_OFF;
+    syng::HDR hdr = HDR_OFF;
 
     Mesh2D* quad;
+#ifndef __EMSCRIPTEN__
     unsigned int MSOUT_FBO = 0, MS_TCB = 0;
+#endif
     unsigned int RBO = 0, TCB = 0;
 
     glm::vec3 fallbackColor = {0.1f, 0.5f, 0.5f};
@@ -44,7 +46,7 @@ public:
     void setAntiAliasing(AntiAliasing AA);
     void setTCBFormat(GLenum format);
     void setTCBFiltering(GLenum filterType);
-    void setHDR(class HDR hdr);
+    void setHDR(class syng::HDR hdr);
 
     void addInitTask(std::function<void(Framebuffer *)> task);
     void addRenderTask(std::function<void(Framebuffer *)> task);

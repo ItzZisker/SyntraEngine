@@ -2,7 +2,7 @@
 
 #include "Syngine/serialization/DataSerializer.hpp"
 
-#include <glad/glad.h>
+#include "Syngine/ports/GLPort.h"
 #include <glm/glm.hpp>
 
 #include <filesystem>
@@ -46,6 +46,7 @@ private:
     std::map<std::string, std::string> variables;
     GLuint ID = 0;
 public:
+    std::string vertexBase, fragmentBase, geometryBase;
     std::string vertexCode, fragmentCode, geometryCode;
 
     Shader() = default;

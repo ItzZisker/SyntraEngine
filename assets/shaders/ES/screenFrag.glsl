@@ -1,19 +1,21 @@
-#version 330 core
+#version 300 es
+precision highp float;
+precision highp int;
 
 out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
 uniform vec2 screenSize;
-uniform float gamma = 2.2;
+uniform float gamma;
 
-uniform bool hdrEnabled = false;
-uniform float hdrExposure = 3.25;
+uniform bool hdrEnabled;
+uniform float hdrExposure;
 
-uniform bool fxaaEnabled = false;
-uniform float fxaaReduceMin = 1.0 / 128.0;
-uniform float fxaaReduceMul = 1.0 / 8.0;
-uniform float fxaaSpanMax = 8.0;
+uniform bool fxaaEnabled;
+uniform float fxaaReduceMin;
+uniform float fxaaReduceMul;
+uniform float fxaaSpanMax;
 
 vec4 applyFXAA(vec2 texCoords) {
     vec2 texel = 1.0 / screenSize;

@@ -29,8 +29,8 @@ public:
     float mass;
     float friction = 1.0f, rollingFriction = 0.3f, linearDamping = 0.8f, angularDamping = 0.2f;
 
-    BT_EntityConvexHull(BT_World* world, float mass, ModelInstance* model);
-    BT_EntityConvexHull(BT_World* world, float mass, MeshInstance* meI);
+    BT_EntityConvexHull(float mass, ModelInstance* model);
+    BT_EntityConvexHull(float mass, MeshInstance* meI);
     ~BT_EntityConvexHull();
 
     const glm::mat4 onMotionState() override;
