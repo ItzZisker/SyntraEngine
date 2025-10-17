@@ -51,11 +51,11 @@
  *   - [-] One Draw call Particles ( ) | Gamma correction (*) -> HDR (*) -> Bloom ( ) -> Normal Mapping (*) -> Parallax Mapping (*)
  *   - [ ] Make an "install" task in CMake for publishing Syngine + Bullet + etc. dependent headers + shared libs.
  *   - [ ] Multi Shader Support for Scene and inherited renderable objects
- *   - [ ] Deferred Rendererer as a an object in the scene rendering tree
+ *   - [ ] Deferred Rendererer as an object in the scene rendering tree
  *   - [ ] Unfolded one-pass spherical Point Shadow Maps
  *   - [ ] SSAO (+ < Game Menu Option >)
  *   - [ ] Physics-Based Rendering
- *   - [-] Web Support (Emscripten)
+ *   - [*] Web Support (Emscripten)
  *   - [ ] Android Support (Fully based off C++ using Android NDK)
  *   - [ ] < Make format parser for special nodes name (Using gltf's custom properties + assimp) ([B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh) >
  *   - [ ] < Room to Room Lighting System > (Filter lights for specific meshes in a room, so meshes behind the walls won't get lit, Only usable for static pointlights)
