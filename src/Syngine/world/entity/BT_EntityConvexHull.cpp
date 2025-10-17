@@ -41,7 +41,7 @@ void BT_EntityConvexHull::load(bool enablePolyhedral) {
         glm::mat4 transform = getWorldTransform(leaf);
 
         for (auto nMesh : leaf->getMeshes()) {
-            for (const Vertex& vertex : nMesh.mesh->getVertices()) {
+            for (const Vertex& vertex : nMesh->mesh->getVertices()) {
                 glm::vec4 vec = glm::vec4(vertex.position, 1.0f) * transform;
                 points[i++] = vec[0];
                 points[i++] = vec[1];

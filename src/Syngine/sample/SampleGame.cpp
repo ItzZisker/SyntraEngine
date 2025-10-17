@@ -20,6 +20,7 @@
 #include "imgui_impl_sdl3.h"
 
 #include <filesystem>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -44,6 +45,7 @@
  *   - [*] GLVertex, GLVertexElement, GLObjects, cleaner vertex read/write to GPU
  *   - [*] Model mesh-tree traversal, each mesh has its own local transform (*) -> MeshInstances followed by ModelInstances (*)
  *   - [*] Anti-Aliasing: MSAA (*) -> FXAA (*)
+ *   - [ ] GLTF/FBX Animations! VERY VERY IMPORTANT
  *   - [ ] Global Asset Manager: Read/Write Shaders ( ), Read/Write Materials (Textures + Metadata + PBR) ( ), Read/Write Models ( ), Read/Write Meshes ( ) <bind/release meshes in model>
  *   - [ ] Batching: Reduce GPU State Changes by once binding to materials for each mesh (*) -> Batched VAO Model Instances (BVMI) ( ) -> BVMI + Atlased Textures ( )
  *   - [ ] UI Rendering: Text Rendering ( ) -> Mesh2D "Quads, static buttons, images etc." (-) -> Batched Mesh2D, Text, etc (defined by U.V. template) ( )
@@ -101,8 +103,33 @@ void SampleGame::createWindow(GameWindow *window) {
 
     Model* sceneModel = new Model();
 
-    sceneModel->readAssimp({"assets/models/Sponza/glTF/Sponza.gltf"});
-    sceneModel->uploadVertices(CacheApproach::Interleaved);
+    // TODO: DataDeserializer overflow error, fix!!!!
+    //sceneModel->readAssimp({"assets/models/Sponza/glTF/Sponza.gltf"});
+    // sceneModel->uploadVertices(CacheApproach::Interleaved);
+
+    // std::ifstream sponzaPackFile;
+    // sponzaPackFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    // sponzaPackFile.open(std::filesystem::current_path() / "sponza.spk", std::ios::binary);
+
+    // std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(sponzaPackFile)), {});
+    // sponzaPackFile.close();
+
+    // DataDeserializer buff(bytes.data(), bytes.size());
+
+    // ModelIO::PackedReader reader(&buff);
+    // sceneModel->readPacked(reader);
+
+    // DataSerializer buff(500 * 1024 * 1024);
+    // ModelIO::PackedWriter writer(&buff);
+    // sceneModel->serialize(writer);
+
+    // auto serialized = buff.copyData(buff.getWritePos());
+    // std::ofstream sponzaPackFile;
+
+    // sponzaPackFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    // sponzaPackFile.open(std::filesystem::current_path() / std::filesystem::path("sponza.spk"), std::ios::binary);
+    // sponzaPackFile.write(reinterpret_cast<const char*>(serialized.data()), serialized.size());
+    // sponzaPackFile.close();
 
 #ifdef __EMSCRIPTEN__
     batchShader.read("assets/shaders/ES/batchVertex.glsl", "assets/shaders/ES/batchFrag.glsl");
@@ -151,9 +178,9 @@ void SampleGame::createWindow(GameWindow *window) {
         {0.6f, 0.6f, 0.45f}
     };
 #ifndef __EMSCRIPTEN__
-    // dayLight.ambient *= 25.0f * (hdrSkyBoost / 20.0f);
-    // dayLight.diffuse *= 35.0f * (hdrSkyBoost / 20.0f);
-    // dayLight.specular *= 60.0f * (hdrSkyBoost / 20.0f);
+    dayLight.ambient *= 25.0f * (hdrSkyBoost / 20.0f);
+    dayLight.diffuse *= 35.0f * (hdrSkyBoost / 20.0f);
+    dayLight.specular *= 60.0f * (hdrSkyBoost / 20.0f);
 #endif
     scene->setDirectionalLight(dayLight);
     scene->reloadShaders();
@@ -181,8 +208,8 @@ void SampleGame::createWindow(GameWindow *window) {
     framebuffer = new Framebuffer(scene);
     framebuffer->setTCBFiltering(GL_LINEAR);
 #ifndef __EMSCRIPTEN__
-    // framebuffer->setTCBFormat(GL_RGBA16F);
-    // framebuffer->setHDR({0.036f});
+    framebuffer->setTCBFormat(GL_RGBA16F);
+    framebuffer->setHDR({0.036f});
 #endif
     framebuffer->setAntiAliasing(AA_FXAAx4);
     framebuffer->getRenderTable()->add("scene", scene);
@@ -231,8 +258,10 @@ void SampleGame::renderETC() {
     scene->setGamma(gamma);
     scene->getBatchShader().use();
     scene->getBatchShader().setFloat("roughnessConstrant", roughnessConstrant);
-    //skybox->hdrBoost = glm::vec3(hdrSkyBoost);
-    //framebuffer->setHDR({hdrExposure});
+#ifndef __EMSCRIPTEN__
+    skybox->hdrBoost = glm::vec3(hdrSkyBoost);
+    framebuffer->setHDR({hdrExposure});
+#endif
 }
 
 void SampleGame::cleanup() {

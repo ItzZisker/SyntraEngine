@@ -1,12 +1,9 @@
 #pragma once
 
 #include "Mesh.hpp"
-#include "Shader.hpp"
 #include "Texture.hpp"
 
 #include "Syngine/serialization/DataSerializer.hpp"
-
-#include "Syngine/ports/GLPort.h"
 
 #include <stb_image.h>
 
@@ -37,24 +34,25 @@ class Model;
 struct NamedMesh {
     std::string name = "NONE";
     Mesh* mesh = nullptr;
+    ~NamedMesh();
 };
 
 class LocalNode {
 public:
     std::string name = "NONE";
     glm::mat4 transform = glm::mat4(1.0f);
-    
+
     std::vector<LocalNode> children = {};
-    std::vector<NamedMesh> meshes = {};
+    std::vector<NamedMesh*> meshes = {};
 
     LocalNode(std::string name, glm::mat4 transform = glm::mat4(1.0f));
-
-    void purgeMeshes();
 
     bool hasMesh();
     bool isEmpty();
 };
 
+namespace ModelIO
+{
 class PackedWriter {
 private:
     DataSerializer* buffer;
@@ -80,7 +78,7 @@ private:
     TexelPairs cachedTextures;
 
     void processNode(Model *model, aiNode *node, const aiScene *scene, LocalNode& wmt);
-    Mesh* processMesh(Model *model, aiMesh *mesh, const aiScene *scene);
+    Mesh* processMesh(int meshID, Model *model, aiMesh *mesh, const aiScene *scene);
     void cacheMaterialTextures(
         aiMaterial *mat, Material *syngMat,
         aiTextureType type, const MaterialTexture2D_T &syngType
@@ -100,21 +98,24 @@ public:
     void read(Model* model);
 };
 #endif
+};
 
 class Model {
 protected:
     bool uploaded = false;
 public:
     LocalNode rootNode = {"ROOT"};
+
     std::vector<Material*> materialById;
+    std::vector<NamedMesh*> meshesById;
 
     Model();
     ~Model();
 
-    void serialize(PackedWriter writer);
-    void readPacked(PackedReader reader);
+    void serialize(ModelIO::PackedWriter writer);
+    void readPacked(ModelIO::PackedReader reader);
 #ifdef USE_ASSIMP
-    void readAssimp(AssimpReader reader);
+    void readAssimp(ModelIO::AssimpReader reader);
 #endif
 
     bool isUploaded() { return this->uploaded; };

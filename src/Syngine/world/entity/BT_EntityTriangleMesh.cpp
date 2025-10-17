@@ -62,7 +62,7 @@ void BT_EntityTriangleMesh::load(bool useQuantizedAabbCompression) {
         glm::mat4 transform = getWorldTransform(leaf);
 
         for (auto nMesh : leaf->getMeshes()) {
-            Mesh *mesh = nMesh.mesh;
+            Mesh *mesh = nMesh->mesh;
 
             int materialID = mesh->getMaterial()->getID();
             auto vertices = mesh->getVertices();

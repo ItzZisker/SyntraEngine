@@ -29,8 +29,8 @@ void renderBatchDepth(Scene_T snapshot, Shader &depthShader, const RenderBatch& 
     ModelInstance *mI = batch.modelInstance;
     MeshInstance *parent = batch.meshInstance;
     glm::mat4 finalTransform = mI->getTransform() * mI->getWorldTransform(parent);
-    for (auto& nmesh : batch.mesh) {
-        drawNonDiscardable(nmesh.mesh, parent, depthShader, snapshot, finalTransform);
+    for (auto *nmesh : batch.mesh) {
+        drawNonDiscardable(nmesh->mesh, parent, depthShader, snapshot, finalTransform);
     }
 }
 
@@ -100,8 +100,8 @@ void renderBatch(Scene_T snapshot, Shader &batchShader, const RenderBatch& batch
     MeshInstance *parent = batch.meshInstance;
 
     glm::mat4 finalTransform = mI->getTransform() * mI->getWorldTransform(parent);
-    for (auto& nmesh : batch.mesh) {
-        drawNonDiscardable(nmesh.mesh, parent, batchShader, snapshot, finalTransform);
+    for (auto *nmesh : batch.mesh) {
+        drawNonDiscardable(nmesh->mesh, parent, batchShader, snapshot, finalTransform);
     }
 }
 
@@ -115,7 +115,7 @@ void MaterialBatchRenderer::render(Shader& batchShader, Screenbuffer screen) {
 
 void MaterialBatchRenderer::addMeshInstancesByMaterial(NamedMeshByMaterial &namedMeshesByMaterial, ModelInstance *mI, MeshInstance *meI) {
     for (auto& nmesh : meI->getMeshes()) {
-        Material *material = nmesh.mesh->getMaterial();
+        Material *material = nmesh->mesh->getMaterial();
         if (namedMeshesByMaterial.find(material) == namedMeshesByMaterial.end()) {
             namedMeshesByMaterial.insert({material, {}});
         }

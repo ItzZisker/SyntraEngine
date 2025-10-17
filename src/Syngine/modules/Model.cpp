@@ -2,6 +2,7 @@
 
 #include "Mesh.hpp"
 #include "Material.hpp"
+#include "Model.hpp"
 #include "Texture.hpp"
 
 #include "Syngine/serialization/DataSerializer.hpp"
@@ -22,12 +23,9 @@
 
 using namespace syng;
 
-LocalNode::LocalNode(std::string name, glm::mat4 transform) : name(name), transform(transform) {}
+NamedMesh::~NamedMesh() { delete mesh; }
 
-void LocalNode::purgeMeshes() {
-    for (auto nMesh : meshes) delete nMesh.mesh;
-    for (auto child : children) child.purgeMeshes();
-}
+LocalNode::LocalNode(std::string name, glm::mat4 transform) : name(name), transform(transform) {}
 
 bool LocalNode::hasMesh() {
     return !meshes.empty();
@@ -40,44 +38,42 @@ bool LocalNode::isEmpty() {
 Model::Model() {}
 
 Model::~Model() {
-    rootNode.purgeMeshes();
+    rootNode.meshes.clear();
+    rootNode.children.clear();
+    for (auto *nmesh : meshesById) delete nmesh;
+    meshesById.clear();
     for (Material *mat : materialById) delete mat;
     materialById.clear();
     uploaded = false;
 }
 
-void uploadNodeTraversal(LocalNode &node, CacheApproach::VRAM_Approach &approach) {
-    for (auto mesh : node.meshes) mesh.mesh->init(approach);
-    for (auto child : node.children) uploadNodeTraversal(child, approach);
-}
-
 void Model::uploadVertices(CacheApproach::VRAM_Approach approach) {
-    uploadNodeTraversal(rootNode, approach);
+    for (auto *nmesh : meshesById) nmesh->mesh->init(approach);
     uploaded = true;
 }
 
-void Model::serialize(PackedWriter writer) {
+void Model::serialize(ModelIO::PackedWriter writer) {
     writer.write(this);
 }
 
-void Model::readPacked(PackedReader reader) {
+void Model::readPacked(ModelIO::PackedReader reader) {
     reader.read(this);
 }
 
 #ifdef USE_ASSIMP
-void Model::readAssimp(AssimpReader reader) {
+void Model::readAssimp(ModelIO::AssimpReader reader) {
     reader.read(this);
 }
 #endif
 
 #ifdef USE_ASSIMP
-AssimpReader::AssimpReader(const std::filesystem::path& path) : path(path) {}
+ModelIO::AssimpReader::AssimpReader(const std::filesystem::path& path) : path(path) {}
 
-TexelPairs& AssimpReader::getCachedTextures() {
+TexelPairs& ModelIO::AssimpReader::getCachedTextures() {
     return this->cachedTextures;
 }
 
-void AssimpReader::read(Model* model) {
+void ModelIO::AssimpReader::read(Model* model) {
     if (model->isUploaded() || !model->rootNode.isEmpty()) return;
 
     stbi_set_flip_vertically_on_load(flipTextures);
@@ -92,19 +88,25 @@ void AssimpReader::read(Model* model) {
     processNode(model, scene->mRootNode, scene, model->rootNode);
 }
 
-void AssimpReader::processNode(Model* model, aiNode* node, const aiScene* scene, LocalNode& gNode) {
+void ModelIO::AssimpReader::processNode(Model* model, aiNode* node, const aiScene* scene, LocalNode& gNode) {
     gNode.name = std::string(node->mName.C_Str());
     gNode.transform = glm::mat4(GameUtils::convertToGLMMatrix(node->mTransformation));
 
     for (uint32_t i = 0; i < node->mNumMeshes; i++) {
-        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+        int meshID = node->mMeshes[i];
+        aiMesh* mesh = scene->mMeshes[meshID];
         std::string meshName = std::string(mesh->mName.C_Str());
         if (meshName.empty()) meshName = "Unnamed";
-
-        gNode.meshes.push_back({
-            .name = meshName,
-            .mesh = processMesh(model, mesh, scene),
-        });
+        if (meshID >= model->meshesById.size()) {
+            model->meshesById.resize(meshID + 1);
+        }
+        if (!model->meshesById[meshID]) {
+            NamedMesh *nmesh = new NamedMesh();
+            nmesh->name = meshName;
+            nmesh->mesh = processMesh(meshID, model, mesh, scene);
+            model->meshesById[meshID] = nmesh;
+        }
+        gNode.meshes.push_back(model->meshesById[meshID]);
     }
 
     for (uint32_t i = 0; i < node->mNumChildren; i++) {
@@ -115,7 +117,7 @@ void AssimpReader::processNode(Model* model, aiNode* node, const aiScene* scene,
 }
 
 
-Mesh* AssimpReader::processMesh(Model *model, aiMesh *mesh, const aiScene *scene) {
+Mesh* ModelIO::AssimpReader::processMesh(int meshID, Model *model, aiMesh *mesh, const aiScene *scene) {
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
     TexelPairs textures;
@@ -211,13 +213,13 @@ Mesh* AssimpReader::processMesh(Model *model, aiMesh *mesh, const aiScene *scene
         }
     }
 
-    Mesh* result = new Mesh(vertices, indices);
+    Mesh* result = new Mesh(meshID, vertices, indices);
     result->setMaterial(model->materialById[mesh->mMaterialIndex]);
 
     return result;
 }
 
-void AssimpReader::cacheMaterialTextures(
+void ModelIO::AssimpReader::cacheMaterialTextures(
     aiMaterial *mat, Material *syngMat,
     aiTextureType type, const MaterialTexture2D_T &syngType
 ) {
@@ -246,9 +248,22 @@ void AssimpReader::cacheMaterialTextures(
 }
 #endif
 
-PackedReader::PackedReader(DataDeserializer* buff) : buffer(buff) {}
+ModelIO::PackedReader::PackedReader(DataDeserializer* buff) : buffer(buff) {}
 
-void PackedReader::read(Model* model) {
+void ModelIO_PackedReader_ReadNode(Model *model, DataDeserializer *buffer, LocalNode& node) {
+    node.name = DataTemplates::read_string(buffer);
+    node.transform = DataTemplates::read_glm_mat4(buffer);
+    node.meshes = DataTemplates::read_vector<NamedMesh*>(buffer, [&](){
+        return model->meshesById[DataTemplates::read_int32(buffer)];
+    });
+    node.children = DataTemplates::read_vector<LocalNode>(buffer, [&](){
+        LocalNode child("Unnamed");
+        ModelIO_PackedReader_ReadNode(model, buffer, child);
+        return child;
+    });
+}
+
+void ModelIO::PackedReader::read(Model* model) {
     DataTemplates::push(buffer, "Model", PCK_HEADER_MODEL);
 
     std::vector<Material*> materialsByID = DataTemplates::read_vector<Material*>(buffer, [&](){
@@ -282,10 +297,11 @@ void PackedReader::read(Model* model) {
 
         return mat;
     });
+    model->materialById = materialsByID;
 
-    uint32_t map_size = DataTemplates::read_uint32(buffer);
-    for (uint32_t i = 0; i < map_size; i++) {
-        std::string meshKey = DataTemplates::read_string(buffer);
+    std::vector<NamedMesh*> meshesByID = DataTemplates::read_vector<NamedMesh*>(buffer, [&](){
+        int meshID = DataTemplates::read_int32(buffer);
+        std::string meshName = DataTemplates::read_string(buffer);
 
         std::vector<Vertex> vertices = DataTemplates::read_vector<Vertex>(buffer, [&]() {
             Vertex result;
@@ -305,18 +321,31 @@ void PackedReader::read(Model* model) {
 
         int materialID = DataTemplates::read_int32(buffer);
 
-        Mesh* mesh = new Mesh(vertices, indices);
+        Mesh* mesh = new Mesh(meshID, vertices, indices);
         mesh->setMaterial(materialID == -1 ? FallbackMaterial::Default : materialsByID[materialID]);
+    
+        return new NamedMesh(meshName, mesh);
+    });
+    model->meshesById = meshesByID;
+    ModelIO_PackedReader_ReadNode(model, buffer, model->rootNode);
 
-        //model->meshes.insert({meshKey, mesh});
-    }
-    model->materialById = materialsByID;
     DataTemplates::pop(buffer, "Model", PCK_FOOTER_MODEL);
 }
 
-PackedWriter::PackedWriter(DataSerializer* buffer) : buffer(buffer) {}
+ModelIO::PackedWriter::PackedWriter(DataSerializer* buffer) : buffer(buffer) {}
 
-void PackedWriter::write(Model* model) {
+void ModelIO_PackedWriter_WriteNode(DataSerializer *buffer, LocalNode &node) {
+    DataTemplates::write_string(buffer, node.name);
+    DataTemplates::write_glm_mat3(buffer, node.transform);
+    DataTemplates::write_vector<NamedMesh*>(buffer, node.meshes, [&](NamedMesh* nmesh){
+        DataTemplates::write_int32(buffer, nmesh->mesh->getID());
+    });
+    DataTemplates::write_vector<LocalNode>(buffer, node.children, [&](LocalNode child){
+        ModelIO_PackedWriter_WriteNode(buffer, child);
+    });
+}
+
+void ModelIO::PackedWriter::write(Model* model) {
     DataTemplates::write_uint16(buffer, PCK_HEADER_MODEL);
 
     std::unordered_map<std::string, std::vector<uint8_t>> textures_all_data;
@@ -345,30 +374,31 @@ void PackedWriter::write(Model* model) {
         }
     });
 
-    // DataTemplates::write_uint32(buffer, model->meshes.size());
-    // for (auto& pair : model->meshes) {
-    //     std::string meshKey = pair.first;
+    DataTemplates::write_vector<NamedMesh*>(buffer, model->meshesById, [&](NamedMesh* nmesh){
+        std::string meshName = nmesh->name;
     
-    //     Mesh* mesh = pair.second;
-    //     std::vector<Vertex> vertices = mesh->getVertices();
-    //     std::vector<GLuint> indices = mesh->getIndices();
+        Mesh* mesh = nmesh->mesh;
+        std::vector<Vertex> vertices = mesh->getVertices();
+        std::vector<GLuint> indices = mesh->getIndices();
 
-    //     DataTemplates::write_string(buffer, meshKey);
-    //     DataTemplates::write_vector<Vertex>(buffer, vertices, [&](const Vertex& v){
-    //         DataTemplates::write_glm_vec3(buffer, v.position);
-    //         DataTemplates::write_glm_vec3(buffer, v.normal);
-    //         DataTemplates::write_glm_vec2(buffer, v.texCoords);
-    //         DataTemplates::write_glm_vec3(buffer, v.tangent);
-    //         for (uint32_t i = 0; i < MAX_BONE_INFLUENCE; i++) { 
-    //             DataTemplates::write_int32(buffer, v.m_BoneIDs[i]);
-    //             DataTemplates::write_float(buffer, v.m_Weights[i]);
-    //         }
-    //     });
-    //     DataTemplates::write_vector<GLuint>(buffer, indices, [&](const GLuint& index){
-    //         LittleEndian::write<GLuint>(buffer, index);
-    //     });
-    //     DataTemplates::write_int32(buffer, mesh->getMaterialId());
-    // }
+        DataTemplates::write_int32(buffer, mesh->getID());
+        DataTemplates::write_string(buffer, meshName);
+        DataTemplates::write_vector<Vertex>(buffer, vertices, [&](const Vertex& v){
+            DataTemplates::write_glm_vec3(buffer, v.position);
+            DataTemplates::write_glm_vec3(buffer, v.normal);
+            DataTemplates::write_glm_vec2(buffer, v.texCoords);
+            DataTemplates::write_glm_vec3(buffer, v.tangent);
+            for (uint32_t i = 0; i < MAX_BONE_INFLUENCE; i++) { 
+                DataTemplates::write_int32(buffer, v.m_BoneIDs[i]);
+                DataTemplates::write_float(buffer, v.m_Weights[i]);
+            }
+        });
+        DataTemplates::write_vector<GLuint>(buffer, indices, [&](const GLuint& index){
+            LittleEndian::write<GLuint>(buffer, index);
+        });
+        DataTemplates::write_int32(buffer, mesh->getMaterial()->getID());
+    });
 
+    ModelIO_PackedWriter_WriteNode(buffer, model->rootNode);
     DataTemplates::write_uint16(buffer, PCK_FOOTER_MODEL);
 }

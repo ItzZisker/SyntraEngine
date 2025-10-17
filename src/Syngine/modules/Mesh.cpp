@@ -14,7 +14,8 @@
 
 using namespace syng;
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices) : GLVertexElement<Vertex>(vertices, indices) {}
+Mesh::Mesh(int meshID, std::vector<Vertex> vertices, std::vector<unsigned int> indices) 
+    : GLVertexElement<Vertex>(vertices, indices), meshID(meshID) {}
 
 void Mesh::setMaterial(Material *mat) {
     this->material = mat;
@@ -22,6 +23,10 @@ void Mesh::setMaterial(Material *mat) {
 
 Material* Mesh::getMaterial() {
     return this->material;
+}
+
+int Mesh::getID() {
+    return this->meshID;
 }
 
 void Mesh::init(CacheApproach::VRAM_Approach approach) {

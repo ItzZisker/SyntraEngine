@@ -16,7 +16,7 @@ private:
     std::string name = "NONE";
 
     std::vector<MeshInstance*> children = {};
-    std::vector<NamedMesh> meshes = {};
+    std::vector<NamedMesh*> meshes = {};
 
     bool markedDirty = false;
 
@@ -42,7 +42,7 @@ public:
     void setScale(glm::vec3 scale) override;
 
     std::vector<MeshInstance*>& getChildren();
-    std::vector<NamedMesh>& getMeshes();
+    std::vector<NamedMesh*>& getMeshes();
 
     const std::string& getName();
     bool hasMeshes();

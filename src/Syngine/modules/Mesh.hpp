@@ -42,11 +42,13 @@ struct Vertex2D {
 class Mesh : public GLVertexElement<Vertex> {
 private:
     Material *material = FallbackMaterial::Default;
+    int meshID = -1;
 public:
-    Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices);
+    Mesh(int meshID, std::vector<Vertex> vertices, std::vector<uint32_t> indices);
 
     void setMaterial(Material *mat);
     Material *getMaterial();
+    int getID();
 
     void render(Shader& shader, Screenbuffer screen, glm::mat4 transform);
     void init(CacheApproach::VRAM_Approach = CacheApproach::Sequential);

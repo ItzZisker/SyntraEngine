@@ -27,7 +27,7 @@ protected:
 
     void getNumPoints(MeshInstance *meI, int& lastNumPoints) {
         for (auto nMesh : meI->getMeshes()) {
-            lastNumPoints += nMesh.mesh->getVertices().size();
+            lastNumPoints += nMesh->mesh->getVertices().size();
         }
         for (auto child : meI->getChildren()) {
             getNumPoints(child, lastNumPoints);

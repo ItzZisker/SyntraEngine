@@ -14,7 +14,7 @@ using namespace syng;
 
 void getMinMax(LocalNode &node, glm::vec3 &min, glm::vec3 &max, bool &unset) {
     for (auto nMesh : node.meshes) {
-        for (const auto& vertex : nMesh.mesh->getVertices()) {
+        for (const auto& vertex : nMesh->mesh->getVertices()) {
             if (unset) {
                 min = max = vertex.position;
                 unset = false;
@@ -111,7 +111,7 @@ std::vector<MeshInstance*>& MeshInstance::getChildren() {
     return this->children;
 }
 
-std::vector<NamedMesh>& MeshInstance::getMeshes() {
+std::vector<NamedMesh*>& MeshInstance::getMeshes() {
     return this->meshes;
 }
 

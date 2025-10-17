@@ -25,11 +25,11 @@ struct RenderBatch {
     Material* material;
     ModelInstance *modelInstance;
     MeshInstance *meshInstance;
-    std::vector<NamedMesh> mesh;
+    std::vector<NamedMesh*> mesh;
 };
 
 using SortFunc = std::function<bool(const RenderBatch& a, const RenderBatch& b)>;
-using ByInstanceMap = std::unordered_map<MeshInstance*, std::vector<NamedMesh>>;
+using ByInstanceMap = std::unordered_map<MeshInstance*, std::vector<NamedMesh*>>;
 using NamedMeshByMaterial = std::unordered_map<Material*, ByInstanceMap>;
 
 inline SortFunc DEFAULT_BATCH_SORT = [](const RenderBatch& a, const RenderBatch& b) {
