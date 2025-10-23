@@ -336,7 +336,7 @@ ModelIO::PackedWriter::PackedWriter(DataSerializer* buffer) : buffer(buffer) {}
 
 void ModelIO_PackedWriter_WriteNode(DataSerializer *buffer, LocalNode &node) {
     DataTemplates::write_string(buffer, node.name);
-    DataTemplates::write_glm_mat3(buffer, node.transform);
+    DataTemplates::write_glm_mat4(buffer, node.transform);
     DataTemplates::write_vector<NamedMesh*>(buffer, node.meshes, [&](NamedMesh* nmesh){
         DataTemplates::write_int32(buffer, nmesh->mesh->getID());
     });
@@ -347,8 +347,6 @@ void ModelIO_PackedWriter_WriteNode(DataSerializer *buffer, LocalNode &node) {
 
 void ModelIO::PackedWriter::write(Model* model) {
     DataTemplates::write_uint16(buffer, PCK_HEADER_MODEL);
-
-    std::unordered_map<std::string, std::vector<uint8_t>> textures_all_data;
 
     DataTemplates::write_vector<Material*>(buffer, model->materialById, [&](Material* material){
         DataTemplates::write_int32(buffer, material->getID());

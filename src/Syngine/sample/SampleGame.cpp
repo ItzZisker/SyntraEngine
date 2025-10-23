@@ -103,33 +103,18 @@ void SampleGame::createWindow(GameWindow *window) {
 
     Model* sceneModel = new Model();
 
-    // TODO: DataDeserializer overflow error, fix!!!!
-    //sceneModel->readAssimp({"assets/models/Sponza/glTF/Sponza.gltf"});
-    // sceneModel->uploadVertices(CacheApproach::Interleaved);
+    std::ifstream sponzaPackFile;
+    sponzaPackFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    sponzaPackFile.open(std::filesystem::current_path() / "sponza.spk", std::ios::binary);
 
-    // std::ifstream sponzaPackFile;
-    // sponzaPackFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    // sponzaPackFile.open(std::filesystem::current_path() / "sponza.spk", std::ios::binary);
+    std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(sponzaPackFile)), {});
+    sponzaPackFile.close();
 
-    // std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(sponzaPackFile)), {});
-    // sponzaPackFile.close();
+    DataDeserializer buff(bytes.data(), bytes.size());
 
-    // DataDeserializer buff(bytes.data(), bytes.size());
-
-    // ModelIO::PackedReader reader(&buff);
-    // sceneModel->readPacked(reader);
-
-    // DataSerializer buff(500 * 1024 * 1024);
-    // ModelIO::PackedWriter writer(&buff);
-    // sceneModel->serialize(writer);
-
-    // auto serialized = buff.copyData(buff.getWritePos());
-    // std::ofstream sponzaPackFile;
-
-    // sponzaPackFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    // sponzaPackFile.open(std::filesystem::current_path() / std::filesystem::path("sponza.spk"), std::ios::binary);
-    // sponzaPackFile.write(reinterpret_cast<const char*>(serialized.data()), serialized.size());
-    // sponzaPackFile.close();
+    ModelIO::PackedReader reader(&buff);
+    sceneModel->readPacked(reader);
+    sceneModel->uploadVertices(CacheApproach::Interleaved);
 
 #ifdef __EMSCRIPTEN__
     batchShader.read("assets/shaders/ES/batchVertex.glsl", "assets/shaders/ES/batchFrag.glsl");
