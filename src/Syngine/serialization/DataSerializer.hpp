@@ -4,6 +4,7 @@
 #include <cstring>
 #include <type_traits>
 #include <vector>
+#include <filesystem>
 
 namespace syng
 {
@@ -11,7 +12,7 @@ class DataSerializer {
 private:
     uint8_t* data;
     uint64_t writeIndex;
-    const uint64_t length;
+    uint64_t length;
 public:
     DataSerializer(uint64_t length);
     ~DataSerializer();
@@ -27,11 +28,13 @@ public:
 
 class DataDeserializer {
 private:
-    const uint8_t* data;
-    const uint64_t length;
-    uint64_t readIndex;
+    uint8_t* data;
+    uint64_t length;
+    uint64_t readIndex = 0;
 public:
-    DataDeserializer(const uint8_t* buffer, uint64_t length);
+    DataDeserializer(uint8_t* buffer, uint64_t length);
+    DataDeserializer(std::filesystem::path path);
+    ~DataDeserializer();
 
     uint64_t getLength() const { return length; }
     uint64_t getReadPos() const { return readIndex; }

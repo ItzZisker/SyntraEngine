@@ -1,6 +1,8 @@
 #include "DataSerializer.hpp"
 
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <stdexcept>
 
 using namespace syng;
@@ -8,6 +10,8 @@ using namespace syng;
 DataSerializer::DataSerializer(uint64_t length) : data(new uint8_t[length]()), writeIndex(0), length(length) {}
 DataSerializer::~DataSerializer() {
     delete[] data;
+    this->length = 0;
+    this->writeIndex = 0;
 }
 
 void DataSerializer::write(const unsigned char* bytes, size_t size) {
@@ -25,7 +29,27 @@ void DataSerializer::rewind(uint64_t pos) {
     writeIndex = pos;
 }
 
-DataDeserializer::DataDeserializer(const uint8_t* buffer, uint64_t length) : data(buffer), readIndex(0), length(length) {}
+DataDeserializer::DataDeserializer(uint8_t* buffer, uint64_t length) : length(length) {
+    this->data = new uint8_t[length];
+    std::memcpy(this->data, buffer, this->length);
+}
+
+DataDeserializer::DataDeserializer(std::filesystem::path path) {
+    std::ifstream packfile;
+    packfile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    packfile.open(path, std::ios::binary);
+    std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(packfile)), {});
+    packfile.close();
+    this->length = bytes.size();
+    this->data = new uint8_t[length];
+    std::memcpy(this->data, bytes.data(), this->length);
+}
+
+DataDeserializer::~DataDeserializer() {
+    delete[] data;
+    this->length = 0;
+    this->readIndex = 0;
+}
 
 uint8_t DataDeserializer::readByte() {
     uint8_t bytes[1];

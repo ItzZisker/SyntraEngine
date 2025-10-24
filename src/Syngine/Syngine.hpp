@@ -12,12 +12,10 @@
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/EventHandler.hpp"
 #include "Syngine/modules/Screenbuffer.hpp"
-#include "Syngine/modules/Shader.hpp"
+#include "Syngine/ports/GLPort.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
-
-#include "Syngine/ports/GLPort.h"
 
 #include <functional>
 #include <unordered_map>
@@ -27,11 +25,11 @@ namespace syng
 {
 
 #ifdef __EMSCRIPTEN__
-inline void JS_GL_LOG(const std::string& msg) {
+inline void SG_LOG(const std::string& msg) {
     EM_ASM({ console.log("[SG_WEBGL] " + UTF8ToString($0)); }, msg.c_str());
 }
 #else
-inline void JS_GL_LOG(const std::string& msg) {}
+inline void SG_LOG(const std::string& msg) {}
 #endif
 
 struct WindowSize {
@@ -49,8 +47,6 @@ private:
     double lastFrameTime;
 
     std::unordered_map<int, int> window_attributes;
-    std::unordered_map<std::string, LazyShader> presetShaders;
-
     std::vector<std::function<void(GameWindow *)>> initTasks, renderTasks, cleanupTasks;
     
     std::vector<SDL_EventHandler*> eventHandlers;
@@ -58,7 +54,6 @@ private:
 
     std::string title;
 
-    int sdlWindowStatus, glfwWindowStatus, gladLoadStatus;
     bool initialized, disposed;
 public:
     GameWindow(std::string title, WindowSize initialSize);
@@ -78,11 +73,6 @@ public:
 
     void closeWindow();
 
-    int getGLADLoadStatus();
-	int getSDLWindowStatus();
-    int getGLFWWindowStatus();
-
-    LazyShader getPresetShader(std::string path);
     double getLastFrameTime();
     std::vector<SDL_Event> getLastFrameEvents();
     TaskQueue& getGameLoopQueue();

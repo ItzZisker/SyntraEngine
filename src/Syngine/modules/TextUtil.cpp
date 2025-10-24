@@ -59,7 +59,7 @@ void TextUtil::writeFT(DataSerializer *buffer, std::vector<FT_Byte> ft_base) {
 
 TextUtil::T_Char generateGlyph(FT_Face ft_face, int32_t c, GLenum filter_type) {
     if (FT_Load_Char(ft_face, c, FT_LOAD_RENDER)) {
-        std::cout << "ERROR::FREETYTPE: Failed to load Glyph for character '" << c << "'" << std::endl;
+        std::cerr << "ERROR::FREETYTPE: Failed to load Glyph for character '" << c << "'" << std::endl;
         return {0, {0, 0}, {0, 0}, 0};
     }
     GLuint TCB;

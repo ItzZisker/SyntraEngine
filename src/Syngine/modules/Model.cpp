@@ -82,7 +82,7 @@ void ModelIO::AssimpReader::read(Model* model) {
     const aiScene *scene = importer.ReadFile(path.string(), postProcessSteps);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
+        std::cerr << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
         return;
     }
     processNode(model, scene->mRootNode, scene, model->rootNode);

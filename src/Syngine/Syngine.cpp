@@ -193,18 +193,6 @@ void GameWindow::closeWindow() {
     initialized = false;
 }
 
-int GameWindow::getGLADLoadStatus() {
-    return this->gladLoadStatus;
-}
-
-int GameWindow::getSDLWindowStatus() {
-    return this->sdlWindowStatus;
-}
-
-int GameWindow::getGLFWWindowStatus() {
-    return this->glfwWindowStatus;
-}
-
 double GameWindow::getLastFrameTime() {
     return this->lastFrameTime;
 }
@@ -233,14 +221,4 @@ WindowSize GameWindow::getSize() {
     int width, height;
     SDL_GetWindowSize(sdlWindowPtr, &width, &height);
     return {width, height};
-}
-
-LazyShader GameWindow::getPresetShader(std::string path) {
-    auto pair = presetShaders.find(path);
-    if (pair != presetShaders.end()) {
-        LazyShader copy = pair->second;
-        return copy;
-    } else {
-        return {};
-    }
 }

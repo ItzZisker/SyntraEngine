@@ -180,10 +180,7 @@ GLuint syng::TCBFromBytes(uint8_t *raw, int width, int height, int nrComponents)
 
     glGenTextures(1, &TCB);
     glBindTexture(GL_TEXTURE_2D, TCB);
-
-    JS_GL_LOG("push: TCB=" + std::to_string(TCB) + ", internalFormat=" + std::to_string(internalFormat));
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, raw);
-    JS_GL_LOG("pop: TCB=" + std::to_string(TCB));
 
 #ifdef __EMSCRIPTEN__
     // if (format == GL_RGBA || format == GL_RGB || format == GL_SRGB8_ALPHA8) {

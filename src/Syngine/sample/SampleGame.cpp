@@ -11,6 +11,7 @@
 #include "Syngine/modules/Mesh.hpp"
 #include "Syngine/modules/Scene.hpp"
 #include "Syngine/modules/ShadowMapper.hpp"
+#include "Syngine/serialization/DataSerializer.hpp"
 #include "Syngine/world/Coordination.hpp"
 
 #include "glm/fwd.hpp" 
@@ -47,16 +48,16 @@
  *   - [*] Anti-Aliasing: MSAA (*) -> FXAA (*)
  *   - [ ] GLTF/FBX Animations! VERY VERY IMPORTANT
  *   - [ ] Global Asset Manager: Read/Write Shaders ( ), Read/Write Materials (Textures + Metadata + PBR) ( ), Read/Write Models ( ), Read/Write Meshes ( ) <bind/release meshes in model>
- *   - [ ] Batching: Reduce GPU State Changes by once binding to materials for each mesh (*) -> Batched VAO Model Instances (BVMI) ( ) -> BVMI + Atlased Textures ( )
+ *   - [-] Batching: Reduce GPU State Changes by once binding to materials for each mesh (*) -> Batched VAO Model Instances (BVMI) ( ) -> BVMI + Atlased Textures ( )
  *   - [ ] UI Rendering: Text Rendering ( ) -> Mesh2D "Quads, static buttons, images etc." (-) -> Batched Mesh2D, Text, etc (defined by U.V. template) ( )
- *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows (*) -> Cascaded Shadow Mapping ( )
+ *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows ( ) -> Cascaded Shadow Mapping ( )
  *   - [-] One Draw call Particles ( ) | Gamma correction (*) -> HDR (*) -> Bloom ( ) -> Normal Mapping (*) -> Parallax Mapping (*)
- *   - [ ] Make an "install" task in CMake for publishing Syngine + Bullet + etc. dependent headers + shared libs.
+ *   - [-] Make an "install" task in CMake for publishing Syngine + Bullet + etc. dependent headers + shared libs.
  *   - [ ] Multi Shader Support for Scene and inherited renderable objects
- *   - [ ] Deferred Rendererer as an object in the scene rendering tree
  *   - [ ] Unfolded one-pass spherical Point Shadow Maps
  *   - [ ] SSAO (+ < Game Menu Option >)
  *   - [ ] Physics-Based Rendering
+ *   - [ ] Clustered-Forward Rendering supporting both LR(Legacy Rendering) & PBR(Physics-Based Rendering)
  *   - [*] Web Support (Emscripten)
  *   - [ ] Android Support (Fully based off C++ using Android NDK)
  *   - [ ] < Make format parser for special nodes name (Using gltf's custom properties + assimp) ([B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh) >
@@ -102,18 +103,9 @@ void SampleGame::createWindow(GameWindow *window) {
     camera = new Camera(glm::vec3(5.0f, 0.0f, 5.0f), yaw, pitch);
 
     Model* sceneModel = new Model();
+    DataDeserializer sponzaPacked(std::filesystem::current_path() / "sponza.spk");
 
-    std::ifstream sponzaPackFile;
-    sponzaPackFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    sponzaPackFile.open(std::filesystem::current_path() / "sponza.spk", std::ios::binary);
-
-    std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(sponzaPackFile)), {});
-    sponzaPackFile.close();
-
-    DataDeserializer buff(bytes.data(), bytes.size());
-
-    ModelIO::PackedReader reader(&buff);
-    sceneModel->readPacked(reader);
+    sceneModel->readPacked(ModelIO::PackedReader(&sponzaPacked));
     sceneModel->uploadVertices(CacheApproach::Interleaved);
 
 #ifdef __EMSCRIPTEN__
