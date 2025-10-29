@@ -109,7 +109,7 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
             {{1.0f, 1.0f}, {1.0f, 1.0f}}
         };
         quad = Presets2D::newMeshQuad(corners[0], corners[1], TCB);
-        quad->init();
+        quad->uploadVertices();
     }
     if (!outputShader.hasProgram()) {
         outputShader.init();

@@ -2,8 +2,10 @@
 
 #include "Presets.hpp"
 
+#include <iostream>
 #include <stb_image.h>
 #include "Syngine/ports/GLPort.h"
+#include "Texture.hpp"
 
 #include <filesystem>
 #include <vector>
@@ -31,12 +33,14 @@ void Skybox::load() {
 }
 
 void Skybox::load(DataDeserializer *buffer) {
-    texture = loadTextureCubemap(buffer);
+    texture = TextureIO::TexturePackedReader(buffer).readTextureCubemap();
+    texture.uploadTexture();
     Skybox::load();
 }
 
 void Skybox::load(std::vector<std::filesystem::path> paths) {
-    texture = loadTextureCubemap(paths);
+    texture = TextureIO::TextureFileReader::readTextureCubemap(paths);
+    texture.uploadTexture();
     Skybox::load();
 }
 
@@ -46,7 +50,7 @@ void Skybox::render(Screenbuffer screen) {
     shader.use();
     shader.setMatrix4("view", glm::mat4(glm::mat3(scene->getCamera()->getViewMatrix())), 1, GL_FALSE);
     shader.setMatrix4("projection", scene->getProjection(), 1, GL_FALSE);
-    shader.setTexture("skybox", GL_TEXTURE_CUBE_MAP, 0, texture.TCB);
+    shader.setTexture("skybox", GL_TEXTURE_CUBE_MAP, 0, texture.getTCB());
     shader.setVec3f("hdrBoost", hdrBoost);
 
     glDepthFunc(GL_LEQUAL);

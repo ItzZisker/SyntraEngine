@@ -21,7 +21,7 @@ class Skybox : public DuplexRenderable
 private:
     Scene *scene;
     GLVertexElement<glm::vec3> *cube;
-    TextureCubemap texture;
+    TextureCubemap texture = TextureCubemap(0);
 
     void load();
 public:

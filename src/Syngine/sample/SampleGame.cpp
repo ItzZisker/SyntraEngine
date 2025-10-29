@@ -22,6 +22,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -103,10 +104,15 @@ void SampleGame::createWindow(GameWindow *window) {
     camera = new Camera(glm::vec3(5.0f, 0.0f, 5.0f), yaw, pitch);
 
     Model* sceneModel = new Model();
+    // sceneModel->readAssimp({"assets/models/Sponza/glTF/sponza.gltf"});
+    // DataSerializer serializer(1024 * 1024 * 512);
+    // sceneModel->serialize(ModelIO::PackedWriter(&serializer));
+    // serializer.serialize(std::filesystem::current_path() / "sponza.spk");
+
     DataDeserializer sponzaPacked(std::filesystem::current_path() / "sponza.spk");
 
     sceneModel->readPacked(ModelIO::PackedReader(&sponzaPacked));
-    sceneModel->uploadVertices(CacheApproach::Interleaved);
+    sceneModel->upload();
 
 #ifdef __EMSCRIPTEN__
     batchShader.read("assets/shaders/ES/batchVertex.glsl", "assets/shaders/ES/batchFrag.glsl");

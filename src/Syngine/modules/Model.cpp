@@ -48,8 +48,15 @@ Model::~Model() {
 }
 
 void Model::uploadVertices(CacheApproach::VRAM_Approach approach) {
-    for (auto *nmesh : meshesById) nmesh->mesh->init(approach);
+    for (auto *nmesh : meshesById) nmesh->mesh->uploadVertices(approach);
     uploaded = true;
+}
+
+void Model::uploadTextures(std::function<void(GLuint TCB)> params) {
+    for (auto *mat : materialById)
+        for (auto &list : mat->textures)
+            for (auto &texture : list.second)
+                texture.uploadTexture(params);
 }
 
 void Model::serialize(ModelIO::PackedWriter writer) {
@@ -167,14 +174,6 @@ Mesh* ModelIO::AssimpReader::processMesh(int meshID, Model *model, aiMesh *mesh,
 
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
 
-    static std::vector<MaterialTexture2D_T> types = {
-        Texture_Diffuse,
-        Texture_Specular,
-        Texture_Normal,
-        Texture_Height,
-        Texture_Rough
-    };
-
     if (mesh->mMaterialIndex >= model->materialById.size()) {
         model->materialById.resize(mesh->mMaterialIndex + 1);
     }
@@ -207,9 +206,32 @@ Mesh* ModelIO::AssimpReader::processMesh(int meshID, Model *model, aiMesh *mesh,
         }
         Material *syngMat = new Material(mesh->mMaterialIndex, std::string(material->GetName().C_Str()), props, metadata_map);
         model->materialById[mesh->mMaterialIndex] = syngMat;
-
-        for (auto& type: types) {
-            cacheMaterialTextures(material, syngMat, TEXTURE_ASSIMP(type), type);
+    
+        static std::vector<MaterialTexture2D_T> blinnPhongtypes = {
+            Texture_Diffuse,
+            Texture_Specular,
+            Texture_Normal,
+            Texture_Height,
+            Texture_Rough
+        };
+        static std::vector<MaterialTexture2D_T> pbrtypes = {
+            Texture_Diffuse,
+            Texture_Specular,
+            Texture_Normal,
+            Texture_Height,
+            Texture_Rough,
+            Texture_Metallic,
+            Texture_AmbientOcclusion,
+            Texture_Emissive
+        };
+        if (loadPBRTextures) {
+            for (auto& type: pbrtypes) {
+                cacheMaterialTextures(material, syngMat, TEXTURE_ASSIMP(type), type);
+            }
+        } else {
+            for (auto& type: blinnPhongtypes) {
+                cacheMaterialTextures(material, syngMat, TEXTURE_ASSIMP(type), type);
+            }
         }
     }
 
@@ -234,13 +256,13 @@ void ModelIO::AssimpReader::cacheMaterialTextures(
 
         bool skip = false;
         for (unsigned int j = 0; j < cachedTextures.size(); j++) {
-            if (std::strcmp(cachedTextures[j].second.path.data(), texNameC.c_str()) == 0) {
+            if (std::strcmp(cachedTextures[j].second.getPath().data(), texNameC.c_str()) == 0) {
                 skip = true;
                 break;
             }
         }
         if (!skip) {
-            Texture2D texture = loadTexture2D(path.parent_path() / texNameC.c_str());
+            Texture2D texture = TextureIO::TextureFileReader::readTexture2D(path.parent_path() / texNameC.c_str());
             cachedTextures.push_back({syngType, texture});
             syngMat->addTexture(syngType, texture);
         }
@@ -266,6 +288,7 @@ void ModelIO_PackedReader_ReadNode(Model *model, DataDeserializer *buffer, Local
 void ModelIO::PackedReader::read(Model* model) {
     DataTemplates::push(buffer, "Model", PCK_HEADER_MODEL);
 
+    TextureIO::TexturePackedReader texReader(buffer);
     std::vector<Material*> materialsByID = DataTemplates::read_vector<Material*>(buffer, [&](){
         int ID = DataTemplates::read_int32(buffer);
         std::string name = DataTemplates::read_string(buffer);
@@ -275,7 +298,7 @@ void ModelIO::PackedReader::read(Model* model) {
         for (int i = 0; i < texmap_size; i++) {
             MaterialTexture2D_T type = static_cast<MaterialTexture2D_T>(DataTemplates::read_int32(buffer));
             texmap[type] = DataTemplates::read_vector<Texture2D>(buffer, [&](){
-                return loadTexture2D(buffer);
+                return texReader.readTexture2D();
             });
         }
 
@@ -348,11 +371,11 @@ void ModelIO_PackedWriter_WriteNode(DataSerializer *buffer, LocalNode &node) {
 void ModelIO::PackedWriter::write(Model* model) {
     DataTemplates::write_uint16(buffer, PCK_HEADER_MODEL);
 
+    TextureIO::TexturePackedWriter texWriter(buffer);
     DataTemplates::write_vector<Material*>(buffer, model->materialById, [&](Material* material){
         DataTemplates::write_int32(buffer, material->getID());
         DataTemplates::write_string(buffer, material->getName());
 
-        TextureWriter texWriter(buffer);
         DataTemplates::write_int32(buffer, material->textures.size());
         for (auto& pair : material->textures) {
             DataTemplates::write_int32(buffer, pair.first);

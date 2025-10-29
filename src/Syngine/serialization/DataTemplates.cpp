@@ -1,5 +1,6 @@
 #include "DataTemplates.hpp"
 #include "DataSerializer.hpp"
+#include "Syngine/modules/Texture.hpp"
 
 #include <stdexcept>
 
@@ -20,6 +21,13 @@ void pop(DataDeserializer *buffer, std::string res, uint16_t footer) {
     if (read != footer) {
         throw std::runtime_error("Invalid Footer (" + res + "): " + std::to_string(read));
     }
+}
+
+void write_texture_image(DataSerializer *buffer, TextureImage &image) {
+    write_uint16(buffer, image.width);
+    write_uint16(buffer, image.height);
+    write_uint16(buffer, image.nrComponents);
+    buffer->write(image.bytes.data(), image.bytes.size());
 }
 
 void write_material_props(DataSerializer *buffer, MaterialProps material) {
@@ -70,6 +78,16 @@ void write_glm_vec2(DataSerializer *buffer, const glm::vec2& val) {
     for (uint32_t i = 0; i < 2; i++) {
         LittleEndian::write(buffer, val[i]);
     }
+}
+
+TextureImage read_texture_image(DataDeserializer* buffer) {
+    TextureImage image;
+    image.width = read_uint16(buffer);
+    image.height = read_uint16(buffer);
+    image.nrComponents = read_uint16(buffer);
+    image.bytes.resize(image.width * image.height * image.nrComponents);
+    buffer->read(image.bytes.data(), image.bytes.size());
+    return image;
 }
 
 MaterialProps read_material_props(DataDeserializer *buffer) {

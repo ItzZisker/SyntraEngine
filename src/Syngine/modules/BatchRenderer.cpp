@@ -76,7 +76,7 @@ void renderBatch(Scene_T snapshot, Shader &batchShader, const RenderBatch& batch
                 case Texture_Height: number = std::to_string(heightNr++); break;
                 case Texture_Rough: number = std::to_string(roughNr++); break;
             }
-            batchShader.setTexture(TEXTURE_NAME(type) + number, GL_TEXTURE_2D, texUnit++, tex.TCB);
+            batchShader.setTexture(TEXTURE_NAME(type) + number, GL_TEXTURE_2D, texUnit++, tex.getTCB());
         }
     }
     
@@ -88,7 +88,7 @@ void renderBatch(Scene_T snapshot, Shader &batchShader, const RenderBatch& batch
 
     for (auto& type : requiredTypes) {
         if (!material->hasTexture(type)) {
-            GLuint TCB = FallbackTexture::get(type).TCB;
+            GLuint TCB = FallbackTexture::get(type).getTCB();
             batchShader.setTexture(std::string(TEXTURE_NAME(type)) + "1", GL_TEXTURE_2D, texUnit++, TCB);
         }
     }

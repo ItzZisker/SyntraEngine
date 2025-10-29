@@ -5,6 +5,7 @@
 
 #include "Syngine/serialization/DataSerializer.hpp"
 
+#include <functional>
 #include <stb_image.h>
 
 #include <glm/glm.hpp>
@@ -91,6 +92,7 @@ public:
         aiProcess_CalcTangentSpace
     );
     bool flipTextures = false;
+    bool loadPBRTextures = false;
 
     AssimpReader(const std::filesystem::path& path);
 
@@ -119,6 +121,13 @@ public:
 #endif
 
     bool isUploaded() { return this->uploaded; };
+
     virtual void uploadVertices(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential);
+    virtual void uploadTextures(TexelExecParams params = PARAMS_TEX2D_DEFAULT);
+
+    void upload(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential, TexelExecParams params = PARAMS_TEX2D_DEFAULT) {
+        this->uploadVertices(approach);
+        this->uploadTextures(params);
+    }
 };
 }

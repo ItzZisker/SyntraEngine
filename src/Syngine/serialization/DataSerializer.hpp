@@ -24,6 +24,8 @@ public:
 
     void write(const unsigned char* bytes, size_t size);
     void rewind(uint64_t pos);
+
+    void serialize(std::filesystem::path path);
 };
 
 class DataDeserializer {

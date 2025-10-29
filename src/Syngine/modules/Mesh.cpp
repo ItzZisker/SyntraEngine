@@ -29,7 +29,7 @@ int Mesh::getID() {
     return this->meshID;
 }
 
-void Mesh::init(CacheApproach::VRAM_Approach approach) {
+void Mesh::uploadVertices(CacheApproach::VRAM_Approach approach) {
     if (isLoaded()) return;
 
     switch (approach) {
@@ -125,7 +125,8 @@ Mesh2D::Mesh2D(std::vector<Vertex2D> vertices, std::vector<GLuint> indices) : GL
 
 Mesh2D::~Mesh2D() {
     if (texture_fallback) glDeleteTextures(1, &texture_fallback);
-    if (meshTexture.TCB) glDeleteTextures(1, &meshTexture.TCB);
+    GLuint TCB = meshTexture.getTCB();
+    if (TCB) glDeleteTextures(1, &TCB);
 }
 
 void Mesh2D::setFallbackTCB(GLuint TCB) {
@@ -141,8 +142,9 @@ void Mesh2D::setFallbackColor(GLubyte pixel[4]) {
 }
 
 void Mesh2D::setTexture(Texture2D texel) {
-    if (!texel.TCB) return;
-    if (this->meshTexture.TCB) glDeleteTextures(1, &this->meshTexture.TCB);
+    if (!texel.getTCB()) return;
+    GLuint TCB = meshTexture.getTCB();
+    if (TCB) glDeleteTextures(1, &TCB);
     this->meshTexture = texel;
 }
 
@@ -150,19 +152,19 @@ void Mesh2D::render(Shader& shader, Screenbuffer screen, glm::mat4 transform) { 
     if (!isLoaded()) return;
     glBindFramebuffer(GL_FRAMEBUFFER, screen.getFBO());
 
-    if (!meshTexture.TCB && !texture_fallback) {
+    if (!meshTexture.getTCB() && !texture_fallback) {
         GLubyte pixel[4] = {0, 128, 128, 255};
         setFallbackColor(pixel);
     }
     shader.use();
     shader.setMatrix4("model", transform, 1, GL_FALSE);
-    shader.setTexture("texture2D", GL_TEXTURE_2D, 0, meshTexture.TCB ? meshTexture.TCB : texture_fallback);
+    shader.setTexture("texture2D", GL_TEXTURE_2D, 0, meshTexture.getTCB() ? meshTexture.getTCB() : texture_fallback);
     
     GLVertexElement<Vertex2D>::draw();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Mesh2D::init(CacheApproach::VRAM_Approach approach) {
+void Mesh2D::uploadVertices(CacheApproach::VRAM_Approach approach) {
     if (isLoaded()) return;
 
     switch (approach) {

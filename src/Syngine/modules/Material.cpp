@@ -73,7 +73,7 @@ Texture2D FallbackTexture::get(MaterialTexture2D_T type) {
         case Texture_Normal: return FallbackTexture::Normal;
         case Texture_Height: return FallbackTexture::Height;
         case Texture_Rough: return FallbackTexture::Rough;
-        default: return {0, "NONE"};
+        default: return {};
     }
 }
 
@@ -84,6 +84,16 @@ namespace FallbackMaterial
 
 Material::Material() {}
 Material::Material(int id, std::string name, MaterialProps props, MetaDataMap metadata) : ID(id), name(name), props(props), metadata_map(metadata) {}
+
+Material::~Material() {
+    for (auto& [type, texels] : textures) {
+        for (Texture2D& texel : texels) {
+            delete &texel;
+        }
+    }
+    metadata_map.clear();
+    textures.clear();
+}
 
 bool Material::hasTexture(MaterialTexture2D_T type) {
     return textures.find(type) != textures.end();
@@ -103,17 +113,29 @@ void Material::addTexture(MaterialTexture2D_T type, Texture2D texture) {
     textures[type].push_back(texture);
 }
 
-void Material::delTexture(MaterialTexture2D_T type, std::string& path) {
+void Material::remTexture(MaterialTexture2D_T type, std::string& path, std::function<bool(Texture2D& tex)> remove_if) {
     if (!hasTexture(type)) return;
     std::vector<Texture2D>& texels = textures[type];
     auto it = std::remove_if(
         texels.begin(),
         texels.end(),
-        [path](const Texture2D& tex) {
-            return tex.path == path;
-        }
+        remove_if
     );
     texels.erase(it, texels.end());
+}
+
+void Material::popTexture(MaterialTexture2D_T type, std::string& path) {
+    remTexture(type, path, [path](Texture2D& tex) {
+        return tex.getPath() == path;
+    });
+}
+
+void Material::delTexture(MaterialTexture2D_T type, std::string& path) {
+    remTexture(type, path, [path](Texture2D& tex) {
+        bool shouldRemove = tex.getPath() == path;
+        if (shouldRemove) tex.deleteTexture();
+        return shouldRemove;
+    });
 }
 
 int Material::getID() {

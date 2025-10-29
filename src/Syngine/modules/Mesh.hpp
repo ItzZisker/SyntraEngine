@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GLObjects.hpp"
+#include "Syngine/modules/Texture.hpp"
 #include "Texture.hpp"
 #include "Screenbuffer.hpp"
 #include "Shader.hpp"
@@ -51,7 +52,7 @@ public:
     int getID();
 
     void render(Shader& shader, Screenbuffer screen, glm::mat4 transform);
-    void init(CacheApproach::VRAM_Approach = CacheApproach::Sequential);
+    void uploadVertices(CacheApproach::VRAM_Approach = CacheApproach::Sequential);
 };
 
 // TODO: This
@@ -61,7 +62,7 @@ public:
 class Mesh2D : public GLVertexElement<Vertex2D> {
 private:
     GLuint texture_fallback = 0;
-    Texture2D meshTexture = {0};
+    Texture2D meshTexture;
 public:
     Mesh2D(std::vector<Vertex2D> vertices, std::vector<GLuint> indices);
     ~Mesh2D();
@@ -71,7 +72,7 @@ public:
     void setTexture(Texture2D texture);
 
     void render(Shader& shader, Screenbuffer screen, glm::mat4 transform);
-    void init(CacheApproach::VRAM_Approach = CacheApproach::Sequential);
+    void uploadVertices(CacheApproach::VRAM_Approach = CacheApproach::Sequential);
 
     Texture2D& getTexture() { return this->meshTexture; }
     GLuint getFallbackTCB() { return this->texture_fallback; }

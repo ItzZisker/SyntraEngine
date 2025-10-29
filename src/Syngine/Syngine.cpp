@@ -49,11 +49,11 @@ GameWindow::GameWindow(std::string title, WindowSize initialSize) {
 #endif
 
     addInitTask([](GameWindow *window){
-        FallbackTexture::Diffuse = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
-        FallbackTexture::Specular = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
-        FallbackTexture::Normal = {TCBByPlainColor((uint8_t[4]){128, 128, 255, 255}), ""};
-        FallbackTexture::Height = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255}), ""};
-        FallbackTexture::Rough = {TCBByPlainColor((uint8_t[4]){128, 128, 128, 255}), ""};
+        FallbackTexture::Diffuse = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255})};
+        FallbackTexture::Specular = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255})};
+        FallbackTexture::Normal = {TCBByPlainColor((uint8_t[4]){128, 128, 255, 255})};
+        FallbackTexture::Height = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255})};
+        FallbackTexture::Rough = {TCBByPlainColor((uint8_t[4]){128, 128, 128, 255})};
     });
     addRenderTask([](GameWindow *window) {
         static Uint64 previousCounter = SDL_GetPerformanceCounter();

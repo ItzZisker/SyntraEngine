@@ -46,11 +46,15 @@ Mesh2D* Presets2D_newMeshQuad(Vertex2D min, Vertex2D max, Texture2D texture) {
 }
 
 Mesh2D* Presets2D::newMeshQuad(Vertex2D min, Vertex2D max, std::string pathToTexel) {
-    return Presets2D_newMeshQuad(min, max, loadTexture2D(pathToTexel.c_str()));
+    auto texel = TextureIO::TextureFileReader::readTexture2D(pathToTexel.c_str());
+    texel.uploadTexture();
+    return Presets2D_newMeshQuad(min, max, texel);
 }
 
 Mesh2D* Presets2D::newMeshQuad(Vertex2D min, Vertex2D max, GLuint TCB) {
-    return Presets2D_newMeshQuad(min, max, {TCB, ""});
+    Texture2D texel;
+    texel.setTCB(TCB);
+    return Presets2D_newMeshQuad(min, max, texel);
 }
 
 void syng::Presets3D::pushVerticesCube(float size, std::vector<glm::vec3>& vertices, std::vector<GLuint>& indices) {

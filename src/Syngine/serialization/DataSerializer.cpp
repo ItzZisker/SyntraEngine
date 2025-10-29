@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <stdexcept>
 
 using namespace syng;
@@ -29,17 +30,31 @@ void DataSerializer::rewind(uint64_t pos) {
     writeIndex = pos;
 }
 
+void DataSerializer::serialize(std::filesystem::path path) {
+    std::ofstream packfile;
+    packfile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    packfile.open(path, std::ios::binary);
+    packfile.write(reinterpret_cast<const char*>(copyData(writeIndex + 1).data()), writeIndex + 1);
+    packfile.close();
+}
+
 DataDeserializer::DataDeserializer(uint8_t* buffer, uint64_t length) : length(length) {
     this->data = new uint8_t[length];
     std::memcpy(this->data, buffer, this->length);
 }
 
 DataDeserializer::DataDeserializer(std::filesystem::path path) {
-    std::ifstream packfile;
-    packfile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    packfile.open(path, std::ios::binary);
-    std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(packfile)), {});
-    packfile.close();
+    std::ifstream packfile(path, std::ios::binary | std::ios::ate);
+    if (!packfile) {
+        throw std::runtime_error("Failed to open file: " + path.string());
+    }
+    std::streamsize size = packfile.tellg();
+    packfile.seekg(0, std::ios::beg);
+
+    std::vector<uint8_t> bytes(size);
+    if (!packfile.read(reinterpret_cast<char*>(bytes.data()), size)) {
+        throw std::runtime_error("Failed to read file: " + path.string());
+    }
     this->length = bytes.size();
     this->data = new uint8_t[length];
     std::memcpy(this->data, bytes.data(), this->length);
