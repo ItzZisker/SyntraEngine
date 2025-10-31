@@ -15,6 +15,22 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+
+#ifndef AI_MATKEY_GLTF_ALPHACUTOFF
+#define AI_MATKEY_GLTF_ALPHACUTOFF "$mat.gltf.alphaCutoff", 0, 0
+#endif
+
+#ifndef _AI_MATKEY_GLTF_SCALE_BASE
+#define _AI_MATKEY_GLTF_SCALE_BASE "$tex.scale"
+#endif
+
+#ifndef AI_MATKEY_GLTF_TEXTURE_SCALE
+#define AI_MATKEY_GLTF_TEXTURE_SCALE(type, N) _AI_MATKEY_GLTF_SCALE_BASE, type, N
+#endif
+
+#ifndef AI_MATKEY_GLTF_ALPHAMODE
+#define AI_MATKEY_GLTF_ALPHAMODE "$mat.gltf.alphaMode", 0, 0
+#endif
 #endif
 
 #include <filesystem>
@@ -80,6 +96,7 @@ private:
 
     void processNode(Model *model, aiNode *node, const aiScene *scene, LocalNode& wmt);
     Mesh* processMesh(int meshID, Model *model, aiMesh *mesh, const aiScene *scene);
+    glm::vec4 getMColor(aiMaterial* pMaterial, const char* pAiMatKey, int AiMatType, int AiMatIdx);
     void cacheMaterialTextures(
         aiMaterial *mat, Material *syngMat,
         aiTextureType type, const MaterialTexture2D_T &syngType
@@ -122,7 +139,7 @@ public:
 
     bool isUploaded() { return this->uploaded; };
 
-    virtual void uploadVertices(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential);
+    virtual void uploadVertices(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential, bool uploadPBR = false);
     virtual void uploadTextures(TexelExecParams params = PARAMS_TEX2D_DEFAULT);
 
     void upload(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential, TexelExecParams params = PARAMS_TEX2D_DEFAULT) {

@@ -4,8 +4,8 @@ namespace syng
 {
 namespace Concurrency
 {
-    static std::thread::id g_mainThreadId;
-    static bool g_initialized = false;
+    std::thread::id g_mainThreadId;
+    bool g_initialized = false;
 
     void initMainThread() {
         if (!g_initialized) {

@@ -13,9 +13,9 @@
 
 using namespace syng;
 
-ShaderEncoder::ShaderEncoder(DataSerializer *buffer) : buffer(buffer) {}
+ShaderIO::ShaderEncoder::ShaderEncoder(DataSerializer *buffer) : buffer(buffer) {}
 
-void ShaderEncoder::encode(std::string vertex, std::string fragment, std::string geometry) {
+void ShaderIO::ShaderEncoder::encode(std::string vertex, std::string fragment, std::string geometry) {
     DataTemplates::write_uint16(buffer, PCK_HEADER_SHADER);
     DataTemplates::write_string(buffer, vertex);
     DataTemplates::write_string(buffer, fragment);
@@ -26,17 +26,17 @@ void ShaderEncoder::encode(std::string vertex, std::string fragment, std::string
     DataTemplates::write_uint16(buffer, PCK_FOOTER_SHADER);
 }
 
-void ShaderEncoder::encode(Shader shader) {
+void ShaderIO::ShaderEncoder::encode(Shader shader) {
     ShaderEncoder::encode(shader.vertexCode, shader.fragmentCode, shader.geometryCode);
 }
 
-ShaderDecoder::ShaderDecoder(DataDeserializer *buff) : buffer(buff) {}
+ShaderIO::ShaderDecoder::ShaderDecoder(DataDeserializer *buff) : buffer(buff) {}
 
-Shader LazyShader::publish() {
+Shader ShaderIO::LazyShader::publish() {
     return {*this};
 }
 
-LazyShader ShaderDecoder::decodeLazy() {
+ShaderIO::LazyShader ShaderIO::ShaderDecoder::decodeLazy() {
     DataTemplates::push(buffer, "Shader", PCK_HEADER_SHADER);
 
     LazyShader lazy;
@@ -50,16 +50,16 @@ LazyShader ShaderDecoder::decodeLazy() {
     return lazy;
 }
 
-Shader ShaderDecoder::decode() {
+Shader ShaderIO::ShaderDecoder::decode() {
     return ShaderDecoder::decodeLazy().publish();
 }
 
-Shader::Shader(LazyShader lazy) :
+Shader::Shader(ShaderIO::LazyShader lazy) :
     vertexBase(lazy.vertexCode), fragmentBase(lazy.fragmentCode), geometryBase(lazy.geometryCode),
     vertexCode(lazy.vertexCode), fragmentCode(lazy.fragmentCode), geometryCode(lazy.geometryCode) {}
 
 void Shader::read(DataDeserializer *buffer) {
-    LazyShader lazy = ShaderDecoder(buffer).decodeLazy();
+    ShaderIO::LazyShader lazy = ShaderIO::ShaderDecoder(buffer).decodeLazy();
     this->vertexBase = this->vertexCode = lazy.vertexCode;
     this->fragmentBase = this->fragmentCode = lazy.fragmentCode;
     this->geometryBase = this->geometryCode = lazy.geometryCode;

@@ -106,17 +106,16 @@ void Scene::updateProjection() {
 void Scene::updateUniforms() {
     screenShader.use();
     screenShader.setVec2f("screenSize", snapshot.width, snapshot.height);
-    screenShader.setFloat("gamma", gamma);
 
     screenShader.setBool("hdrEnabled", false); // Default HDR values
     screenShader.setFloat("hdrExposure", 3.25f);
+    screenShader.setBool("fxaaEnabled", false); // Default FXAA4 values
+    screenShader.setFloat("fxaaReduceMin", 1.0f / 128.0f);
+    screenShader.setFloat("fxaaReduceMul", 1.0f / 8.0f);
+    screenShader.setFloat("fxaaSpanMax", 8.0f);
 
     batchShader.use();
-
-    batchShader.setBool("fxaaEnabled", false); // Default FXAA4 values
-    batchShader.setFloat("fxaaReduceMin", 1.0f / 128.0f);
-    batchShader.setFloat("fxaaReduceMul", 1.0f / 8.0f);
-    batchShader.setFloat("fxaaSpanMax", 8.0f);
+    batchShader.setFloat("gamma", gamma);
 
     batchShader.setFloat("roughnessConstrant", 4.0f); // Default roughness/parallax constrant
     batchShader.setBool("roughness", false);
@@ -167,8 +166,8 @@ void Scene::updateUniforms() {
 
 void Scene::setGamma(float gamma) {
     this->gamma = gamma;
-    screenShader.use();
-    screenShader.setFloat("gamma", gamma);
+    batchShader.use();
+    batchShader.setFloat("gamma", gamma);
 }
 
 void Scene::updateProjection(glm::mat4 customPerspective) {

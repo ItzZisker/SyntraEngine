@@ -49,6 +49,8 @@ uniform DirLight dirLight;
 
 uniform vec3 cameraPos;
 
+uniform float gamma;
+
 uniform float roughnessConstrant;
 uniform bool roughness;
 uniform bool parallax;
@@ -128,7 +130,7 @@ void main() {
         result += calculateSpotLight(spotLights[i], normal, viewDir, texCoords);
     }
 #endif
-
+    result.xyz = pow(result.xyz, vec3(1.0/gamma));
     FragColor = vec4(result, opacity);
 }
 

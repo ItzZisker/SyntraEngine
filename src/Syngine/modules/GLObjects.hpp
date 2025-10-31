@@ -46,6 +46,9 @@ public:
         if (VBO) glDeleteBuffers(1, &VBO);
         if (VAO) glDeleteVertexArrays(1, &VAO);
         vertices.clear();
+        attributes.clear();
+        dataSubs.clear();
+        componentsPerVertex = 0;
     }
 
     void attribute(GLVertexAttribute attribute) {

@@ -16,29 +16,32 @@ constexpr uint16_t PCK_FOOTER_SHADER = 103;
 
 class Shader;
 
-class LazyShader {
-public:
-    std::string vertexCode, fragmentCode, geometryCode = "";
-    Shader publish();
-};
+namespace ShaderIO
+{
+    class LazyShader {
+    public:
+        std::string vertexCode, fragmentCode, geometryCode = "";
+        Shader publish();
+    };
 
-class ShaderEncoder {
-private:
-    DataSerializer *buffer;
-public:
-    ShaderEncoder(DataSerializer *buffer);
-    void encode(std::string vertex, std::string fragment, std::string geometry = "");
-    void encode(Shader shader);
-};
+    class ShaderEncoder {
+    private:
+        DataSerializer *buffer;
+    public:
+        ShaderEncoder(DataSerializer *buffer);
+        void encode(std::string vertex, std::string fragment, std::string geometry = "");
+        void encode(Shader shader);
+    };
 
-class ShaderDecoder {
-private:
-    DataDeserializer *buffer;
-public:
-    ShaderDecoder(DataDeserializer *buffer);
-    LazyShader decodeLazy();
-    Shader decode();
-};
+    class ShaderDecoder {
+    private:
+        DataDeserializer *buffer;
+    public:
+        ShaderDecoder(DataDeserializer *buffer);
+        LazyShader decodeLazy();
+        Shader decode();
+    };
+}
 
 class Shader
 {
@@ -50,7 +53,7 @@ public:
     std::string vertexCode, fragmentCode, geometryCode;
 
     Shader() = default;
-    Shader(LazyShader lazy);
+    Shader(ShaderIO::LazyShader lazy);
     Shader(const Shader&) = delete;
     Shader& operator=(const Shader&) = delete;
     Shader(Shader&& other) noexcept

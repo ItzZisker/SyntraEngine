@@ -5,7 +5,6 @@ in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
 uniform vec2 screenSize;
-uniform float gamma;
 
 uniform bool hdrEnabled;
 uniform float hdrExposure;
@@ -59,10 +58,6 @@ vec4 applyFXAA(vec2 texCoords) {
         return vec4(rgbB, 1.0);
 }
 
-vec3 applyGamma(vec3 color) {
-    return pow(color.rgb, vec3(1.0 / gamma));
-}
-
 vec3 applyToneMapping(vec3 color) {
     return vec3(1.0) - exp(-color * hdrExposure);
 }
@@ -73,6 +68,5 @@ void main() {
     if (hdrEnabled) {
         finalColor.rgb = applyToneMapping(finalColor.rgb);
     }
-    finalColor.rgb = applyGamma(finalColor.rgb);
     FragColor = finalColor;
 }

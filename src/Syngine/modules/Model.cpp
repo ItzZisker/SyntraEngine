@@ -8,6 +8,8 @@
 #include "Syngine/serialization/DataSerializer.hpp"
 #include "Syngine/serialization/DataTemplates.hpp"
 #include "Syngine/utils/GameUtils.hpp"
+#include "assimp/material.h"
+#include <algorithm>
 
 #ifdef USE_ASSIMP
 #include "assimp/vector3.h"
@@ -47,8 +49,8 @@ Model::~Model() {
     uploaded = false;
 }
 
-void Model::uploadVertices(CacheApproach::VRAM_Approach approach) {
-    for (auto *nmesh : meshesById) nmesh->mesh->uploadVertices(approach);
+void Model::uploadVertices(CacheApproach::VRAM_Approach approach, bool uploadPBR) {
+    for (auto *nmesh : meshesById) nmesh->mesh->uploadVertices(approach, uploadPBR);
     uploaded = true;
 }
 
@@ -150,7 +152,7 @@ Mesh* ModelIO::AssimpReader::processMesh(int meshID, Model *model, aiMesh *mesh,
 
             vec.x = mesh->mTextureCoords[0][i].x;
             vec.y = mesh->mTextureCoords[0][i].y;
-            vertex.texCoords = vec;
+            vertex.texCoords0 = vec;
 
             aiVector3D T = mesh->mTangents[i], B = mesh->mBitangents[i];
 
@@ -159,7 +161,15 @@ Mesh* ModelIO::AssimpReader::processMesh(int meshID, Model *model, aiMesh *mesh,
 
             vertex.tangent = glm::vec3(Tglm) * glm::dot(glm::cross(vertex.normal, Tglm), Bglm);
         } else {
-            vertex.texCoords = glm::vec2(0.0f, 0.0f);
+            vertex.texCoords0 = glm::vec2(0.0f, 0.0f);
+        }
+        if (mesh->mTextureCoords[1]) { // Used internally for PBR: AO, LightMaps, detail textures, etc.
+            glm::vec2 vec(0.0f);
+            vec.x = mesh->mTextureCoords[1][i].x;
+            vec.y = mesh->mTextureCoords[1][i].y;
+            vertex.texCoords1 = vec;
+        } else {
+            vertex.texCoords1 = glm::vec2(0.0f, 0.0f);
         }
 
         vertices.push_back(vertex);
@@ -194,17 +204,58 @@ Mesh* ModelIO::AssimpReader::processMesh(int meshID, Model *model, aiMesh *mesh,
             );
         }
 
+        props.diffuseColor = getMColor(material, AI_MATKEY_COLOR_DIFFUSE);
+        props.specularColor = getMColor(material, AI_MATKEY_COLOR_SPECULAR);
+        props.baseColor = getMColor(material, AI_MATKEY_BASE_COLOR);
+
+        float alphaCutoff = 0.0f;
+        if (loadPBRTextures) {
+            props.pbr.emissiveColor = getMColor(material, AI_MATKEY_COLOR_EMISSIVE);
+            if (material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, alphaCutoff) == AI_SUCCESS) {
+                props.pbr.emissiveColor.w = alphaCutoff;
+            } else {
+                props.pbr.emissiveColor.w = 0.5f;                
+            }
+        }
+
         float ior = 1.0f;
         float opacity = 1.0f;
-
         if (material->Get(AI_MATKEY_REFRACTI, ior) == AI_SUCCESS) {
             props.ior = glm::vec3(ior);
         }
         if (material->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS) {
             props.opacity = opacity;
+            props.maxOpacity = opacity;
             props.isTransparent = (opacity < 1.0f);
+            if (loadPBRTextures) {
+                static float opaquenessThreshold = 0.05f;
+                props.pbr.transparencyFactor = std::clamp(1.0f - opacity, 0.0f, 1.0f);
+                if (props.pbr.transparencyFactor >= 1.0f - opaquenessThreshold) {
+                    props.pbr.transparencyFactor = 0.0f;
+                }
+            }
         }
-        Material *syngMat = new Material(mesh->mMaterialIndex, std::string(material->GetName().C_Str()), props, metadata_map);
+        if (loadPBRTextures) {
+            float MetallicFactor;
+            if (material->Get(AI_MATKEY_METALLIC_FACTOR, MetallicFactor) == AI_SUCCESS) {
+                props.pbr.metallicRoughnessNormalOcclusion.x = MetallicFactor;
+            }
+            float RoughnessFactor;
+            if (material->Get(AI_MATKEY_ROUGHNESS_FACTOR, RoughnessFactor) == AI_SUCCESS) {
+                props.pbr.metallicRoughnessNormalOcclusion.y = RoughnessFactor;
+            }
+            float NormalScale;
+            if (material->Get(AI_MATKEY_GLTF_TEXTURE_SCALE(aiTextureType_NORMALS, 0), NormalScale) == AI_SUCCESS) {
+                props.pbr.metallicRoughnessNormalOcclusion.z = NormalScale;
+            }
+            float OcclusionStrength;
+            if (material->Get(AI_MATKEY_GLTF_TEXTURE_SCALE(aiTextureType_LIGHTMAP, 0), OcclusionStrength) == AI_SUCCESS) {
+                props.pbr.metallicRoughnessNormalOcclusion.w = OcclusionStrength;
+            }
+        }
+        material->Get(AI_MATKEY_SHININESS, props.shininess);
+
+        Material *syngMat = new Material(mesh->mMaterialIndex, std::string(material->GetName().C_Str()), props, metadata_map, loadPBRTextures);
         model->materialById[mesh->mMaterialIndex] = syngMat;
     
         static std::vector<MaterialTexture2D_T> blinnPhongtypes = {
@@ -225,13 +276,11 @@ Mesh* ModelIO::AssimpReader::processMesh(int meshID, Model *model, aiMesh *mesh,
             Texture_Emissive
         };
         if (loadPBRTextures) {
-            for (auto& type: pbrtypes) {
+            for (auto& type: pbrtypes)
                 cacheMaterialTextures(material, syngMat, TEXTURE_ASSIMP(type), type);
-            }
         } else {
-            for (auto& type: blinnPhongtypes) {
+            for (auto& type: blinnPhongtypes)
                 cacheMaterialTextures(material, syngMat, TEXTURE_ASSIMP(type), type);
-            }
         }
     }
 
@@ -239,6 +288,24 @@ Mesh* ModelIO::AssimpReader::processMesh(int meshID, Model *model, aiMesh *mesh,
     result->setMaterial(model->materialById[mesh->mMaterialIndex]);
 
     return result;
+}
+
+glm::vec4 ModelIO::AssimpReader::getMColor(
+    aiMaterial* pMaterial, const char* pAiMatKey,
+    int AiMatType, int AiMatIdx
+) {
+    glm::vec4 color;
+    aiColor4D AiColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+    if (pMaterial->Get(pAiMatKey, AiMatType, AiMatIdx, AiColor) == AI_SUCCESS) {
+        color.x = AiColor.r;
+        color.y = AiColor.g;
+        color.z = AiColor.b;
+        color.w = std::min(AiColor.a, 1.0f);
+    } else {
+        color = glm::vec4(1.0f);
+    }
+    return color;
 }
 
 void ModelIO::AssimpReader::cacheMaterialTextures(
@@ -330,7 +397,9 @@ void ModelIO::PackedReader::read(Model* model) {
             Vertex result;
             result.position = DataTemplates::read_glm_vec3(buffer);
             result.normal = DataTemplates::read_glm_vec3(buffer);
-            result.texCoords = DataTemplates::read_glm_vec2(buffer);
+            result.texCoords0 = DataTemplates::read_glm_vec2(buffer);
+            result.texCoords1 = DataTemplates::read_glm_vec2(buffer);
+            result.color = DataTemplates::read_glm_vec4(buffer);
             result.tangent = DataTemplates::read_glm_vec3(buffer);
             for (uint32_t i = 0; i < MAX_BONE_INFLUENCE; i++) {
                 result.m_BoneIDs[i] = DataTemplates::read_int32(buffer);
@@ -407,7 +476,9 @@ void ModelIO::PackedWriter::write(Model* model) {
         DataTemplates::write_vector<Vertex>(buffer, vertices, [&](const Vertex& v){
             DataTemplates::write_glm_vec3(buffer, v.position);
             DataTemplates::write_glm_vec3(buffer, v.normal);
-            DataTemplates::write_glm_vec2(buffer, v.texCoords);
+            DataTemplates::write_glm_vec2(buffer, v.texCoords0);
+            DataTemplates::write_glm_vec2(buffer, v.texCoords1);
+            DataTemplates::write_glm_vec4(buffer, v.color);
             DataTemplates::write_glm_vec3(buffer, v.tangent);
             for (uint32_t i = 0; i < MAX_BONE_INFLUENCE; i++) { 
                 DataTemplates::write_int32(buffer, v.m_BoneIDs[i]);

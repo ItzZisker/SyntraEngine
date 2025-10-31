@@ -9,6 +9,7 @@
 
 #include "Syngine/ports/GLPort.h"
 
+#include <climits>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -29,7 +30,9 @@ namespace CacheApproach {
 struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
-    glm::vec2 texCoords;
+    glm::vec2 texCoords0;
+    glm::vec2 texCoords1;
+    glm::vec4 color;
     glm::vec3 tangent;
 	int m_BoneIDs[MAX_BONE_INFLUENCE];
 	float m_Weights[MAX_BONE_INFLUENCE];
@@ -52,7 +55,7 @@ public:
     int getID();
 
     void render(Shader& shader, Screenbuffer screen, glm::mat4 transform);
-    void uploadVertices(CacheApproach::VRAM_Approach = CacheApproach::Sequential);
+    void uploadVertices(CacheApproach::VRAM_Approach = CacheApproach::Sequential, bool uploadPBR = false);
 };
 
 // TODO: This

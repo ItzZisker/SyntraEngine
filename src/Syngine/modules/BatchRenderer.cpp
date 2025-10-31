@@ -10,8 +10,11 @@
 #include "ModelInstance.hpp"
 #include "Scene.hpp"
 #include "Screenbuffer.hpp"
+#include "Texture.hpp"
 
 #include <algorithm>
+#include <iostream>
+#include <ostream>
 #include <unordered_map>
 
 using namespace syng;
@@ -50,6 +53,11 @@ void renderBatch(Scene_T snapshot, Shader &batchShader, const RenderBatch& batch
     batchShader.setVec3f("ior", material->props.ior);
     batchShader.setFloat("shininess", material->props.shininess);
 
+    batchShader.setVec4f("baseColor", material->props.baseColor);
+    if (material->isPBR()) {
+        batchShader.setVec4f("emissiveColor", material->props.pbr.emissiveColor);
+    }
+
     if (batchShader.getVariable(SHADER_REFRAC_KEY_DYNAMIC_OPACITY) == SHADER_VAL_ON) {
         batchShader.setFloat("minOpacity", material->props.minOpacity);
         batchShader.setFloat("maxOpacity", material->props.maxOpacity);
@@ -62,6 +70,9 @@ void renderBatch(Scene_T snapshot, Shader &batchShader, const RenderBatch& batch
     unsigned int normalNr = 1;
     unsigned int heightNr = 1;
     unsigned int roughNr = 1;
+    unsigned int metalNr = 1;
+    unsigned int emissiveNr = 1;
+    unsigned int AONr = 1;
     unsigned int texUnit = 0;
 
     for (auto& pair : material->textures) {
@@ -75,26 +86,46 @@ void renderBatch(Scene_T snapshot, Shader &batchShader, const RenderBatch& batch
                 case Texture_Normal: number = std::to_string(normalNr++); break;
                 case Texture_Height: number = std::to_string(heightNr++); break;
                 case Texture_Rough: number = std::to_string(roughNr++); break;
+                case Texture_Metallic: number = std::to_string(metalNr++); break;
+                case Texture_Emissive: number = std::to_string(emissiveNr++); break;
+                case Texture_AmbientOcclusion: number = std::to_string(AONr++); break;
             }
             batchShader.setTexture(TEXTURE_NAME(type) + number, GL_TEXTURE_2D, texUnit++, tex.getTCB());
         }
     }
     
-    static std::vector<MaterialTexture2D_T> requiredTypes = {
+    static std::vector<MaterialTexture2D_T> requiredPhongTypes = {
         Texture_Diffuse,
         Texture_Specular,
         Texture_Normal
     };
+    static std::vector<MaterialTexture2D_T> requiredPBRTypes = {
+        Texture_Diffuse,
+        Texture_Specular,
+        Texture_Normal,
+        Texture_Height,
+        Texture_Rough,
+        Texture_Metallic,
+        Texture_Emissive,
+        Texture_AmbientOcclusion
+    };
 
-    for (auto& type : requiredTypes) {
+    auto typeFiller = [&](MaterialTexture2D_T& type) {
         if (!material->hasTexture(type)) {
             GLuint TCB = FallbackTexture::get(type).getTCB();
             batchShader.setTexture(std::string(TEXTURE_NAME(type)) + "1", GL_TEXTURE_2D, texUnit++, TCB);
         }
-    }
+    };
 
-    batchShader.setBool("parallax", heightNr > 1  && material->props.hasDisplacement);
-    batchShader.setBool("roughness", roughNr > 1 && material->props.hasRoughness);
+    if (material->isPBR()) for (auto& type : requiredPBRTypes) typeFiller(type);
+    else for (auto& type : requiredPhongTypes) typeFiller(type);
+
+    batchShader.setBool("hasNormalMap", normalNr > 1);
+    // Phong-model roughness/parallax Rendering, parallax is often unused due to slippery/weird texture effects appears between meshes
+    if (!material->isPBR()) {
+        batchShader.setBool("parallax", heightNr > 1  && material->props.hasDisplacement);
+        batchShader.setBool("roughness", roughNr > 1 && material->props.hasRoughness);
+    }
 
     ModelInstance *mI = batch.modelInstance;
     MeshInstance *parent = batch.meshInstance;

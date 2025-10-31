@@ -146,17 +146,6 @@ namespace TextureIO {
     };
 }
 
-// enum MaterialTexture2D_T {
-//     Texture_Diffuse,
-//     Texture_Specular,
-//     Texture_Normal,
-//     Texture_Height,
-//     Texture_Rough,
-//     Texture_Metallic, // Required for PBR
-//     Texture_AmbientOcclusion,
-//     Texture_Emissive
-// };
-
 constexpr std::array<const char*, 8> TextureTNames = {
     "texture_diffuse",
     "texture_specular",

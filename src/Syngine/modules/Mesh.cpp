@@ -2,6 +2,7 @@
 
 #include "Shader.hpp"
 #include "Material.hpp"
+#include "Syngine/ports/GLPort.h"
 #include "Texture.hpp"
 #include "GLObjects.hpp"
 #include "Screenbuffer.hpp"
@@ -9,6 +10,9 @@
 
 #include "glm/fwd.hpp"
 
+#include <cstddef>
+#include <iostream>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -29,35 +33,44 @@ int Mesh::getID() {
     return this->meshID;
 }
 
-void Mesh::uploadVertices(CacheApproach::VRAM_Approach approach) {
+void Mesh::uploadVertices(CacheApproach::VRAM_Approach approach, bool uploadPBR) {
     if (isLoaded()) return;
 
+    GLuint attrIdx = 0;
     switch (approach) {
         case CacheApproach::Sequential:
-            attribute({0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) 0});
-            attribute({1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal)});
-            attribute({2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoords)});
-            attribute({3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, tangent)});
-            attribute({4, MAX_BONE_INFLUENCE, GL_INT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, m_BoneIDs), GLPointer_Int32});
-            attribute({5, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, m_Weights)});
+            attribute({attrIdx++, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position)});
+            attribute({attrIdx++, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal)});
+            attribute({attrIdx++, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords0)});
+            if (uploadPBR) {
+                attribute({attrIdx++, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords1)});
+                attribute({attrIdx++, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color)});
+            }
+            attribute({attrIdx++, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent)});
+            attribute({attrIdx++, 4, GL_INT,   GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_BoneIDs), GLPointer_Int32});
+            attribute({attrIdx++, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_Weights)});
+
             reserve();
         break;
         case CacheApproach::Interleaved:        
             size_t count = vertices.size();
         
-            int vec2fLength   = 2 * count;
-            int vec3fLength   = 3 * count;
-            int boneLength    = MAX_BONE_INFLUENCE * count;
+            int vec2fLength = 2 * count;
+            int vec3fLength = 3 * count;
+            int vec4fLength = 4 * count;
+            int boneLength  = MAX_BONE_INFLUENCE * count;
 
-            float* positions   = new float[vec3fLength];
-            float* normals     = new float[vec3fLength];
-            float* texCoords   = new float[vec2fLength];
-            float* tangents    = new float[vec3fLength];
-            float* m_Weights   = new float[boneLength];
-            int* m_BoneIDs     = new int[boneLength];
+            float* positions  = new float[vec3fLength];
+            float* normals    = new float[vec3fLength];
+            float* texCoords0 = new float[vec2fLength];
+            float* texCoords1 = uploadPBR ? new float[vec2fLength] : nullptr;
+            float* colors     = uploadPBR ? new float[vec4fLength] : nullptr;
+            float* tangents   = new float[vec3fLength];
+            float* m_Weights  = new float[boneLength];
+            int*   m_BoneIDs  = new int[boneLength];
 
             for (size_t i = 0; i < count; ++i) {
-                const Vertex& v = vertices[i];
+                const Vertex& v = this->vertices[i];
 
                 positions[i * 3 + 0] = v.position.x;
                 positions[i * 3 + 1] = v.position.y;
@@ -67,8 +80,18 @@ void Mesh::uploadVertices(CacheApproach::VRAM_Approach approach) {
                 normals[i * 3 + 1] = v.normal.y;
                 normals[i * 3 + 2] = v.normal.z;
 
-                texCoords[i * 2 + 0] = v.texCoords.x;
-                texCoords[i * 2 + 1] = v.texCoords.y;
+                texCoords0[i * 2 + 0] = v.texCoords0.x;
+                texCoords0[i * 2 + 1] = v.texCoords0.y;
+
+                if (uploadPBR) {
+                    texCoords1[i * 2 + 0] = v.texCoords1.x;
+                    texCoords1[i * 2 + 1] = v.texCoords1.y;
+
+                    colors[i * 4 + 0] = v.color.x;
+                    colors[i * 4 + 1] = v.color.y;
+                    colors[i * 4 + 2] = v.color.z;
+                    colors[i * 4 + 3] = v.color.w;
+                }
 
                 tangents[i * 3 + 0] = v.tangent.x;
                 tangents[i * 3 + 1] = v.tangent.y;
@@ -86,34 +109,50 @@ void Mesh::uploadVertices(CacheApproach::VRAM_Approach approach) {
             offset += vec3fLength * sizeof(float);
             dataSub({offset, static_cast<GLsizeiptr>(vec3fLength * sizeof(float)), normals});
             offset += vec3fLength * sizeof(float);
-            dataSub({offset, static_cast<GLsizeiptr>(vec2fLength * sizeof(float)), texCoords});
+            dataSub({offset, static_cast<GLsizeiptr>(vec2fLength * sizeof(float)), texCoords0});
             offset += vec2fLength * sizeof(float);
+            if (uploadPBR) {
+                dataSub({offset, static_cast<GLsizeiptr>(vec2fLength * sizeof(float)), texCoords1});
+                offset += vec2fLength * sizeof(float);
+                dataSub({offset, static_cast<GLsizeiptr>(vec4fLength * sizeof(float)), colors});
+                offset += vec4fLength * sizeof(float);
+            }
             dataSub({offset, static_cast<GLsizeiptr>(vec3fLength * sizeof(float)), tangents});
             offset += vec3fLength * sizeof(float);
             dataSub({offset, static_cast<GLsizeiptr>(boneLength * sizeof(int)), m_BoneIDs});
             offset += boneLength * sizeof(int);
             dataSub({offset, static_cast<GLsizeiptr>(boneLength * sizeof(float)), m_Weights});
 
-            GLuint attribIndex = 0;
+            attrIdx = 0;
             offset = 0;
 
-            attribute({attribIndex++, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
+            attribute({attrIdx++, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
             offset += vec3fLength * sizeof(float);
-            attribute({attribIndex++, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
+            attribute({attrIdx++, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
             offset += vec3fLength * sizeof(float);
-            attribute({attribIndex++, 2, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
+            attribute({attrIdx++, 2, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
             offset += vec2fLength * sizeof(float);
-            attribute({attribIndex++, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
+            if (uploadPBR) {
+                attribute({attrIdx++, 2, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
+                offset += vec2fLength * sizeof(float);
+                attribute({attrIdx++, 4, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
+                offset += vec4fLength * sizeof(float);
+            }
+            attribute({attrIdx++, 3, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
             offset += vec3fLength * sizeof(float);
-            attribute({attribIndex++, MAX_BONE_INFLUENCE, GL_INT, GL_FALSE, 0, (void*)(offset), GLPointer_Int32});
+            attribute({attrIdx++, MAX_BONE_INFLUENCE, GL_INT, GL_FALSE, 0, (void*)(offset), GLPointer_Int32});
             offset += boneLength * sizeof(int);
-            attribute({attribIndex++, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
+            attribute({attrIdx++, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, 0, (void*)(offset)});
 
             reserve();
 
             delete[] positions;
             delete[] normals;
-            delete[] texCoords;
+            delete[] texCoords0;
+            if (uploadPBR) {
+                delete[] texCoords1;
+                delete[] colors;
+            }
             delete[] tangents;
             delete[] m_Weights;
             delete[] m_BoneIDs;

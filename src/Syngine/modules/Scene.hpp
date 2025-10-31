@@ -108,7 +108,7 @@ private:
     std::vector<SpotLight> spotLights;
     
     Scene_T snapshot;
-    float gamma = 2.2f;
+    float gamma = 1.8f;
 
     glm::mat4 projection;
 

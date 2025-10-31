@@ -64,6 +64,9 @@ namespace FallbackTexture
     Texture2D Normal = {};
     Texture2D Height = {};
     Texture2D Rough = {};
+    Texture2D Metal = {};
+    Texture2D Emissive = {};
+    Texture2D AO = {};
 }
 
 Texture2D FallbackTexture::get(MaterialTexture2D_T type) {
@@ -73,17 +76,22 @@ Texture2D FallbackTexture::get(MaterialTexture2D_T type) {
         case Texture_Normal: return FallbackTexture::Normal;
         case Texture_Height: return FallbackTexture::Height;
         case Texture_Rough: return FallbackTexture::Rough;
+        case Texture_Metallic: return FallbackTexture::Metal;
+        case Texture_Emissive: return FallbackTexture::Emissive;
+        case Texture_AmbientOcclusion: return FallbackTexture::AO;
         default: return {};
     }
 }
 
 namespace FallbackMaterial
 {
-    Material *Default = new Material();
+    Material *Default = new Material(false);
+    Material *Default_PBR = new Material(true);
 };
 
-Material::Material() {}
-Material::Material(int id, std::string name, MaterialProps props, MetaDataMap metadata) : ID(id), name(name), props(props), metadata_map(metadata) {}
+Material::Material(bool PBR) : pbr(PBR) {}
+Material::Material(int id, std::string name, MaterialProps props, MetaDataMap metadata, bool pbr)
+    : ID(id), name(name), props(props), metadata_map(metadata), pbr(pbr) {}
 
 Material::~Material() {
     for (auto& [type, texels] : textures) {
@@ -136,6 +144,10 @@ void Material::delTexture(MaterialTexture2D_T type, std::string& path) {
         if (shouldRemove) tex.deleteTexture();
         return shouldRemove;
     });
+}
+
+bool Material::isPBR() {
+    return this->pbr;
 }
 
 int Material::getID() {

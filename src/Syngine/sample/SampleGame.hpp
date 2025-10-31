@@ -37,7 +37,7 @@ public:
     float framerate[maxFrameCount];
     int frameCount;
 
-    float gamma = 1.1f;
+    float gamma = 2.2f;
     float yaw = 0, pitch = 0;
     float hdrExposure = 0.06f;
     float hdrSkyBoost = 30.0f;

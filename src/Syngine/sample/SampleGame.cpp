@@ -23,6 +23,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -47,6 +48,7 @@
  *   - [*] GLVertex, GLVertexElement, GLObjects, cleaner vertex read/write to GPU
  *   - [*] Model mesh-tree traversal, each mesh has its own local transform (*) -> MeshInstances followed by ModelInstances (*)
  *   - [*] Anti-Aliasing: MSAA (*) -> FXAA (*)
+ *   - [ ] Use Basis for raw image data compression/decompression at runtime
  *   - [ ] GLTF/FBX Animations! VERY VERY IMPORTANT
  *   - [ ] Global Asset Manager: Read/Write Shaders ( ), Read/Write Materials (Textures + Metadata + PBR) ( ), Read/Write Models ( ), Read/Write Meshes ( ) <bind/release meshes in model>
  *   - [-] Batching: Reduce GPU State Changes by once binding to materials for each mesh (*) -> Batched VAO Model Instances (BVMI) ( ) -> BVMI + Atlased Textures ( )
@@ -57,7 +59,7 @@
  *   - [ ] Multi Shader Support for Scene and inherited renderable objects
  *   - [ ] Unfolded one-pass spherical Point Shadow Maps
  *   - [ ] SSAO (+ < Game Menu Option >)
- *   - [ ] Physics-Based Rendering
+ *   - [-] Physics-Based Rendering (Broken, doesn't render anything, probably a broken VAO + lacks environment maps)
  *   - [ ] Clustered-Forward Rendering supporting both LR(Legacy Rendering) & PBR(Physics-Based Rendering)
  *   - [*] Web Support (Emscripten)
  *   - [ ] Android Support (Fully based off C++ using Android NDK)
@@ -104,21 +106,23 @@ void SampleGame::createWindow(GameWindow *window) {
     camera = new Camera(glm::vec3(5.0f, 0.0f, 5.0f), yaw, pitch);
 
     Model* sceneModel = new Model();
-    // sceneModel->readAssimp({"assets/models/Sponza/glTF/sponza.gltf"});
-    // DataSerializer serializer(1024 * 1024 * 512);
-    // sceneModel->serialize(ModelIO::PackedWriter(&serializer));
-    // serializer.serialize(std::filesystem::current_path() / "sponza.spk");
+    ModelIO::AssimpReader reader = {"assets/models/Sponza/glTF/sponza.gltf"};
+    reader.loadPBRTextures = true;
+    sceneModel->readAssimp(reader);
+    DataSerializer serializer(1024 * 1024 * 512);
+    sceneModel->serialize(ModelIO::PackedWriter(&serializer));
+    serializer.serialize(std::filesystem::current_path() / "sponza.spk");
 
-    DataDeserializer sponzaPacked(std::filesystem::current_path() / "sponza.spk");
-
-    sceneModel->readPacked(ModelIO::PackedReader(&sponzaPacked));
-    sceneModel->upload();
+    // DataDeserializer sponzaPacked(std::filesystem::current_path() / "sponza.spk");
+    // sceneModel->readPacked(ModelIO::PackedReader(&sponzaPacked));
+    sceneModel->uploadVertices(syng::CacheApproach::Interleaved, true);
+    sceneModel->uploadTextures();
 
 #ifdef __EMSCRIPTEN__
     batchShader.read("assets/shaders/ES/batchVertex.glsl", "assets/shaders/ES/batchFrag.glsl");
     screenShader.read("assets/shaders/ES/screenVertex.glsl", "assets/shaders/ES/screenFrag.glsl");
 #else
-    batchShader.read("assets/shaders/batchVertex.glsl", "assets/shaders/batchFrag.glsl");
+    batchShader.read("assets/shaders/PBRbatchVertex.glsl", "assets/shaders/PBRbatchFrag.glsl");
     screenShader.read("assets/shaders/screenVertex.glsl", "assets/shaders/screenFrag.glsl");
 #endif
 
@@ -156,14 +160,14 @@ void SampleGame::createWindow(GameWindow *window) {
 
     DirLight dayLight = {
         {-0.86f, -1.0f, -0.97f},
-        {0.3f, 0.3f, 0.2f},
-        {0.5f, 0.5f, 0.3f},
-        {0.6f, 0.6f, 0.45f}
+        {0.3f, 0.3f, 0.15f},
+        {0.35f, 0.35f, 0.14f},
+        {0.6f, 0.6f, 0.25f}
     };
 #ifndef __EMSCRIPTEN__
-    dayLight.ambient *= 25.0f * (hdrSkyBoost / 20.0f);
-    dayLight.diffuse *= 35.0f * (hdrSkyBoost / 20.0f);
-    dayLight.specular *= 60.0f * (hdrSkyBoost / 20.0f);
+    dayLight.ambient *= 2.5f * 300.0f;
+    dayLight.diffuse *= 3.5f * 500.0f;
+    dayLight.specular *= 6.0f * 600.0f;
 #endif
     scene->setDirectionalLight(dayLight);
     scene->reloadShaders();
@@ -177,8 +181,8 @@ void SampleGame::createWindow(GameWindow *window) {
 #endif
     shadowMapper = new ShadowMapper(depthShader, 4096, glm::vec3(0.0f), lightDir, lightPos);
     shadowMapper->strength *= 2;
-    shadowMapper->biasMax *= 0.18f;
-    shadowMapper->biasMin *= 0.05f;
+    shadowMapper->biasMax = 0;
+    shadowMapper->biasMin = 0.0005;
     shadowMapper->create();
     scene->withShadows(shadowMapper);
 
@@ -227,8 +231,10 @@ void SampleGame::renderImGUI() {
 
     ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
     ImGui::SliderFloat("HDR Boost (Skybox)", &hdrSkyBoost, 0.0f, 100.0f, "%.3f");
-    ImGui::SliderFloat("HDR Exposure", &hdrExposure, 0.0f, 0.1f, "%.3f");
+    ImGui::SliderFloat("HDR Exposure", &hdrExposure, 0.0f, 1.0f, "%.3f");
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
+    ImGui::SliderFloat("Bias min", &shadowMapper->biasMin, 0.0f, 1.0f, "%.3f");
+    ImGui::SliderFloat("Bias max", &shadowMapper->biasMax, 0.0f, 1.0f, "%.3f");
 
     ImGui::End();
     ImGui::Render();
@@ -256,7 +262,5 @@ void SampleGame::cleanup() {
 }
 
 int main() {
-    Concurrency::initMainThread();
-    SampleGame *game = new SampleGame();
-    return game->launch();
+    return SampleGame().launch();
 }

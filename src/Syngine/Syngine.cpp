@@ -9,6 +9,7 @@
 
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_video.h"
+#include "modules/Material.hpp"
 
 #include <ostream>
 #include <iostream>
@@ -19,10 +20,6 @@
 using namespace syng;
 
 GameWindow::GameWindow(std::string title, WindowSize initialSize) {
-    if (!Concurrency::isMainThreadInitialized()) {
-        throw std::runtime_error("Syngine: GL Main Thread isn't initialized -> Concurrency::initMainThread()");
-    }
-
     this->title = title;
     this->width = initialSize.width;
     this->height = initialSize.height;
@@ -49,11 +46,14 @@ GameWindow::GameWindow(std::string title, WindowSize initialSize) {
 #endif
 
     addInitTask([](GameWindow *window){
-        FallbackTexture::Diffuse = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255})};
+        FallbackTexture::Diffuse  = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255})};
         FallbackTexture::Specular = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255})};
-        FallbackTexture::Normal = {TCBByPlainColor((uint8_t[4]){128, 128, 255, 255})};
-        FallbackTexture::Height = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255})};
-        FallbackTexture::Rough = {TCBByPlainColor((uint8_t[4]){128, 128, 128, 255})};
+        FallbackTexture::Normal   = {TCBByPlainColor((uint8_t[4]){128, 128, 255, 255})};
+        FallbackTexture::Height   = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255})};
+        FallbackTexture::Rough    = {TCBByPlainColor((uint8_t[4]){128, 128, 128, 255})};
+        FallbackTexture::Emissive = {TCBByPlainColor((uint8_t[4]){0, 0, 0, 255})};
+        FallbackTexture::AO       = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255})};
+        FallbackTexture::Metal    = {TCBByPlainColor((uint8_t[4]){0, 0, 0, 255})};  
     });
     addRenderTask([](GameWindow *window) {
         static Uint64 previousCounter = SDL_GetPerformanceCounter();
@@ -91,6 +91,7 @@ void GameWindow::attribMSAA(int samples) {
 }
 
 int GameWindow::initLoop() {
+    Concurrency::initMainThread();
     if (SDL_Init(SDL_INIT_VIDEO) <= 0) {
         std::cerr << "Syngine: Failed to initialize SDL3: " << SDL_GetError() << std::endl;
         return -2;

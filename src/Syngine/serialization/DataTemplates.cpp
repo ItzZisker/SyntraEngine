@@ -1,6 +1,7 @@
 #include "DataTemplates.hpp"
 #include "DataSerializer.hpp"
 #include "Syngine/modules/Texture.hpp"
+#include "Syngine/serialization/DataTemplates.hpp"
 
 #include <stdexcept>
 
@@ -39,6 +40,9 @@ void write_material_props(DataSerializer *buffer, MaterialProps material) {
     write_float(buffer, material.F0);
     uint8_t bool_bytes[3] = {material.isTransparent, material.hasDisplacement, material.hasRoughness};
     buffer->write(bool_bytes, 3);
+    write_glm_vec4(buffer, material.pbr.emissiveColor);
+    write_float(buffer, material.pbr.transparencyFactor);
+    write_float(buffer, material.pbr.alphaTest);
 }
 
 void write_string(DataSerializer* buff, const std::string& value) {
@@ -103,6 +107,9 @@ MaterialProps read_material_props(DataDeserializer *buffer) {
     res.isTransparent = bool_bytes[0];
     res.hasDisplacement = bool_bytes[1];
     res.hasRoughness = bool_bytes[2];
+    res.pbr.emissiveColor = read_glm_vec4(buffer);
+    res.pbr.transparencyFactor = read_float(buffer);
+    res.pbr.alphaTest = read_float(buffer);
     return res;
 }
 
