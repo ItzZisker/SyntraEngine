@@ -42,6 +42,8 @@ public:
     float hdrExposure = 0.06f;
     float hdrSkyBoost = 30.0f;
     float roughnessConstrant = 1.0f;
+    float IBLRadianceLambertianFactor = 0.25f;
+    float IBLRadianceGGXFactor = 0.225f;
     bool mouseCaptured = true;
     bool firstMouse;
 

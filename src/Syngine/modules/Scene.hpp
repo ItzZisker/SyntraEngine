@@ -106,9 +106,12 @@ private:
     DirLight dirLight;
     std::vector<PointLight> pointLights;
     std::vector<SpotLight> spotLights;
-    
+
     Scene_T snapshot;
     float gamma = 1.8f;
+
+    float PBR_IBLRadianceLambertianFactor = 0.25f;
+    float PBR_IBLRadianceGGXFactor = 0.225f;
 
     glm::mat4 projection;
 
@@ -137,6 +140,8 @@ public:
     void updateProjection(glm::mat4 customPerspective);
     void updateUniforms();
     void setGamma(float gamma);
+    void setPBR_IBLRadianceLambertianFactor(float value);
+    void setPBR_IBLRadianceGGXFactor(float value);
 
     void setDirectionalLight(DirLight light);
     void setPointLights(std::vector<PointLight> pointLights);

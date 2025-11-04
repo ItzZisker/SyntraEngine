@@ -2,6 +2,8 @@
 
 #define HAS_SHADOWS ${HAS_SHADOWS=0}
 
+const float M_PI = 3.141592653589793;
+
 struct DirLight {
     vec3 direction;
 
@@ -10,31 +12,37 @@ struct DirLight {
     vec3 specular;
 };
 
-struct PointLight {
-    vec3 position;
+// Encapsulate the various inputs used by the various functions in the shading equation
+// We store values in this struct to simplify the integration of alternative implementations
+// of the shading terms, outlined in the Readme.MD Appendix.
+struct PBRInfo {
+    // geometry properties
+    float NdotL;        // cos angle between normal and light direction
+    float NdotV;        // cos angle between normal and view direction
+    float NdotH;        // cos angle between normal and half vector
+    float LdotH;        // cos angle between light direction and half vector
+    float VdotH;        // cos angle between view direction and half vector
 
-    float constant;
-    float linear;
-    float quadratic;
+    // Normal
+    vec3 n;             // Sahding normal
+    vec3 ng;            // Geometry normal
+    vec3 t;             // Geometry tangent
+    vec3 bit;             // Geometry bitangent
+    vec3 v;             // vector from surface point to camera
 
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-};
+    // material properties
+    float perceptualRoughness;    // roughness value, as authored by the model creator (input to shader)
+    vec3 reflectance0;            // full reflectance color (normal incidence angle)
+    vec3 reflectance90;           // reflectance color at grazing angle
+    float alphaRoughness;         // roughness mapped to a more linear change in the roughness (proposed by [2])
+    vec3 baseDiffuseColor;        // color contribution from diffuse lighting
+    vec3 baseSpecularColor;       // color contribution from specular lighting
 
-struct SpotLight {
-    vec3 position;
-    vec3 direction;
-    float cutOff;
-    float outerCutOff;
+    float ior;
 
-    float constant;
-    float linear;
-    float quadratic;
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
+    vec3 FssEss;
+    float brdf_scale;
+    float brdf_bias;
 };
 
 struct InputAttributes {
@@ -42,30 +50,18 @@ struct InputAttributes {
 };
 
 struct MetallicRoughnessDataGPU {
-    float occlusionTextureUV;
-    sampler2D occlusionTextureSampler;
-    float emissiveTextureUV;
+    int occlusionTextureUV;
+    int emissiveTextureUV;
     vec4 emissiveFactorAlphaCutoff;
-    sampler2D emissiveTextureSampler;
-    float baseColorTextureUV;
-    sampler2D baseColorTextureSampler;
+    int baseColorTextureUV;
     vec4 baseColorFactor;
-    sampler2D metallicRoughnessTextureSampler;
-    float metallicRoughnessTextureUV;
-    sampler2D normalTextureSampler;
-    float normalTextureUV;
+    int metallicRoughnessTextureUV;
+    int normalTextureUV;
     vec4 metallicRoughnessNormalOcclusion; // packed metallicFactor, roughnessFactor, normalScale, occlusionStrength
     float ior;
 };
 
-#if NR_POINT_LIGHTS
-uniform PointLight pointLights[NR_POINT_LIGHTS];
-#endif
-#if NR_SPOT_LIGHTS
-uniform SpotLight spotLights[NR_SPOT_LIGHTS];
-#endif
 uniform DirLight dirLight;
-
 uniform vec3 cameraPos;
 
 uniform float gamma;
@@ -90,6 +86,9 @@ uniform float ior;
 uniform float opacity;
 uniform float specularStrength;
 uniform float shininess;
+
+uniform float IBLRadianceLambertianFactor = 0.25;
+uniform float IBLRadianceGGXFactor = 0.225;
 
 #if HAS_SHADOWS
 uniform sampler2D shadowMap;
@@ -117,14 +116,10 @@ out vec4 FragColor;
 MetallicRoughnessDataGPU getMaterial() {
     MetallicRoughnessDataGPU res;
     res.occlusionTextureUV = 0;
-    res.occlusionTextureSampler = texture_ao1;
     res.emissiveTextureUV = 0;
-    res.emissiveTextureSampler = texture_emissive1;
     res.emissiveFactorAlphaCutoff = emissiveColor;
     res.baseColorFactor = baseColor;
-    res.metallicRoughnessTextureSampler = texture_roughness1;
     res.metallicRoughnessTextureUV = 0;
-    res.normalTextureSampler = texture_normal1;
     res.normalTextureUV = 0;
     res.metallicRoughnessNormalOcclusion = metallicRoughnessNormalOcclusion;
     res.ior = ior;
@@ -152,23 +147,23 @@ vec2 GetNormalUV(InputAttributes tc, MetallicRoughnessDataGPU mat)  {
 }
 
 vec4 sampleAO(InputAttributes tc, MetallicRoughnessDataGPU mat) {
-    return texture(mat.occlusionTextureSampler, tc.uv[mat.occlusionTextureUV]);
+    return texture(texture_ao1, tc.uv[mat.occlusionTextureUV]);
 }
 
 vec4 SampleEmissive(InputAttributes tc, MetallicRoughnessDataGPU mat) {
-    return texture(mat.emissiveTextureSampler, tc.uv[mat.emissiveTextureUV]) * vec4(mat.emissiveFactorAlphaCutoff.xyz, 1.0f);
+    return texture(texture_emissive1, tc.uv[mat.emissiveTextureUV]) * vec4(mat.emissiveFactorAlphaCutoff.xyz, 1.0f);
 }
 
 vec4 sampleAlbedo(InputAttributes tc, MetallicRoughnessDataGPU mat) {
-    return texture(mat.baseColorTextureSampler, tc.uv[mat.baseColorTextureUV]) * mat.baseColorFactor;
+    return texture(texture_diffuse1, tc.uv[mat.baseColorTextureUV]) * mat.baseColorFactor;
 }
 
 vec4 sampleMetallicRoughness(InputAttributes tc, MetallicRoughnessDataGPU mat) {
-    return texture(mat.metallicRoughnessTextureSampler, tc.uv[mat.metallicRoughnessTextureUV]);
+    return texture(texture_roughness1, tc.uv[mat.metallicRoughnessTextureUV]);
 }
 
-vec4 sampleNormal(InputAttributes tc, MetallicRoughnessDataGPU mat) {
-    return texture(mat.normalTextureSampler, tc.uv[mat.normalTextureUV]);
+vec3 sampleNormal(InputAttributes tc, MetallicRoughnessDataGPU mat) {
+    return texture(texture_normal1, tc.uv[mat.normalTextureUV]).rgb;
 }
 
 // Standard Schlick approximation without environment contribution for low-end hardware with limited textures
@@ -194,6 +189,14 @@ vec3 CalcSchlickFresnelMinimal(vec3 F0, float NdotV) {
 
 //     return FssEss;
 // }
+
+vec3 diffuseBurley(PBRInfo pbrInputs) 
+{
+    float f90 = 2.0 * pbrInputs.LdotH * pbrInputs.LdotH * pbrInputs.alphaRoughness - 0.5;
+
+    return (pbrInputs.baseDiffuseColor / M_PI) * (1.0 + f90 * pow((1.0 - pbrInputs.NdotL), 5.0)) * 
+                                                 (1.0 + f90 * pow((1.0 - pbrInputs.NdotV), 5.0));
+}
 
 // Source: OGLDev
 PBRInfo CalculatePBRInputsMetallicRoughness(MetallicRoughnessDataGPU mat, vec4 albedo, vec3 normal, vec4 mrSample) {
@@ -225,7 +228,7 @@ PBRInfo CalculatePBRInputsMetallicRoughness(MetallicRoughnessDataGPU mat, vec4 a
     vec3 specularEnvironmentR0 = baseSpecularColor.rgb;
     vec3 specularEnvironmentR90 = vec3(reflectance90);
 
-    vec3 v = normalize(gCameraWorldPos - WorldPos0);
+    vec3 v = normalize(cameraPos - fs_in.FragPos);
 
     pbrInputs.NdotV = clamp(abs(dot(normal, v)), 0.001, 1.0);
     pbrInputs.perceptualRoughness = PerceptualRoughness;
@@ -309,10 +312,10 @@ float calculateShadow(DirLight light, vec3 normal, vec4 fragPosLightSpace)
 #endif
 
 // Source: OGLDev
-vec3 calculatePBRLightContribution(inout PBRInfo pbrInputs, vec3 LightDirection, vec3 lightColor)  {
+vec3 calculatePBRLightContribution(inout PBRInfo pbrInputs, DirLight light)  {
     vec3 n = pbrInputs.n;
     vec3 v = pbrInputs.v;
-    vec3 l = normalize(LightDirection);  // Vector from surface point to light
+    vec3 l = normalize(-light.direction);  // Vector from surface point to light
     vec3 h = normalize(l+v);             // Half vector between both l and v
 
     float NdotV = pbrInputs.NdotV;
@@ -338,31 +341,40 @@ vec3 calculatePBRLightContribution(inout PBRInfo pbrInputs, vec3 LightDirection,
         vec3 diffuseContrib = (1.0 - F) * diffuseBurley(pbrInputs);
         vec3 specContrib = F * G * D / (4.0 * NdotL * NdotV);
         // Obtain final intensity as reflectance (BRDF) scaled by the energy of the light (cosine law)
-        color = NdotL * lightColor * (diffuseContrib + specContrib);
+        color = NdotL * light.diffuse * (diffuseContrib + specContrib);
 #if HAS_SHADOWS
-        float shadow = calculateShadow(light, n, fs_in.FragPosLightSpace);
-        color *= mix(1.0, shadowStrength, shadow);
+        color *= mix(1.0, 1.0 - clamp(shadowStrength, 0.0, 1.0), calculateShadow(light, n, fs_in.FragPosLightSpace));
 #endif
     }
 
     return color;
 }
 
-// vec3 getIBLRadianceLambertian(PBRInfo pbrInputs) 
+// Source: ogldev
+// Calculation of the lighting contribution from an optional Image Based Light source.
+// Precomputed Environment Maps are required uniform inputs and are computed as outlined in [1].
+// See our README.md on Environment Maps [3] for additional discussion.
+//vec3 getIBLRadianceGGX(vec3 n, vec3 v, float roughness, vec3 F0) 
 // {
-//     EnvironmentMapDataGPU envMap = getEnvironment(getEnvironmentId());
+//     EnvironmentMapDataGPU envMap = getEnvironment(getEnvironmentId());       
+//     float mipCount = float(textureQueryLevels(envMap.envMapTextureSampler));
+//     float lod = roughness * (mipCount - 1);
+//     vec3 reflection = normalize(reflect(-v, n));
+    
+//     // HDR envmaps are already linear
+//     vec3 specularLight = sampleEnvMapLod(reflection.xyz, lod, envMap).rgb;
 
-//     vec3 Irradiance = texture(envMap.envMapTextureIrradianceSampler, pbrInputs.n).rgb;
+//     float NdotV = ClampedDot(n, v);
+//     vec2 brdfSamplePoint = clamp(vec2(NdotV, roughness), vec2(0.0, 0.0), vec2(1.0, 1.0));
+//     vec3 f_ab = sampleBRDF_LUT(brdfSamplePoint, envMap).rgb;
 
-//     // Multiple scattering, from Fdez-Aguera
-//     float Ems = (1.0 - (pbrInputs.brdf_scale + pbrInputs.brdf_bias));
-//     vec3 F_avg = (pbrInputs.reflectance0 + (1.0 - pbrInputs.reflectance0) / 21.0);
-//     vec3 FmsEms = F_avg * Ems * pbrInputs.FssEss / (1.0 - F_avg * Ems);
-//     // we use +FmsEms as indicated by the formula in the blog post 
-//     // (might be a typo in the implementation)
-//     vec3 k_D = pbrInputs.baseDiffuseColor * (1.0 - pbrInputs.FssEss + FmsEms); 
+//     // see https://bruop.github.io/ibl/#single_scattering_results at Single Scattering Results
+//     // Roughness dependent fresnel, from Fdez-Aguera
+//     vec3 Fr = max(vec3(1.0 - roughness), F0) - F0;
+//     vec3 k_S = F0 + Fr * pow(1.0 - NdotV, 5.0);
+//     vec3 FssEss = k_S * f_ab.x + f_ab.y;
 
-//     return (FmsEms + k_D) * Irradiance;
+//     return specularLight * FssEss;
 // }
 
 // Non-IBL Radiance GGX
@@ -376,7 +388,7 @@ vec3 getIBLRadianceGGXMinimal(vec3 n, vec3 v, float roughness, vec3 F0)
     float intensity = 1.0 - roughness;
 
     // Optional: fake constant "ambient reflection"
-    vec3 fakeReflection = vec3(0.04); // small constant reflection
+    vec3 fakeReflection = dirLight.ambient * IBLRadianceGGXFactor; // small constant reflection
     return fakeReflection * Fr * intensity;
 }
 
@@ -401,7 +413,7 @@ vec3 getIBLRadianceGGXMinimal(vec3 n, vec3 v, float roughness, vec3 F0)
 vec3 getIBLRadianceLambertianMinimal(PBRInfo pbrInputs)
 {
     // Approximate ambient light color
-    vec3 ambientLight = vec3(0.1, 0.1, 0.1);
+    vec3 ambientLight = dirLight.ambient * IBLRadianceLambertianFactor;
 
     // Basic diffuse term (Lambert)
     vec3 k_D = pbrInputs.baseDiffuseColor * (1.0 - pbrInputs.FssEss);
@@ -417,8 +429,8 @@ void main() {
     tc.uv[1] = fs_in.TexCoord1;
     MetallicRoughnessDataGPU mat = getMaterial();
 
-    vec4 AlbedoColor = sampleAlbedo(tc, mat) * fs_in.Color;
-    if (AlbedoColor.a < 0.1) discard;
+    vec4 AlbedoColor = sampleAlbedo(tc, mat);// * fs_in.Color;
+    if (texture(texture_diffuse1, tc.uv[0]).a < 0.1) discard;
     if (hasNormalMap) {
         normal = sampleNormal(tc, mat);
         normal = normal * 2.0 - 1.0;
@@ -427,12 +439,14 @@ void main() {
 
     vec4 mrSample = sampleMetallicRoughness(tc, mat);
     vec4 EmissiveColor = SampleEmissive(tc, mat);
-    vec4 AmbientOcclusion = SampleAO(tc, mat);
+    vec4 AmbientOcclusion = sampleAO(tc, mat);
 
-    if (!gl_FrontFacing) n *= -1.0;
+    if (!gl_FrontFacing) normal *= -1.0;
 
     float Occlusion = AmbientOcclusion.r < 0.01 ? 1.0 : AmbientOcclusion.r;
     float OcclusionStrength = GetOcclusionFactor(mat);
+
+    PBRInfo pbrInputs = CalculatePBRInputsMetallicRoughness(mat, AlbedoColor, normal, mrSample);
     
     vec3 SpecularColor = getIBLRadianceGGXMinimal(pbrInputs.n, pbrInputs.v, pbrInputs.perceptualRoughness, pbrInputs.reflectance0);
     vec3 DiffuseColor = getIBLRadianceLambertianMinimal(pbrInputs);
@@ -440,15 +454,7 @@ void main() {
     DiffuseColor = mix(DiffuseColor, DiffuseColor * Occlusion, OcclusionStrength);
     SpecularColor = mix(SpecularColor, SpecularColor * Occlusion, OcclusionStrength);
 
-    vec3 LightDirection = vec3(1.0, -1.0, 0.0); // default light if none defined
-    vec3 LightColor = vec3(1.0);
-
-    if (gNumLights > 0) {
-        LightDirection = normalize(Lights[0].WorldPos - WorldPos0);
-        LightColor = Lights[0].Color;
-    }
-
-    vec3 LightContribution = calculatePBRLightContribution(pbrInputs, LightDirection, LightColor);
+    vec3 LightContribution = calculatePBRLightContribution(pbrInputs, dirLight);
 
     vec3 Color = SpecularColor + DiffuseColor + LightContribution;
     if (AmbientOcclusion.r >= 0.1) {
@@ -457,5 +463,5 @@ void main() {
     Color += EmissiveColor.rgb;
 
     Color.xyz = pow(Color.xyz, vec3(1.0/gamma));
-    FragColor = vec4(Color, opacity);
+    FragColor = vec4(Color.xyz, opacity);
 }

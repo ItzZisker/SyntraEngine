@@ -5,6 +5,7 @@
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/BatchRenderer.hpp"
 #include "Syngine/modules/Model.hpp"
+#include "Syngine/modules/ModelInstance.hpp"
 #include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/modules/Shader.hpp"
 #include "Syngine/modules/Framebuffer.hpp"
@@ -21,9 +22,6 @@
 #include "imgui_impl_sdl3.h"
 
 #include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <ostream>
 #include <string>
 #include <vector>
 
@@ -48,7 +46,10 @@
  *   - [*] GLVertex, GLVertexElement, GLObjects, cleaner vertex read/write to GPU
  *   - [*] Model mesh-tree traversal, each mesh has its own local transform (*) -> MeshInstances followed by ModelInstances (*)
  *   - [*] Anti-Aliasing: MSAA (*) -> FXAA (*)
- *   - [ ] Use Basis for raw image data compression/decompression at runtime
+ *   - [*] Serialize/Deserialize Game Data (SynPack format "assets.spk")
+ *   - [*] Web Support (Emscripten)
+ *   - [*] Physics-Based Rendering (lacks environment maps, but could be implemented easily if needed)
+ *   - [ ] Use Block-Compression method (S3 BCn) for raw image data compression/decompression at runtime
  *   - [ ] GLTF/FBX Animations! VERY VERY IMPORTANT
  *   - [ ] Global Asset Manager: Read/Write Shaders ( ), Read/Write Materials (Textures + Metadata + PBR) ( ), Read/Write Models ( ), Read/Write Meshes ( ) <bind/release meshes in model>
  *   - [-] Batching: Reduce GPU State Changes by once binding to materials for each mesh (*) -> Batched VAO Model Instances (BVMI) ( ) -> BVMI + Atlased Textures ( )
@@ -59,13 +60,10 @@
  *   - [ ] Multi Shader Support for Scene and inherited renderable objects
  *   - [ ] Unfolded one-pass spherical Point Shadow Maps
  *   - [ ] SSAO (+ < Game Menu Option >)
- *   - [-] Physics-Based Rendering (Broken, doesn't render anything, probably a broken VAO + lacks environment maps)
  *   - [ ] Clustered-Forward Rendering supporting both LR(Legacy Rendering) & PBR(Physics-Based Rendering)
- *   - [*] Web Support (Emscripten)
  *   - [ ] Android Support (Fully based off C++ using Android NDK)
  *   - [ ] < Make format parser for special nodes name (Using gltf's custom properties + assimp) ([B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh) >
  *   - [ ] < Room to Room Lighting System > (Filter lights for specific meshes in a room, so meshes behind the walls won't get lit, Only usable for static pointlights)
- *   - [*] < Serialize/Deserialize Game Data > (SynPack format "assets.spk")
  *   - [-] < Review https://github.com/kcat/openal-soft for 3D Audio > -> Implement Gaming Audio System in Syngine ( )
  *   - [-] < Game Modeling + Design (Low Poly? High Constrast colors?) >
  *   - [-] < Game UI (VHS Style Menus? idk) >
@@ -106,17 +104,24 @@ void SampleGame::createWindow(GameWindow *window) {
     camera = new Camera(glm::vec3(5.0f, 0.0f, 5.0f), yaw, pitch);
 
     Model* sceneModel = new Model();
-    ModelIO::AssimpReader reader = {"assets/models/Sponza/glTF/sponza.gltf"};
-    reader.loadPBRTextures = true;
-    sceneModel->readAssimp(reader);
-    DataSerializer serializer(1024 * 1024 * 512);
-    sceneModel->serialize(ModelIO::PackedWriter(&serializer));
-    serializer.serialize(std::filesystem::current_path() / "sponza.spk");
+    Model* helmetModel = new Model();
+    // ModelIO::AssimpReader reader = {"assets/models/Sponza/glTF/sponza.gltf"};
+    // reader.loadPBRTextures = true;
+    // sceneModel->readAssimp(reader);
+    // DataSerializer serializer(1024 * 1024 * 512);
+    // sceneModel->serialize(ModelIO::PackedWriter(&serializer));
+    // serializer.serialize(std::filesystem::current_path() / "sponza.spk");
 
-    // DataDeserializer sponzaPacked(std::filesystem::current_path() / "sponza.spk");
-    // sceneModel->readPacked(ModelIO::PackedReader(&sponzaPacked));
+    DataDeserializer sponzaPacked(std::filesystem::current_path() / "sponza.spk");
+    sceneModel->readPacked(ModelIO::PackedReader(&sponzaPacked));
     sceneModel->uploadVertices(syng::CacheApproach::Interleaved, true);
     sceneModel->uploadTextures();
+
+    ModelIO::AssimpReader reader = {"assets/models/Avocado/glTF/Avocado.gltf"};
+    reader.loadPBRTextures = true;
+    helmetModel->readAssimp(reader);
+    helmetModel->uploadVertices(syng::CacheApproach::Interleaved, true);
+    helmetModel->uploadTextures();
 
 #ifdef __EMSCRIPTEN__
     batchShader.read("assets/shaders/ES/batchVertex.glsl", "assets/shaders/ES/batchFrag.glsl");
@@ -152,11 +157,15 @@ void SampleGame::createWindow(GameWindow *window) {
     scene->getBatchRenderTable()->add("skybox", skybox);
 
     sceneModelInstance = new ModelInstance(sceneModel);
+    ModelInstance* helmetInstance = new ModelInstance(helmetModel);
 
     materialBatch = new MaterialBatchRenderer(scene);
-    materialBatch->add(sceneModelInstance);
+    //materialBatch->add(sceneModelInstance);
+    materialBatch->add(helmetInstance);
     materialBatch->sort(DEFAULT_BATCH_SORT);
     scene->getBatchRenderTable()->add("materialBatch", materialBatch);
+
+    helmetInstance->setScale(glm::vec3(10.0f));
 
     DirLight dayLight = {
         {-0.86f, -1.0f, -0.97f},
@@ -177,14 +186,14 @@ void SampleGame::createWindow(GameWindow *window) {
 #ifdef __EMSCRIPTEN__
     depthShader.read("assets/shaders/ES/depthVertex.glsl", "assets/shaders/ES/depthFrag.glsl");
 #else
-    depthShader.read("assets/shaders/depthVertex.glsl", "assets/shaders/depthFrag.glsl");
+    depthShader.read("assets/shaders/PBRdepthVertex.glsl", "assets/shaders/PBRdepthFrag.glsl");
 #endif
     shadowMapper = new ShadowMapper(depthShader, 4096, glm::vec3(0.0f), lightDir, lightPos);
-    shadowMapper->strength *= 2;
-    shadowMapper->biasMax = 0;
+    shadowMapper->strength = 1.0f;
+    shadowMapper->biasMax = 0.0;
     shadowMapper->biasMin = 0.0005;
     shadowMapper->create();
-    scene->withShadows(shadowMapper);
+    //scene->withShadows(shadowMapper);
 
     keyHandler = new SampleKeyHandler(this);
     mouseEventHandler = new SampleMouseEventHandler(this);
@@ -235,6 +244,8 @@ void SampleGame::renderImGUI() {
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
     ImGui::SliderFloat("Bias min", &shadowMapper->biasMin, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("Bias max", &shadowMapper->biasMax, 0.0f, 1.0f, "%.3f");
+    ImGui::SliderFloat("IBL Radiance Lambertian Factor", &IBLRadianceLambertianFactor, 0.0f, 1.0f, "%.3f");
+    ImGui::SliderFloat("IBL Radiance GGX Factor", &IBLRadianceGGXFactor, 0.0f, 1.0f, "%.3f");
 
     ImGui::End();
     ImGui::Render();
@@ -250,6 +261,8 @@ void SampleGame::renderETC() {
 #ifndef __EMSCRIPTEN__
     skybox->hdrBoost = glm::vec3(hdrSkyBoost);
     framebuffer->setHDR({hdrExposure});
+    scene->setPBR_IBLRadianceLambertianFactor(IBLRadianceLambertianFactor);
+    scene->setPBR_IBLRadianceGGXFactor(IBLRadianceGGXFactor);
 #endif
 }
 

@@ -11,8 +11,6 @@
 #include "glm/fwd.hpp"
 
 #include <cstddef>
-#include <iostream>
-#include <ostream>
 #include <string>
 #include <vector>
 

@@ -116,6 +116,8 @@ void Scene::updateUniforms() {
 
     batchShader.use();
     batchShader.setFloat("gamma", gamma);
+    batchShader.setFloat("IBLRadianceLambertianFactor", PBR_IBLRadianceLambertianFactor);
+    batchShader.setFloat("IBLRadianceGGXFactor", PBR_IBLRadianceGGXFactor);
 
     batchShader.setFloat("roughnessConstrant", 4.0f); // Default roughness/parallax constrant
     batchShader.setBool("roughness", false);
@@ -168,6 +170,18 @@ void Scene::setGamma(float gamma) {
     this->gamma = gamma;
     batchShader.use();
     batchShader.setFloat("gamma", gamma);
+}
+
+void Scene::setPBR_IBLRadianceLambertianFactor(float value) {
+    this->PBR_IBLRadianceLambertianFactor = value;  
+    batchShader.use();
+    batchShader.setFloat("IBLRadianceLambertianFactor", PBR_IBLRadianceLambertianFactor);
+}
+
+void Scene::setPBR_IBLRadianceGGXFactor(float value) {
+    this->PBR_IBLRadianceGGXFactor = value;
+    batchShader.use();
+    batchShader.setFloat("IBLRadianceGGXFactor", PBR_IBLRadianceGGXFactor);
 }
 
 void Scene::updateProjection(glm::mat4 customPerspective) {
