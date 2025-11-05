@@ -25,8 +25,8 @@
 #include <string>
 #include <vector>
 
-#define SCR_WIDTH  1024
-#define SCR_HEIGHT 768
+#define SCR_WIDTH  1280
+#define SCR_HEIGHT 720
 
 /* TODO:
  *   === SEIZURE PROGRAM (Lethal-like COOP Video Game from scratch) ===
@@ -48,27 +48,31 @@
  *   - [*] Anti-Aliasing: MSAA (*) -> FXAA (*)
  *   - [*] Serialize/Deserialize Game Data (SynPack format "assets.spk")
  *   - [*] Web Support (Emscripten)
- *   - [*] Physics-Based Rendering (lacks environment maps, but could be implemented easily if needed)
+ *   - [*] Gamma correction (*) -> Basic HDR (*) -> Normal Mapping (*) -> Parallax Mapping (*)
+ *   - [-] Physics-Based Rendering -> lacks environment maps, but could be implemented easily if needed ( )
+ *   - [ ] Physics-Based PointLights & SpotLights
  *   - [ ] Use Block-Compression method (S3 BCn) for raw image data compression/decompression at runtime
+ *   - [ ] Use Google Crashpad to catch segmentation errors and debug memory dumps to fix them ASAP if happened on client's PC
  *   - [ ] GLTF/FBX Animations! VERY VERY IMPORTANT
  *   - [ ] Global Asset Manager: Read/Write Shaders ( ), Read/Write Materials (Textures + Metadata + PBR) ( ), Read/Write Models ( ), Read/Write Meshes ( ) <bind/release meshes in model>
- *   - [-] Batching: Reduce GPU State Changes by once binding to materials for each mesh (*) -> Batched VAO Model Instances (BVMI) ( ) -> BVMI + Atlased Textures ( )
+ *   - [-] Batching: Reduce GPU State Changes by once binding to materials for each mesh (*) -> Batched VAO Model Instances (BVMI, One Draw Call) ( ) -> BVMI + Atlased Textures ( )
  *   - [ ] UI Rendering: Text Rendering ( ) -> Mesh2D "Quads, static buttons, images etc." (-) -> Batched Mesh2D, Text, etc (defined by U.V. template) ( )
  *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows ( ) -> Cascaded Shadow Mapping ( )
- *   - [-] One Draw call Particles ( ) | Gamma correction (*) -> HDR (*) -> Bloom ( ) -> Normal Mapping (*) -> Parallax Mapping (*)
- *   - [-] Make an "install" task in CMake for publishing Syngine + Bullet + etc. dependent headers + shared libs.
  *   - [ ] Multi Shader Support for Scene and inherited renderable objects
+ *   - [ ] Bright Parts Renderer -> Bloom ( ), Sun Rays "sometimes called God Rays" ( )
+ *   - [ ] Advanced HDR: auto exposure adjustment by average luminance
+ *   - [ ] SSAO, HBAO "With help of compute shaders"
  *   - [ ] Unfolded one-pass spherical Point Shadow Maps
- *   - [ ] SSAO (+ < Game Menu Option >)
- *   - [ ] Clustered-Forward Rendering supporting both LR(Legacy Rendering) & PBR(Physics-Based Rendering)
- *   - [ ] Android Support (Fully based off C++ using Android NDK)
- *   - [ ] < Make format parser for special nodes name (Using gltf's custom properties + assimp) ([B]LP_: [Bloom]PointLight, [B]LS_: [Bloom]SpotLight, R_: Renderable mesh) >
- *   - [ ] < Room to Room Lighting System > (Filter lights for specific meshes in a room, so meshes behind the walls won't get lit, Only usable for static pointlights)
- *   - [-] < Review https://github.com/kcat/openal-soft for 3D Audio > -> Implement Gaming Audio System in Syngine ( )
- *   - [-] < Game Modeling + Design (Low Poly? High Constrast colors?) >
- *   - [-] < Game UI (VHS Style Menus? idk) >
- *   - [ ] < Networking (via ASIO & protobuf) + ANSI Server >
- *   - [ ] < Produce (Demo via itch.io, Paid on Steam) >
+ *   - [ ] Clustered-Forward Rendering supporting both Blinn-Phong & Physics-Based Rendering
+ *   - [ ] Volumetric Fog
+ *   - [ ] One Draw call Particles
+ *   - [-] https://github.com/kcat/openal-soft for 3D Audio -> Implement Gaming Audio System in Syngine: audio/AudioBuffer, audio/AudioSource, audio/AudioUtil, audio/WAV/OGG/MP3 etc. ( )
+ *   - [-] Make an "install" task in CMake for publishing Syngine + Bullet + etc. dependent headers + shared libs.
+ *   - [-] Game Modeling + Design (Low Poly? High Constrast colors?)
+ *   - [-] Game UI (VHS Style Menus? RmlUI? idk)
+ *   - [ ] Networking (via ASIO & protobuf) + ANSI Server
+ *   - [ ] Produce (Demo via itch.io, Paid on Steam)
+ *   - [ ] < Android Support (Fully based off C++ using Android NDK) >
  */
 
 int SampleGame::launch() {
@@ -104,7 +108,8 @@ void SampleGame::createWindow(GameWindow *window) {
     camera = new Camera(glm::vec3(5.0f, 0.0f, 5.0f), yaw, pitch);
 
     Model* sceneModel = new Model();
-    Model* helmetModel = new Model();
+    // Model* helmetModel = new Model();
+
     // ModelIO::AssimpReader reader = {"assets/models/Sponza/glTF/sponza.gltf"};
     // reader.loadPBRTextures = true;
     // sceneModel->readAssimp(reader);
@@ -117,11 +122,11 @@ void SampleGame::createWindow(GameWindow *window) {
     sceneModel->uploadVertices(syng::CacheApproach::Interleaved, true);
     sceneModel->uploadTextures();
 
-    ModelIO::AssimpReader reader = {"assets/models/Avocado/glTF/Avocado.gltf"};
-    reader.loadPBRTextures = true;
-    helmetModel->readAssimp(reader);
-    helmetModel->uploadVertices(syng::CacheApproach::Interleaved, true);
-    helmetModel->uploadTextures();
+    // ModelIO::AssimpReader reader = {"assets/models/Avocado/glTF/Avocado.gltf"};
+    // reader.loadPBRTextures = true;
+    // helmetModel->readAssimp(reader);
+    // helmetModel->uploadVertices(syng::CacheApproach::Interleaved, true);
+    // helmetModel->uploadTextures();
 
 #ifdef __EMSCRIPTEN__
     batchShader.read("assets/shaders/ES/batchVertex.glsl", "assets/shaders/ES/batchFrag.glsl");
@@ -157,15 +162,15 @@ void SampleGame::createWindow(GameWindow *window) {
     scene->getBatchRenderTable()->add("skybox", skybox);
 
     sceneModelInstance = new ModelInstance(sceneModel);
-    ModelInstance* helmetInstance = new ModelInstance(helmetModel);
+    // ModelInstance* helmetInstance = new ModelInstance(helmetModel);
 
     materialBatch = new MaterialBatchRenderer(scene);
-    //materialBatch->add(sceneModelInstance);
-    materialBatch->add(helmetInstance);
+    materialBatch->add(sceneModelInstance);
+    //materialBatch->add(helmetInstance);
     materialBatch->sort(DEFAULT_BATCH_SORT);
     scene->getBatchRenderTable()->add("materialBatch", materialBatch);
 
-    helmetInstance->setScale(glm::vec3(10.0f));
+    // helmetInstance->setScale(glm::vec3(10.0f));
 
     DirLight dayLight = {
         {-0.86f, -1.0f, -0.97f},
@@ -193,7 +198,7 @@ void SampleGame::createWindow(GameWindow *window) {
     shadowMapper->biasMax = 0.0;
     shadowMapper->biasMin = 0.0005;
     shadowMapper->create();
-    //scene->withShadows(shadowMapper);
+    scene->withShadows(shadowMapper);
 
     keyHandler = new SampleKeyHandler(this);
     mouseEventHandler = new SampleMouseEventHandler(this);
