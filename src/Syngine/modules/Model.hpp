@@ -6,7 +6,6 @@
 #include "Syngine/serialization/DataSerializer.hpp"
 
 #include <functional>
-#include <stb_image.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -140,7 +139,7 @@ public:
     bool isUploaded() { return this->uploaded; };
 
     virtual void uploadVertices(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential, bool uploadPBR = false);
-    virtual void uploadTextures(TexelExecParams params = PARAMS_TEX2D_DEFAULT);
+    virtual void uploadTextures(TexelExecParams params = PARAMS_TEX2D_DEFAULT, bool remove_from_memory = true);
 
     void upload(CacheApproach::VRAM_Approach approach = CacheApproach::Sequential, TexelExecParams params = PARAMS_TEX2D_DEFAULT) {
         this->uploadVertices(approach);

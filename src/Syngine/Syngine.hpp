@@ -1,5 +1,6 @@
 #pragma once
 
+#include "platform/GLSupport.hpp"
 #ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
 #endif
@@ -41,6 +42,7 @@ private:
 	SDL_Window *sdlWindowPtr; 
     SDL_GLContext glContext;
 
+    GLSupport support;
     TaskQueue gameLoopQueue;
     RenderTable<WindowRenderable> *windowRenderTable = new RenderTable<WindowRenderable>(); // Objects that being rendered by window
 
@@ -58,21 +60,20 @@ private:
 public:
     GameWindow(std::string title, WindowSize initialSize);
 
+    // Before GL Init
     bool isInitialized();
     void attrib(SDL_GLAttr attr, int value);
     void attribMSAA(int samples = 4);
     int initLoop();
 
+    // After GL Init
+    void updateScreenBufferSize();
     void addEventHandler(SDL_EventHandler *handler);
     void pullEventHandler(SDL_EventHandler *handler);
     void forEachFrameEvents(std::function<void(const SDL_Event event)> func);
-
-    void addInitTask(std::function<void(GameWindow *)> task);
-    void addRenderTask(std::function<void(GameWindow *)> task);
-    void addCleanupTask(std::function<void(GameWindow *)> task);
-
     void closeWindow();
 
+    const GLSupport& getGLSupport();
     double getLastFrameTime();
     std::vector<SDL_Event> getLastFrameEvents();
     TaskQueue& getGameLoopQueue();
@@ -80,5 +81,10 @@ public:
 	SDL_Window *getSDLWindowPtr();
     SDL_GLContext getGLContext();
     WindowSize getSize();
+
+    // Both
+    void addInitTask(std::function<void(GameWindow *)> task);
+    void addRenderTask(std::function<void(GameWindow *)> task);
+    void addCleanupTask(std::function<void(GameWindow *)> task);
 };
 }

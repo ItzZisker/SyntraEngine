@@ -1,17 +1,20 @@
 #include "Texture.hpp"
 
+#include "Model.hpp"
+#include "Presets.hpp"
+
 #include "Syngine/Syngine.hpp"
 #include "Syngine/engine/TaskQueue.hpp"
 
 #include "Syngine/modules/Model.hpp"
-#include "Syngine/modules/Presets.hpp"
-
-#include "Syngine/modules/Texture.hpp"
 #include "Syngine/ports/GLPort.h"
 #include "Syngine/serialization/DataSerializer.hpp"
 #include "Syngine/serialization/DataTemplates.hpp"
 
+#include "stb_image.h"
+
 #include <array>
+#include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
@@ -43,7 +46,7 @@ bool Texture2D::isUploaded() { return TCB != 0; }
 
 void Texture2D::deleteTexture() { if (TCB) glDeleteTextures(1, &TCB); }
 void Texture2D::uploadTexture(std::function<void(GLuint TCB)> exec_params) {
-    setTCB(uploadTex2DFromBytes(image.bytes.data(), image.width, image.height, image.nrComponents, exec_params));
+    setTCB(uploadTex2DFromBytes((void*)image.bytes.data(), image.width, image.height, image.getInfo(), exec_params));
 }
 
 TextureCubemap::TextureCubemap(GLuint TCB) : TCB(TCB) {}
@@ -71,15 +74,127 @@ bool TextureCubemap::isUploaded() { return TCB != 0; }
 
 void TextureCubemap::deleteTexture() { if (TCB) glDeleteTextures(1, &TCB); }
 void TextureCubemap::uploadTexture(std::function<void(GLuint TCB)> exec_params) {
-    uint8_t *raws[6];
-    int widths[6], heights[6], nrComponentss[6];
+    void *raws[6];
+    int widths[6], heights[6];
+    ImageFormatInfo infos[6];
     for (unsigned int i = 0; i < 6; i++) {
-        raws[i] = images[i].bytes.data();
+        raws[i] = (void*)images[i].bytes.data();
         widths[i] = images[i].width;
         heights[i] = images[i].height;
-        nrComponentss[i] = images[i].nrComponents;
+        infos[i] = images[i].getInfo();
     }
-    setTCB(uploadTexCubeFromBytes(raws, widths, heights, nrComponentss, exec_params));
+    setTCB(uploadTexCubeFromBytes(raws, widths, heights, infos, exec_params));
+}
+
+const ImageFormatInfo& syng::getImageFormatInfo(ImageFormat fmt) {
+    static std::array<ImageFormatInfo, 12> ImageFormatInfoMap = {{
+        {GL_R8,    GL_RED,  GL_UNSIGNED_BYTE, 1},
+        {GL_RG8,   GL_RG,   GL_UNSIGNED_BYTE, 2},
+        {GL_RGB8,  GL_RGB,  GL_UNSIGNED_BYTE, 3},
+        {GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, 4},
+
+        {GL_R16,    GL_RED,  GL_UNSIGNED_BYTE, 1},
+        {GL_RG16,   GL_RG,   GL_UNSIGNED_BYTE, 2},
+        {GL_RGB16,  GL_RGB,  GL_UNSIGNED_BYTE, 3},
+        {GL_RGBA16, GL_RGBA, GL_UNSIGNED_BYTE, 4},
+
+        {GL_R32F,    GL_RED,  GL_FLOAT, 1},
+        {GL_RG32F,   GL_RG,   GL_FLOAT, 2},
+        {GL_RGB32F,  GL_RGB,  GL_FLOAT, 3},
+        {GL_RGBA32F, GL_RGBA, GL_FLOAT, 4}
+    }};
+    return ImageFormatInfoMap[static_cast<int>(fmt)];
+}
+
+ImageFormat syng::getImageFormat(int nrChannels, int bits, bool isHDR) {
+    if (isHDR && bits == 32) {
+        switch (nrChannels) {
+            case 1: return ImageFormat::R32F;
+            case 2: return ImageFormat::RG32F;
+            case 3: return ImageFormat::RGB32F;
+            case 4: return ImageFormat::RGBA32F;
+        }
+    } else {
+        if (bits == 8) {
+            switch (nrChannels) {
+                case 1: return ImageFormat::R8;
+                case 2: return ImageFormat::RG8;
+                case 3: return ImageFormat::RGB8;
+                case 4: return ImageFormat::RGBA8;
+            }
+        } else if (bits == 16) {
+            switch (nrChannels) {
+                case 1: return ImageFormat::R16;
+                case 2: return ImageFormat::RG16;
+                case 3: return ImageFormat::RGB16;
+                case 4: return ImageFormat::RGBA16;
+            }
+        }
+    }
+    throw std::runtime_error("ImageFormat not found for " + std::to_string(nrChannels) + ", isHDR=" + std::to_string(isHDR));
+}
+
+GLint syng::getUnpackAlignment(int width, int channels, int bytesPerChannel) {
+    int rowStride = width * channels * bytesPerChannel;
+    if (rowStride % 8 == 0) return 8;
+    if (rowStride % 4 == 0) return 4;
+    if (rowStride % 2 == 0) return 2;
+    return 1;
+}
+
+GLint syng::getUnpackAlignment(int width, ImageFormatInfo info) {
+    return getUnpackAlignment(width, info.nrComponents, info.bits());
+}
+
+void* syng::loadSTBI_File(const std::filesystem::path& path, ImageFormat& format, int& width, int& height, int& channels) {
+    std::string path_str = path.string();
+    const char *path_cstr = path_str.c_str();
+    
+    void *data = nullptr;
+    if (stbi_is_hdr(path_cstr)) {
+        data = stbi_loadf(path_cstr, &width, &height, &channels, 0);
+        if (!data) {
+            throw std::runtime_error("Failed to load image 'F32' from path=" + path_str);
+        }
+        format = getImageFormat(channels, 32, true);
+    } else {
+        // Idk gives weird texture artifacts + How the hell am I supposed to know whether image is 16/8 bits ???
+        //data = stbi_load_16(path_cstr, &width, &height, &channels, 0);
+        if (!data) {
+            data = stbi_load(path_cstr, &width, &height, &channels, 0);
+            if (!data) {
+                throw std::runtime_error("Failed to load image 'U8/16' from path=" + path_str);
+            }
+            format = getImageFormat(channels, 8, false);
+        } else {
+            format = getImageFormat(channels, 16, false);
+        }
+    }
+    return data;
+}
+
+void* syng::loadSTBI_FileBytes(const uint8_t* bytes, int length, ImageFormat& format, int& width, int& height, int& channels) {
+    void *data = nullptr;
+    if (stbi_is_hdr_from_memory(bytes, length)) {
+        data = stbi_loadf_from_memory(bytes, length, &width, &height, &channels, 0);
+        if (!data) {
+            throw std::runtime_error("Failed to load image 'F32' from memory");
+        }
+        format = getImageFormat(channels, 32, true);
+    } else {
+        // Idk gives weird texture artifacts + How the hell am I supposed to know whether image is 16/8 bits ???
+        //data = stbi_load_16_from_memory(bytes, length, &width, &height, &channels, 0);
+        if (!data) {
+            data = stbi_load_from_memory(bytes, length, &width, &height, &channels, 0);
+            if (!data) {
+                throw std::runtime_error("Failed to load image 'U8/16' from memory");
+            }
+            format = getImageFormat(channels, 8, false);
+        } else {
+            format = getImageFormat(channels, 16, false);
+        }
+    }
+    return data;
 }
 
 TextureImage syng::readTextureImage(const std::filesystem::path& path) {
@@ -87,16 +202,20 @@ TextureImage syng::readTextureImage(const std::filesystem::path& path) {
 
     textureFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     textureFile.open(path, std::ios::binary);
-    std::vector<uint8_t> file_bytes((std::istreambuf_iterator<char>(textureFile)), {});
+    std::vector<char> file_bytes((std::istreambuf_iterator<char>(textureFile)), {});
     textureFile.close();
 
-    int width, height, nrComponents;
-    uint8_t *data = stbi_load_from_memory(file_bytes.data(), file_bytes.size(), &width, &height, &nrComponents, 0);
+    ImageFormat format;
+    int width, height, channels;
+    void *data = loadSTBI_File(path, format, width, height, channels);
 
-    std::vector<uint8_t> texel_bytes(data, data + static_cast<size_t>(width) * height * nrComponents);
+    const ImageFormatInfo& info = getImageFormatInfo(format);
+    std::vector<uint8_t> texel_bytes(
+        static_cast<char*>(data),
+        static_cast<char*>(data) + width * height * info.nrComponents * info.bits()
+    );
     stbi_image_free(data);
-    
-    return {texel_bytes, width, height, nrComponents};
+    return {format, texel_bytes, width, height};
 }
 
 TextureIO::TexturePackedWriter::TexturePackedWriter(DataSerializer *buff) : buffer(buff) {}
@@ -159,7 +278,7 @@ GLuint syng::TCBByPlainColor(unsigned char pixel[4]) {
 }
 
 TextureCubemap TextureIO::TextureFileReader::readTextureCubemap(std::vector<std::filesystem::path> paths) {
-    if (paths.size() != 6) throw std::runtime_error("loadTextureCubemap(): paths.size != 6");
+    if (paths.size() != 6) throw std::runtime_error("readTextureCubemap(): paths.size != 6");
     std::array<std::string, 6> paths_str;
     for (int i = 0; i < 6; i++) {
         paths_str[i] = paths[i].string();
@@ -207,85 +326,66 @@ Texture2D TextureIO::TexturePackedReader::readTexture2D() {
     return {image, path};
 }
 
-GLuint syng::uploadTex2DFromBytes(uint8_t *raw, int width, int height, int nrComponents, TexelExecParams exec_params) {
+GLuint syng::uploadTex2DFromBytes(void *raw, int width, int height, ImageFormatInfo info, TexelExecParams exec_params) {
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     GLuint TCB;
-    GLenum format;
-
-    switch (nrComponents) {
-        case 1: format = GL_RED; break;
-        case 3: format = GL_RGB; break;
-        case 4: format = GL_RGBA; break;
-        default: return 0;
-    }
-#ifndef __EMSCRIPTEN__
-    GLenum internalFormat = (nrComponents == 3) ? GL_RGB8 : (nrComponents == 4) ? GL_RGBA8 : GL_R8;
-#else
-    GLenum internalFormat = (nrComponents == 3) ? GL_RGB : (nrComponents == 4) ? GL_RGBA : GL_RED;
+    GLenum format = info.format, internalFormat = info.internalFormat;
+#ifdef __EMSCRIPTEN__
+    internalFormat = format;
 #endif
     glGenTextures(1, &TCB);
     glBindTexture(GL_TEXTURE_2D, TCB);
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, raw);
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, info.type, raw);
     exec_params(TCB);
     return TCB;
 }
 
-std::future<GLuint> syng::uploadTex2DFromBytes_TQ(uint8_t *raw, int width, int height, int nrComponents, TexelExecParams exec_params) {
-    return TaskQueue::Instance().enqueueFuture([&](){
-        GLuint TCB = uploadTex2DFromBytes(raw, width, height, nrComponents, exec_params);
+std::future<GLuint> syng::uploadTex2DFromBytes_TQ(std::vector<uint8_t> pixels, int width, int height, ImageFormatInfo info, TexelExecParams exec_params) {
+    return TaskQueue::Instance().enqueueFuture([pixels = std::move(pixels), width, height, info, exec_params](){
+        GLuint TCB = uploadTex2DFromBytes((void*)pixels.data(), width, height, info, exec_params);
         exec_params(TCB);
         return TCB;
     });
 }
 
 GLuint syng::uploadTex2DFromFileBytes(uint8_t *bytes, int length, TexelExecParams exec_params) {
-    int width, height, nrComponents;
-    uint8_t *data = stbi_load_from_memory(bytes, length, &width, &height, &nrComponents, 0);
-
-    if (!data) {
-        throw std::runtime_error("TCBFromFileBytes(): Couldn't Load Image data in bytes, probably one or more textures are corrupted.");
-    }
-    GLuint TCB = uploadTex2DFromBytes_TQ(data, width, height, nrComponents, exec_params).get();
+    ImageFormat format;
+    int width, height, channels;
+    void *data = loadSTBI_FileBytes(static_cast<uint8_t*>(bytes), length, format, width, height, channels);
+    uint8_t *data_uc = static_cast<uint8_t*>(data);
+    ImageFormatInfo info = getImageFormatInfo(format);
+    std::vector<uint8_t> pixelCopy(data_uc, data_uc + width * height * channels * info.bits());
+    GLuint TCB = uploadTex2DFromBytes_TQ(pixelCopy, width, height, info, exec_params).get();
     stbi_image_free(data);
     return TCB;
 }
 
 GLuint syng::uploadTex2DFromFile(const std::filesystem::path& path, TexelExecParams exec_params) {
-    int width, height, nrComponents;
-    uint8_t *data = stbi_load(path.string().c_str(), &width, &height, &nrComponents, 0);
-
-    if (data) {
-        GLuint TCB = uploadTex2DFromBytes_TQ(data, width, height, nrComponents, exec_params).get();
-        stbi_image_free(data);
-        return TCB;
-    } else {
-        std::cerr << "TCBFromFile(): Couldn't Load Image data at path: " << path << std::endl;
-        stbi_image_free(data);
-        return 0;
-    }
+    ImageFormat format;
+    int width, height, channels;
+    void *data = loadSTBI_File(path, format, width, height, channels);
+    uint8_t *data_uc = static_cast<uint8_t*>(data);
+    ImageFormatInfo info = getImageFormatInfo(format);
+    std::vector<uint8_t> pixelCopy(data_uc, data_uc + width * height * channels * info.bits());
+    GLuint TCB = uploadTex2DFromBytes_TQ(pixelCopy, width, height, info, exec_params).get();
+    stbi_image_free(data);
+    return TCB;
 }
 
-GLuint syng::uploadTexCubeFromBytes(uint8_t **raws, int *widths, int *heights, int *nrComponentss, TexelExecParams exec_params) {
+GLuint syng::uploadTexCubeFromBytes(void **raws, int *widths, int *heights, ImageFormatInfo *infos, TexelExecParams exec_params) {
     GLuint QBTCB;
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glGenTextures(1, &QBTCB);
     glBindTexture(GL_TEXTURE_CUBE_MAP, QBTCB);
 
     for (unsigned int i = 0; i < 6; i++) {
-        uint8_t *raw = raws[i];
-        int width = widths[i], height = heights[i], nrComponents = nrComponentss[i];
-
-        GLenum format;
-        switch (nrComponents) {
-            case 1: format = GL_RED; break;
-            case 3: format = GL_RGB; break;
-            case 4: format = GL_RGBA; break;
-            default: return 0;
-        }
+        void *raw = raws[i];
+        int width = widths[i], height = heights[i];
+        ImageFormatInfo info = infos[i];
         if (raw) {
             glTexImage2D(
-                GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format,
-                width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, raw
+                GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, info.internalFormat,
+                width, height, 0, info.format, info.type, raw
             );
         }
     }
@@ -293,42 +393,54 @@ GLuint syng::uploadTexCubeFromBytes(uint8_t **raws, int *widths, int *heights, i
     return QBTCB;
 }
 
-std::future<GLuint> syng::uploadTexCubeFromBytes_TQ(uint8_t **raws, int *widths, int *heights, int *nrComponentss, TexelExecParams exec_params) {
-    return TaskQueue::Instance().enqueueFuture([&](){
-        GLuint TCB = uploadTexCubeFromBytes(raws, widths, heights, nrComponentss, exec_params);
+std::future<GLuint> syng::uploadTexCubeFromBytes_TQ(std::vector<std::vector<uint8_t>> pixels, int *widths, int *heights, ImageFormatInfo *infos, TexelExecParams exec_params) {
+    return TaskQueue::Instance().enqueueFuture([pixels = std::move(pixels), widths, heights, infos, exec_params](){
+        const uint8_t** raws;
+        for (int i = 0; i < 6; i++) raws[i] = pixels[i].data();
+        GLuint TCB = uploadTexCubeFromBytes((void**) raws, widths, heights, infos, exec_params);
         exec_params(TCB);
         return TCB;
     });
 }
 
-GLuint syng::uploadTexCubeFromFilesBytes(unsigned char **bytes, int *lengths, TexelExecParams exec_params) {
+GLuint syng::uploadTexCubeFromFilesBytes(uint8_t **bytes, int *lengths, TexelExecParams exec_params) {
     uint8_t *raws[6];
-    int widths[6], heights[6], nrComponents[6];
+    int widths[6], heights[6], nrComps[6];
+    ImageFormat fmts[6];
+    ImageFormatInfo infos[6];
 
     for (unsigned int i = 0; i < 6; i++) {
-        raws[i] = stbi_load_from_memory(bytes[i], lengths[i], &widths[i], &heights[i], &nrComponents[i], 0);    
-        if (!raws[i]) {
-            throw std::runtime_error("QBTCBFromFilesBytes(): Couldn't Load Image data in bytes, probably one or more textures are corrupted.");
-        }
+        raws[i] = (uint8_t*) loadSTBI_FileBytes(bytes[i], lengths[i], fmts[i], widths[i], heights[i], nrComps[i]);
+        infos[i] = getImageFormatInfo(fmts[i]);
     }
-    GLuint QBTCB = uploadTexCubeFromBytes_TQ(raws, widths, heights, nrComponents, exec_params).get();
-    for (unsigned int i = 0; i < 6; i++) stbi_image_free(raws[i]);
+    std::vector<std::vector<uint8_t>> pixelCopyQB;
+    for (int i = 0; i < 6; i++) {
+        uint8_t* data_uc = raws[i];
+        std::vector<uint8_t> pixelCopy(data_uc, data_uc + widths[i] * heights[i] * nrComps[i] * infos[i].bits());
+        pixelCopyQB.push_back(pixelCopy);
+        stbi_image_free(data_uc);
+    }
+    GLuint QBTCB = uploadTexCubeFromBytes_TQ(pixelCopyQB, widths, heights, infos, exec_params).get();
     return QBTCB;
 }
 
 GLuint syng::uploadTexCubeFromFiles(std::vector<std::filesystem::path>& paths, TexelExecParams exec_params) {
-    if (paths.size() != 6) throw std::runtime_error("Cubemap paths size != 6");
-
     uint8_t *raws[6];
-    int widths[6], heights[6], nrComponents[6];
+    int widths[6], heights[6], nrComps[6];
+    ImageFormat fmts[6];
+    ImageFormatInfo infos[6];
 
     for (unsigned int i = 0; i < 6; i++) {
-        raws[i] = stbi_load(paths[i].string().c_str(), &widths[i], &heights[i], &nrComponents[i], 0);    
-        if (!raws[i]) {
-            throw std::runtime_error("QBTCBFromFilesBytes(): Couldn't Load Image data in bytes, probably one or more textures are corrupted.");
-        }
+        raws[i] = (uint8_t*) loadSTBI_File(paths[i], fmts[i], widths[i], heights[i], nrComps[i]);
+        infos[i] = getImageFormatInfo(fmts[i]);
     }
-    GLuint QBTCB = uploadTexCubeFromBytes_TQ(raws, widths, heights, nrComponents, exec_params).get();
-    for (unsigned int i = 0; i < 6; i++) stbi_image_free(raws[i]);
+    std::vector<std::vector<uint8_t>> pixelCopyQB;
+    for (int i = 0; i < 6; i++) {
+        uint8_t* data_uc = raws[i];
+        std::vector<uint8_t> pixelCopy(data_uc, data_uc + widths[i] * heights[i] * nrComps[i] * infos[i].bits());
+        pixelCopyQB.push_back(pixelCopy);
+        stbi_image_free(data_uc);
+    }
+    GLuint QBTCB = uploadTexCubeFromBytes_TQ(pixelCopyQB, widths, heights, infos, exec_params).get();
     return QBTCB;
 }

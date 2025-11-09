@@ -2,10 +2,16 @@
 
 #include "Syngine/ports/GLPort.h"
 #include "Syngine/serialization/DataSerializer.hpp"
+#include <cstddef>
 
 #ifdef USE_ASSIMP
 #include "assimp/material.h"
 #endif
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/component_wise.hpp>
 
 #include <filesystem>
 #include <functional>
@@ -26,11 +32,55 @@ constexpr uint16_t PCK_FOOTER_TEX2D_MESH = 107;
 constexpr uint16_t PCK_HEADER_TEXQBMP = 108;
 constexpr uint16_t PCK_FOOTER_TEXQBMP = 109;
 
-struct TextureImage {
-    std::vector<uint8_t> bytes;
-    int width, height, nrComponents;
+struct ImageFormatInfo {
+    GLenum internalFormat;
+    GLenum format;
+    GLenum type;
+    int nrComponents;
 
-    size_t getSize() { return width * height * nrComponents; }
+    size_t bits() const {
+        return type == GL_HALF_FLOAT ? 2 : type == GL_FLOAT ? 4 : 1;
+    }
+};
+
+enum ImageFormat {
+    R8 = 0,       // 1 channel, 8-bit
+    RG8 = 1,      // 2 channels, 8-bit
+    RGB8 = 2,     // 3 channels, 8-bit
+    RGBA8 = 3,    // 4 channels, 8-bit
+
+    R16 = 0,       // 1 channel, 16-bit
+    RG16 = 1,      // 2 channels, 16-bit
+    RGB16 = 2,     // 3 channels, 16-bit
+    RGBA16 = 3,    // 4 channels, 16-bit
+
+    // Below is definition of EXR/HDR formats. High dynamic-range colors often used for textures such as BRDF_LUT in which color precision matters for later calculations
+    R32F = 8,     // 1 channel, 32-bit float
+    RG32F = 9,    // 2 channels, 32-bit float
+    RGB32F = 10,  // 3 channels, 32-bit float
+    RGBA32F = 11  // 4 channels, 32-bit float
+};
+
+const ImageFormatInfo& getImageFormatInfo(ImageFormat fmt);
+ImageFormat getImageFormat(int nrChannels, int bytesPerChannel, bool isHDR);
+GLint getUnpackAlignment(int width, int channels, int bytesPerChannel);
+GLint getUnpackAlignment(int width, ImageFormatInfo info);
+
+void* loadSTBI_File(const std::filesystem::path& path, ImageFormat& fmt_out, int& width_out, int& height_out, int& nrChannels_out);;
+void* loadSTBI_FileBytes(const uint8_t* bytes, int length, ImageFormat& fmt_out, int& width_out, int& height_out, int& nrChannels_out);
+
+struct TextureImage {
+    ImageFormat format = ImageFormat::RGB8;
+    std::vector<uint8_t> bytes;
+    int width, height;
+
+    const ImageFormatInfo& getInfo() const {
+        return getImageFormatInfo(format);
+    }
+    size_t getSize() const {
+        const ImageFormatInfo& info = getInfo();
+        return width * height * info.nrComponents * info.bits();
+    }
 };
 
 using TexelExecParams = std::function<void(GLuint TCB)>;
@@ -70,6 +120,7 @@ public:
     void setTCB(GLuint TCB);
     GLuint getTCB() const;
     const std::string& getPath() const;
+    const TextureImage& getImage() const { return image; }
 
     void readImage();
     void clearImage();
@@ -92,6 +143,7 @@ public:
     void setTCB(GLuint TCB);
     GLuint getTCB() const;
     const std::string& getPath(GLenum face) const;
+    const std::array<TextureImage, 6>& getImages() const { return images; }
 
     void readImages();
     void clearImages();
@@ -155,7 +207,6 @@ constexpr std::array<const char*, 8> TextureTNames = {
     "texture_metallic",
     "texture_ao",
     "texture_emissive"
-
 };
 constexpr const char* TEXTURE_NAME(MaterialTexture2D_T type) {
     auto i = static_cast<size_t>(type);
@@ -190,14 +241,14 @@ TextureImage readTextureImage(const std::filesystem::path& path);
 GLuint TCBByPlainColor(unsigned char pixel[4]);
 void TCBPlainColor(unsigned int &TCB, unsigned char pixel[4]);
 
-std::future<GLuint> uploadTex2DFromBytes_TQ(uint8_t *raw, int width, int height, int nrComponents, TexelExecParams exec_params);
-GLuint uploadTex2DFromBytes(uint8_t *raw, int width, int height, int nrComponents, TexelExecParams exec_params);
-GLuint uploadTex2DFromFileBytes(unsigned char *bytes, int length, TexelExecParams exec_params);
+std::future<GLuint> uploadTex2DFromBytes_TQ(std::vector<uint8_t> pixels, int width, int height, ImageFormatInfo info, TexelExecParams exec_params);
+GLuint uploadTex2DFromBytes(void *raw, int width, int height, ImageFormatInfo info, TexelExecParams exec_params);
+GLuint uploadTex2DFromFileBytes(uint8_t *bytes, int length, TexelExecParams exec_params);
 GLuint uploadTex2DFromFile(const std::filesystem::path& path, TexelExecParams exec_params);
 
-std::future<GLuint> uploadTexCubeFromBytes_TQ(uint8_t **raws, int *widths, int *heights, int *nrComponentss, TexelExecParams exec_params);
-GLuint uploadTexCubeFromBytes(uint8_t **raw, int widths[6], int heights[6], int nrComponents[6], TexelExecParams exec_params);
-GLuint uploadTexCubeFromFilesBytes(unsigned char **bytes, int lengths[6], TexelExecParams exec_params);
+std::future<GLuint> uploadTexCubeFromBytes_TQ(std::vector<std::vector<uint8_t>> pixels, int *widths, int *heights, ImageFormatInfo *infos, TexelExecParams exec_params);
+GLuint uploadTexCubeFromBytes(void **raw, int widths[6], int heights[6], ImageFormatInfo infos[6], TexelExecParams exec_params);
+GLuint uploadTexCubeFromFilesBytes(uint8_t **bytes, int lengths[6], TexelExecParams exec_params);
 GLuint uploadTexCubeFromFiles(std::vector<std::filesystem::path>& paths, TexelExecParams exec_params);
 
 }

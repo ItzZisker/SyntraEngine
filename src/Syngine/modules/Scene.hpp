@@ -113,6 +113,8 @@ private:
     float PBR_IBLRadianceLambertianFactor = 0.25f;
     float PBR_IBLRadianceGGXFactor = 0.225f;
 
+    GLuint envTCB;
+
     glm::mat4 projection;
 
     void updateProjection();
@@ -142,6 +144,7 @@ public:
     void setGamma(float gamma);
     void setPBR_IBLRadianceLambertianFactor(float value);
     void setPBR_IBLRadianceGGXFactor(float value);
+    void setEnvironmentTCB(GLuint TCB);
 
     void setDirectionalLight(DirLight light);
     void setPointLights(std::vector<PointLight> pointLights);

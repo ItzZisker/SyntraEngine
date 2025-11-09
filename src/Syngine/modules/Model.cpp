@@ -8,15 +8,16 @@
 #include "Syngine/serialization/DataSerializer.hpp"
 #include "Syngine/serialization/DataTemplates.hpp"
 #include "Syngine/utils/GameUtils.hpp"
-#include "assimp/material.h"
-#include <algorithm>
 
 #ifdef USE_ASSIMP
 #include "assimp/vector3.h"
+#include "assimp/material.h"
 #endif
 
+#include "stb_image.h"
+
 #include <filesystem>
-#include <unordered_map>
+#include <algorithm>
 #include <cstdint>
 #include <ostream>
 #include <iostream>
@@ -54,11 +55,15 @@ void Model::uploadVertices(CacheApproach::VRAM_Approach approach, bool uploadPBR
     uploaded = true;
 }
 
-void Model::uploadTextures(std::function<void(GLuint TCB)> params) {
-    for (auto *mat : materialById)
-        for (auto &list : mat->textures)
-            for (auto &texture : list.second)
+void Model::uploadTextures(std::function<void(GLuint TCB)> params, bool remove_from_mem) {
+    for (auto *mat : materialById) {
+        for (auto &list : mat->textures) {
+            for (auto &texture : list.second) {
                 texture.uploadTexture(params);
+                if (remove_from_mem) texture.clearImage();
+            }
+        }
+    }
 }
 
 void Model::serialize(ModelIO::PackedWriter writer) {

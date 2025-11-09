@@ -67,6 +67,12 @@ namespace FallbackTexture
     Texture2D Metal = {};
     Texture2D Emissive = {};
     Texture2D AO = {};
+    Texture2D BRDF_LUT = {};
+}
+
+namespace GlobalTexture
+{
+    Texture2D BRDFLUT = {};
 }
 
 Texture2D FallbackTexture::get(MaterialTexture2D_T type) {

@@ -59,6 +59,11 @@ namespace FallbackTexture
     Texture2D get(MaterialTexture2D_T type);
 }
 
+namespace GlobalTexture
+{
+    extern Texture2D BRDFLUT;
+}
+
 using TexelByTypeMap = std::unordered_map<MaterialTexture2D_T, std::vector<Texture2D>>;
 
 class Material {

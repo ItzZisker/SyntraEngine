@@ -9,7 +9,9 @@
 
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_video.h"
+#include "modules/BRDFGenerator.hpp"
 #include "modules/Material.hpp"
+#include "platform/GLSupport.hpp"
 
 #include <ostream>
 #include <iostream>
@@ -46,6 +48,7 @@ GameWindow::GameWindow(std::string title, WindowSize initialSize) {
 #endif
 
     addInitTask([](GameWindow *window){
+        window->support.queryCapabilities();
         FallbackTexture::Diffuse  = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255})};
         FallbackTexture::Specular = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255})};
         FallbackTexture::Normal   = {TCBByPlainColor((uint8_t[4]){128, 128, 255, 255})};
@@ -54,6 +57,11 @@ GameWindow::GameWindow(std::string title, WindowSize initialSize) {
         FallbackTexture::Emissive = {TCBByPlainColor((uint8_t[4]){0, 0, 0, 255})};
         FallbackTexture::AO       = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255})};
         FallbackTexture::Metal    = {TCBByPlainColor((uint8_t[4]){0, 0, 0, 255})};  
+        
+        //TextureImage img;
+        //syng::SG_generateBRDFLUT(img);
+        //GlobalTexture::BRDFLUT = {img};
+        //GlobalTexture::BRDFLUT.uploadTexture();
     });
     addRenderTask([](GameWindow *window) {
         static Uint64 previousCounter = SDL_GetPerformanceCounter();
@@ -63,6 +71,7 @@ GameWindow::GameWindow(std::string title, WindowSize initialSize) {
         previousCounter = currentCounter;
 
         window->lastFrameTime = deltaTime;
+        window->updateScreenBufferSize();
     });
     addRenderTask([](GameWindow *window) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -90,6 +99,13 @@ void GameWindow::attribMSAA(int samples) {
     }
 }
 
+void GameWindow::updateScreenBufferSize() {
+    int width, height;
+    SDL_GetWindowSize(sdlWindowPtr, &width, &height);
+    this->width = width;
+    this->height = height;
+}
+
 int GameWindow::initLoop() {
     Concurrency::initMainThread();
     if (SDL_Init(SDL_INIT_VIDEO) <= 0) {
@@ -110,12 +126,18 @@ int GameWindow::initLoop() {
     sdlWindowPtr = sdlWindow;
     glContext =  SDL_GL_CreateContext(sdlWindow);
 
+    if (glContext == NULL) {
+        std::cerr << "Syngine: Failed to create GLContext: " << SDL_GetError() << std::endl;
+        SDL_Quit();
+        return -4;
+    }
+
     SDL_GL_MakeCurrent(sdlWindow, glContext);
 
 #ifndef __EMSCRIPTEN__ // skip GLAD — WebGL context already provides all functions.
     if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress)) {
         std::cerr << "Syngine: Failed to initialize GLAD" << std::endl;
-        return -4;
+        return -5;
     }
 #endif
     glViewport(0, 0, width, height);
@@ -192,6 +214,10 @@ void GameWindow::addCleanupTask(std::function<void(GameWindow *)> task) {
 
 void GameWindow::closeWindow() {
     initialized = false;
+}
+
+const GLSupport &GameWindow::getGLSupport() {
+    return this->support;
 }
 
 double GameWindow::getLastFrameTime() {

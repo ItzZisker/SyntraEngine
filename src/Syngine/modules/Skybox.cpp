@@ -1,11 +1,9 @@
 #include "Skybox.hpp"
 
 #include "Presets.hpp"
-
-#include <iostream>
-#include <stb_image.h>
-#include "Syngine/ports/GLPort.h"
 #include "Texture.hpp"
+
+#include "Syngine/ports/GLPort.h"
 
 #include <filesystem>
 #include <vector>

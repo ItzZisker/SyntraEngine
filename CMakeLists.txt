@@ -208,10 +208,6 @@ endif()
 set(GLAD_ROOT "${CMAKE_SOURCE_DIR}/libs/glad-3.3")
 include_directories(${GLAD_ROOT}/include)
 
-# === STB Image ===
-set(STB_ROOT "${CMAKE_SOURCE_DIR}/libs/stb-image")
-include_directories(${STB_ROOT})
-
 # === Assimp Config ===
 if (USE_ASSIMP)
     if (WEB) # WASM: use static WASM Assimp build
@@ -238,7 +234,7 @@ if (USE_BULLET)
             "${BULLET_INSTALL}/lib/libBulletSoftBody.a"
             "${BULLET_INSTALL}/lib/libLinearMath.a"
         )
-    else()    
+    else()
         set(BULLET_LIBS
             "${BULLET_INSTALL}/lib/libBullet2FileLoader.a"
             "${BULLET_INSTALL}/lib/libBullet3OpenCL_clew.a"
@@ -263,6 +259,10 @@ endif()
 # === GLM Config ===
 set(GLM_ROOT "${CMAKE_SOURCE_DIR}/libs/glm")
 include_directories(${GLM_ROOT})
+
+# === GLI Config ===
+set(STB_ROOT "${CMAKE_SOURCE_DIR}/libs/stb")
+include_directories(${STB_ROOT})
 
 # === ImGui Config ===
 set(IMGUI_ROOT "${CMAKE_SOURCE_DIR}/libs/imgui-1.91.9b")
@@ -293,6 +293,7 @@ set(PROJECT_SRC
     src/Syngine/serialization/DataTemplates.cpp
 
     #src/Syngine/modules/TextUtil.cpp
+    src/Syngine/modules/BRDFGenerator.cpp
     src/Syngine/modules/BatchRenderer.cpp
     src/Syngine/modules/Material.cpp
     src/Syngine/modules/Texture.cpp
@@ -315,11 +316,13 @@ set(PROJECT_SRC
     src/Syngine/world/entity/BT_EntityConvexHull.cpp
     src/Syngine/world/entity/BT_EntityTriangleMesh.cpp
 
+    src/Syngine/platform/GLSupport.cpp
+
     src/Syngine/utils/FastMath.cpp
     src/Syngine/utils/GameUtils.cpp
-    
-    src/Syngine/ports/stb_image.c
+
     src/Syngine/ports/glad.c
+    src/Syngine/ports/stb.c
 )
 
 # Define library files

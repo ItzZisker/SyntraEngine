@@ -27,7 +27,7 @@ void pop(DataDeserializer *buffer, std::string res, uint16_t footer) {
 void write_texture_image(DataSerializer *buffer, TextureImage &image) {
     write_uint16(buffer, image.width);
     write_uint16(buffer, image.height);
-    write_uint16(buffer, image.nrComponents);
+    write_uint16(buffer, image.format);
     buffer->write(image.bytes.data(), image.bytes.size());
 }
 
@@ -88,8 +88,10 @@ TextureImage read_texture_image(DataDeserializer* buffer) {
     TextureImage image;
     image.width = read_uint16(buffer);
     image.height = read_uint16(buffer);
-    image.nrComponents = read_uint16(buffer);
-    image.bytes.resize(image.width * image.height * image.nrComponents);
+    image.format = static_cast<ImageFormat>(read_uint16(buffer));
+    auto info = image.getInfo();
+    int bitSize = ((info.type == GL_HALF_FLOAT) ? 2 : (info.type == GL_FLOAT) ? 4 : 1);
+    image.bytes.resize(image.width * image.height * info.nrComponents * bitSize);
     buffer->read(image.bytes.data(), image.bytes.size());
     return image;
 }

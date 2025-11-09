@@ -10,6 +10,8 @@
 #include "ModelInstance.hpp"
 #include "Scene.hpp"
 #include "Screenbuffer.hpp"
+#include "Syngine/modules/Material.hpp"
+#include "Syngine/ports/GLPort.h"
 #include "Texture.hpp"
 
 #include <algorithm>
@@ -116,6 +118,8 @@ void renderBatch(Scene_T snapshot, Shader &batchShader, const RenderBatch& batch
             batchShader.setTexture(std::string(TEXTURE_NAME(type)) + "1", GL_TEXTURE_2D, texUnit++, TCB);
         }
     };
+
+    batchShader.setTexture("texture_brdflut", GL_TEXTURE_2D, 14, GlobalTexture::BRDFLUT.getTCB());
 
     if (material->isPBR()) for (auto& type : requiredPBRTypes) typeFiller(type);
     else for (auto& type : requiredPhongTypes) typeFiller(type);

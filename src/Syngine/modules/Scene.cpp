@@ -6,6 +6,7 @@
 
 #include "Syngine/engine/Config.hpp"
 #include "Syngine/engine/RenderTable.hpp"
+#include "Syngine/ports/GLPort.h"
 #include "Syngine/world/Coordination.hpp"
 #include "Syngine/utils/GameUtils.hpp"
 
@@ -182,6 +183,12 @@ void Scene::setPBR_IBLRadianceGGXFactor(float value) {
     this->PBR_IBLRadianceGGXFactor = value;
     batchShader.use();
     batchShader.setFloat("IBLRadianceGGXFactor", PBR_IBLRadianceGGXFactor);
+}
+
+void Scene::setEnvironmentTCB(GLuint TCB) {
+    this->envTCB = TCB;
+    batchShader.use();
+    batchShader.setTexture("texture_envmap", GL_TEXTURE_CUBE_MAP, 15, TCB);
 }
 
 void Scene::updateProjection(glm::mat4 customPerspective) {

@@ -1,8 +1,10 @@
 #include "SampleGame.hpp"
 
 #include "SampleCallbacks.hpp"
+
 #include "Syngine/engine/Concurrency.hpp"
 #include "Syngine/engine/RenderTable.hpp"
+
 #include "Syngine/modules/BatchRenderer.hpp"
 #include "Syngine/modules/Model.hpp"
 #include "Syngine/modules/ModelInstance.hpp"
@@ -14,6 +16,7 @@
 #include "Syngine/modules/ShadowMapper.hpp"
 #include "Syngine/serialization/DataSerializer.hpp"
 #include "Syngine/world/Coordination.hpp"
+#include "Syngine/platform/GLSupport.hpp"
 
 #include "glm/fwd.hpp" 
 
@@ -22,6 +25,8 @@
 #include "imgui_impl_sdl3.h"
 
 #include <filesystem>
+#include <iostream>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -78,7 +83,7 @@
 int SampleGame::launch() {
     window = new GameWindow("Sample", {SCR_WIDTH, SCR_HEIGHT});
     window->attrib(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
-    window->addInitTask([&](GameWindow *window){ 
+    window->addInitTask([&](GameWindow *window){
         createImGUI();
         createWindow(window);
     });
@@ -113,9 +118,10 @@ void SampleGame::createWindow(GameWindow *window) {
     // ModelIO::AssimpReader reader = {"assets/models/Sponza/glTF/sponza.gltf"};
     // reader.loadPBRTextures = true;
     // sceneModel->readAssimp(reader);
-    // DataSerializer serializer(1024 * 1024 * 512);
-    // sceneModel->serialize(ModelIO::PackedWriter(&serializer));
-    // serializer.serialize(std::filesystem::current_path() / "sponza.spk");
+    // DataSerializer* serializer = new DataSerializer(1024 * 1024 * 512);
+    // sceneModel->serialize(ModelIO::PackedWriter(serializer));
+    // serializer->serialize(std::filesystem::current_path() / "sponza.spk");
+    // delete serializer;
 
     DataDeserializer sponzaPacked(std::filesystem::current_path() / "sponza.spk");
     sceneModel->readPacked(ModelIO::PackedReader(&sponzaPacked));
@@ -212,7 +218,7 @@ void SampleGame::createWindow(GameWindow *window) {
     framebuffer->setTCBFormat(GL_RGBA16F);
     framebuffer->setHDR({0.036f});
 #endif
-    framebuffer->setAntiAliasing(AA_FXAAx4);
+    framebuffer->setAntiAliasing(AA_MSAAx4);
     framebuffer->getRenderTable()->add("scene", scene);
     framebuffer->create(SCR_WIDTH, SCR_HEIGHT, true);
 

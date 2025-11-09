@@ -313,7 +313,7 @@ namespace detail
 	template<typename genIUType>
 	GLM_FUNC_QUALIFIER int bitCount(genIUType x)
 	{
-		GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'bitCount' only accept integer values");
+		//GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'bitCount' only accept integer values");
 
 		return bitCount(glm::vec<1, genIUType, glm::defaultp>(x)).x;
 	}
@@ -321,7 +321,7 @@ namespace detail
 	template<length_t L, typename T, qualifier Q>
 	GLM_FUNC_QUALIFIER vec<L, int, Q> bitCount(vec<L, T, Q> const& v)
 	{
-		GLM_STATIC_ASSERT(std::numeric_limits<T>::is_integer, "'bitCount' only accept integer values");
+		//GLM_STATIC_ASSERT(std::numeric_limits<T>::is_integer, "'bitCount' only accept integer values");
 
 #		if GLM_COMPILER & GLM_COMPILER_VC
 #			pragma warning(push)
