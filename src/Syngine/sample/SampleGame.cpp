@@ -33,8 +33,8 @@
 #include <string>
 #include <vector>
 
-#define SCR_WIDTH  1024
-#define SCR_HEIGHT 768
+#define SCR_WIDTH  1440
+#define SCR_HEIGHT 900
 
 /* TODO:
  *   === SEIZURE PROGRAM (Lethal-like COOP Video Game from scratch) ===
@@ -219,7 +219,7 @@ void SampleGame::createWindow(GameWindow *window) {
 #else
     depthShader.read("assets/shaders/PBRdepthVertex.glsl", "assets/shaders/PBRdepthFrag.glsl");
 #endif
-    shadowMapper = new ShadowMapper(depthShader, 4096, glm::vec3(0.0f), lightDir, lightPos);
+    shadowMapper = new ShadowMapper(depthShader, 8192, glm::vec3(0.0f), lightDir, lightPos);
     shadowMapper->strength = 1.0f;
     shadowMapper->biasMax = 0.0;
     shadowMapper->biasMin = 0.0005;
