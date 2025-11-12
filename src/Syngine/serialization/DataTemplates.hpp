@@ -12,8 +12,10 @@
 
 namespace syng
 {
+
 namespace DataTemplates
 {
+
 void push(DataDeserializer *buffer, std::string res, uint16_t header);
 void pop(DataDeserializer *buffer, std::string res, uint16_t footer);
 
@@ -33,6 +35,7 @@ void write_glm_mat4(DataSerializer* buffer, const glm::mat4& val);
 void write_glm_vec3(DataSerializer* buffer, const glm::vec3& val);
 void write_glm_vec4(DataSerializer* buffer, const glm::vec4& val);
 void write_glm_vec2(DataSerializer* buffer, const glm::vec2& val);
+void write_varint(DataSerializer* buffer, uint64_t value);
 
 inline bool read_bool(DataDeserializer* buffer) { return buffer->readByte(); }
 inline int32_t read_int32(DataDeserializer* buffer) { return LittleEndian::read<int32_t>(buffer); };
@@ -50,6 +53,7 @@ glm::mat4 read_glm_mat4(DataDeserializer* buffer);
 glm::vec3 read_glm_vec3(DataDeserializer* buffer);
 glm::vec4 read_glm_vec4(DataDeserializer* buffer);
 glm::vec2 read_glm_vec2(DataDeserializer* buffer);
+uint64_t read_varint(DataDeserializer* buffer);
 
 template<typename T>
 void write_vector(DataSerializer* buffer, const std::vector<T>& vector, std::function<void(const T& element)> write_element) {

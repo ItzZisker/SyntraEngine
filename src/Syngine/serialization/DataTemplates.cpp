@@ -7,12 +7,13 @@
 
 namespace syng
 {
+
 namespace DataTemplates
 {
+
 void push(DataDeserializer *buffer, std::string res, uint16_t header) {
     uint16_t read = read_uint16(buffer);
     if (read != header) {
-        buffer->rewind(2);
         throw std::runtime_error("Invalid Header (" + res + "): read=" + std::to_string(read));
     }
 }
@@ -83,6 +84,17 @@ void write_glm_vec2(DataSerializer *buffer, const glm::vec2& val) {
     for (uint32_t i = 0; i < 2; i++) {
         LittleEndian::write(buffer, val[i]);
     }
+}
+
+void write_varint(DataSerializer* buffer, uint64_t value) {
+    uint8_t bytes[10];
+    size_t i = 0;
+    while (value >= 0x80) {
+        bytes[i++] = static_cast<uint8_t>((value & 0x7F) | 0x80);
+        value >>= 7;
+    }
+    bytes[i++] = static_cast<uint8_t>(value & 0x7F);
+    buffer->write(bytes, i);
 }
 
 TextureImage read_texture_image(DataDeserializer* buffer) {
@@ -164,5 +176,19 @@ glm::vec2 read_glm_vec2(DataDeserializer *buffer) {
     }
     return result;
 }
+
+uint64_t read_varint(DataDeserializer* buffer) {
+    uint64_t result = 0;
+    int shift = 0;
+    while (true) {
+        uint8_t byte = buffer->readByte();
+        result |= static_cast<uint64_t>(byte & 0x7F) << shift;
+        if ((byte & 0x80) == 0) break;  // last byte
+        shift += 7;
+        if (shift >= 64) throw std::runtime_error("Invalid varint (too long)");
+    }
+    return result;
+}
+
 }
 }
