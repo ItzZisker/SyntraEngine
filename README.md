@@ -13,7 +13,7 @@ Todo:
 - Android (NDK)
 
 ## Sponza
-![Sponza](extra/SponzaPBR.PNG)
+![Sponza](extra/SponzaPBR2.PNG)
 
 ## Manual Build
 

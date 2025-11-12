@@ -194,8 +194,8 @@ void SampleGame::createWindow(GameWindow *window) {
 
     DirLight dayLight = {
         {-0.86f, -1.0f, -0.97f},
-        {0.3f, 0.3f, 0.15f},
-        {0.35f, 0.35f, 0.14f},
+        {0.3f, 0.3f, 0.25f},
+        {0.35f, 0.35f, 0.24f},
         {0.6f, 0.6f, 0.25f}
     };
 #ifndef __EMSCRIPTEN__
