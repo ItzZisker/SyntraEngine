@@ -57,18 +57,18 @@
  *   - [*] Serialize/Deserialize Game Data (SynPack format "assets.spk")
  *   - [*] Web Support (Emscripten)
  *   - [*] Gamma correction (*) -> Basic HDR (*) -> Normal Mapping (*) -> Parallax Mapping (*)
- *   - [-] Physics-Based Rendering -> lacks environment maps, but could be implemented easily if needed (*) -> Environment maps are broken XXXX
- *   - [ ] Physics-Based PointLights & SpotLights
  *   - [*] Use Block-Compression method (S3 BCn) for raw image data compression/decompression at runtime
- *   - [ ] Use Google Crashpad to catch segmentation errors and debug memory dumps to fix them ASAP if happened on client's PC
- *   - [ ] GLTF/FBX Animations! VERY VERY IMPORTANT
+ *   - [-] Physics-Based Rendering -> lacks environment maps, but could be implemented easily if needed (*) -> Environment maps are broken XXXX
  *   - [ ] Add Streamable Functionality to DataSerializer & DataDeserializer for less holding onto memory on read/write
+ *   - [ ] Physics-Based PointLights & SpotLights
+ *   - [ ] Bright Parts Renderer -> Bloom ( ), Sun Rays "sometimes called God Rays" ( )
+ *   - [ ] GLTF/FBX Animations! VERY VERY IMPORTANT -> Cinemachine Camera Controller, Interpolations, etc ( )
+ *   - [ ] Use Google Crashpad to catch segmentation errors and debug memory dumps to fix them ASAP if happened on client's PC
  *   - [ ] Global Asset Manager: Read/Write Shaders ( ), Read/Write Materials (Textures + Metadata + PBR) ( ), Read/Write Models ( ), Read/Write Meshes ( ) <bind/release meshes in model>
  *   - [-] Batching: Reduce GPU State Changes by once binding to materials for each mesh (*) -> Batched VAO Model Instances (BVMI, One Draw Call) ( ) -> BVMI + Atlased Textures ( )
  *   - [ ] UI Rendering: Text Rendering ( ) -> Mesh2D "Quads, static buttons, images etc." (-) -> Batched Mesh2D, Text, etc (defined by U.V. template) ( )
  *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows ( ) -> Cascaded Shadow Mapping ( )
  *   - [ ] Multi Shader Support for Scene and inherited renderable objects
- *   - [ ] Bright Parts Renderer -> Bloom ( ), Sun Rays "sometimes called God Rays" ( )
  *   - [ ] Advanced HDR: auto exposure adjustment by average luminance
  *   - [ ] SSAO, HBAO "With help of compute shaders"
  *   - [ ] Unfolded one-pass spherical Point Shadow Maps
