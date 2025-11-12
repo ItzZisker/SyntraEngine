@@ -57,11 +57,11 @@ GameWindow::GameWindow(std::string title, WindowSize initialSize) {
         FallbackTexture::Emissive = {TCBByPlainColor((uint8_t[4]){0, 0, 0, 255})};
         FallbackTexture::AO       = {TCBByPlainColor((uint8_t[4]){255, 255, 255, 255})};
         FallbackTexture::Metal    = {TCBByPlainColor((uint8_t[4]){0, 0, 0, 255})};  
-        
-        //TextureImage img;
-        //syng::SG_generateBRDFLUT(img);
-        //GlobalTexture::BRDFLUT = {img};
-        //GlobalTexture::BRDFLUT.uploadTexture();
+
+        TextureImage img;
+        syng::SG_generateBRDFLUT(img, 512);
+        GlobalTexture::BRDFLUT = {img};
+        GlobalTexture::BRDFLUT.uploadTexture();
     });
     addRenderTask([](GameWindow *window) {
         static Uint64 previousCounter = SDL_GetPerformanceCounter();

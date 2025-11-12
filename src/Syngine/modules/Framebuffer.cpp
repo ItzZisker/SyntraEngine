@@ -17,7 +17,6 @@ Framebuffer::Framebuffer(Scene* scene, Shader& outputShader) : scene(scene), out
 Framebuffer::~Framebuffer() {
     initTasks.clear();
     renderTasks.clear();
-    delete renderTable;
     glDeleteFramebuffers(1, &FBO);
     glDeleteRenderbuffers(1, &RBO);
     glDeleteTextures(1, &TCB);
@@ -114,16 +113,7 @@ void Framebuffer::create(unsigned int width_, unsigned int height_, bool outputT
     if (!outputShader.hasProgram()) {
         outputShader.init();
     }
-
     onCreate(width_, height_, outputToScreenShader, FBO);
-
-    RenderTable<ShaderRenderable>* renderTableCopy = renderTable;
-    Scene *scene = this->scene;
-    addRenderTask([scene, renderTableCopy](Framebuffer* framebuffer){
-        renderTableCopy->forEach([&](const std::string& key, ShaderRenderable* renderable){
-            GameUtils::renderDV(renderable, scene, scene->getBatchShader(), *framebuffer);
-        });
-    });
 }
 
 void Framebuffer::create(bool outputToScreenShader) {
@@ -226,10 +216,6 @@ void Framebuffer::render(Screenbuffer screen) {
 
         quad->draw();
     }
-}
-
-RenderTable<ShaderRenderable>* Framebuffer::getRenderTable() {
-    return this->renderTable;
 }
 
 Shader& Framebuffer::getOutputShader() {

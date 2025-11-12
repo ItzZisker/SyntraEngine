@@ -81,8 +81,7 @@ void ShadowMapper::pushUniforms(Shader& batchShader) {
     batchShader.setFloat("shadowBiasMin", biasMin);
     batchShader.setFloat("shadowBiasMax", biasMax);
     batchShader.setFloat("shadowPCFScale", pcfScale);
-    batchShader.setInt("shadowPCFRadius", pcfRadius);
-    batchShader.setTexture("shadowMap", GL_TEXTURE_2D, 7, getDepthMapTCB());
+    batchShader.setTexture("shadowMap", GL_TEXTURE_2D, 12, getDepthMapTCB());
 }
 
 GLuint ShadowMapper::getDepthMapFBO() {

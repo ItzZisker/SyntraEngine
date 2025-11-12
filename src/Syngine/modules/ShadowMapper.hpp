@@ -17,7 +17,6 @@ public:
     GLfloat strength = 0.5f;
     GLfloat biasMin = 0.001f, biasMax = 0.016f;
     GLuint shadowWidth = 1024, shadowHeight = 1024;
-    GLuint pcfRadius = 1;
     GLfloat pcfScale = 1.0f;
     glm::mat4 lightProjection, lightView;
 

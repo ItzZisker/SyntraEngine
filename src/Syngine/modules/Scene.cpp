@@ -13,6 +13,7 @@
 #include <SDL3/SDL_video.h>
 #include <glm/ext/matrix_clip_space.hpp>
 
+#include <iostream>
 #include <string>
 
 using namespace syng;
@@ -21,7 +22,10 @@ Scene::Scene(Camera* camera, Shader& batchShader, Shader& screenShader, Scene_T 
     : camera(camera), batchShader(batchShader), screenShader(screenShader), snapshot(props) {
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, snapshot.width, snapshot.height);
+    setPBR_NonIBLRadianceGGXSpecularLightToDirLight();
+    setPBR_NonIBLRadianceLambertianIrradianceToDirLight();
     updateProjection();
+    updateUniforms();
 }
 
 Scene::Scene(Camera* camera, Shader& batchShader, Shader& screenShader)
@@ -73,6 +77,12 @@ void Scene::render(Screenbuffer screen) {
     batchShader.setMatrix4("view", camera->getViewMatrix(), 1, GL_FALSE);
     batchShader.setMatrix4("projection", projection, 1, GL_FALSE);
     batchShader.setVec3f("cameraPos", camera->getPosition());
+
+    if (brdflutTCB) batchShader.setTexture("texture_brdflut", GL_TEXTURE_2D, 13, brdflutTCB);
+    if (hasIBL && envirrTCB) batchShader.setTexture("texture_irradance", GL_TEXTURE_CUBE_MAP, 14, envirrTCB);
+    if (hasIBL && envTCB) batchShader.setTexture("texture_envmap", GL_TEXTURE_CUBE_MAP, 15, envTCB);
+    batchShader.setBool("hasIBL", hasIBL);
+
     batchRenderTable->forEach([&](const std::string& key, ShaderRenderable* renderable) {
         GameUtils::renderDV(renderable, this, batchShader, screen);
     });
@@ -117,9 +127,8 @@ void Scene::updateUniforms() {
 
     batchShader.use();
     batchShader.setFloat("gamma", gamma);
-    batchShader.setFloat("IBLRadianceLambertianFactor", PBR_IBLRadianceLambertianFactor);
-    batchShader.setFloat("IBLRadianceGGXFactor", PBR_IBLRadianceGGXFactor);
 
+    batchShader.setBool("hasNormalMap", false);
     batchShader.setFloat("roughnessConstrant", 4.0f); // Default roughness/parallax constrant
     batchShader.setBool("roughness", false);
     batchShader.setBool("parallax", false);
@@ -128,7 +137,6 @@ void Scene::updateUniforms() {
     batchShader.setFloat("shadowBiasMax", 0.05f);
     batchShader.setFloat("shadowBiasMin", 0.005f);
     batchShader.setFloat("shadowPCFScale", 1.0f);
-    batchShader.setInt("shadowPCFRadius", 10);
 
     batchShader.setFloat("opacity", 1.0f); // Default material misc values
     batchShader.setFloat("specularStrength", 1.0f);
@@ -165,6 +173,54 @@ void Scene::updateUniforms() {
         batchShader.setFloat("spotLights[" + num + "].quadratic", spotLight.quadratic);
         batchShader.setFloat("spotLights[" + num + "].cutOff", spotLight.cutOff);
     }
+
+    batchShader.setBool("hasIBL", hasIBL);
+    batchShader.setVec3f("NonIBLRadianceGGXSpecularLight", PBR_NonIBLRadianceGGXSpecularLight);
+    batchShader.setVec3f("NonIBLRadianceLambertianIrradiance", PBR_NonIBLRadianceLambertianIrradiance);
+    batchShader.setFloat("NonIBLRadianceGGXFactor", PBR_NonIBLRadianceGGXFactor);
+    batchShader.setFloat("NonIBLRadianceLambertianFactor", PBR_NonIBLRadianceLambertianFactor);
+}
+
+void Scene::setIBL(bool hasIBL) {
+    this->hasIBL = hasIBL;
+    batchShader.use();
+    batchShader.setBool("hasIBL", hasIBL);
+}
+
+void Scene::setPBR_NonIBLRadianceLambertianIrradianceToDirLight() {
+    this->PBR_NonIBLRadianceLambertianIrradiance = dirLight.diffuse;
+    batchShader.use();
+    batchShader.setVec3f("NonIBLRadianceLambertianIrradiance", dirLight.diffuse);
+}
+
+void Scene::setPBR_NonIBLRadianceLambertianIrradiance(glm::vec3 nonIBLRadianceLambertianIrradiance) {
+    this->PBR_NonIBLRadianceLambertianIrradiance = nonIBLRadianceLambertianIrradiance;
+    batchShader.use();
+    batchShader.setVec3f("NonIBLRadianceLambertianIrradiance", nonIBLRadianceLambertianIrradiance);
+}
+
+void Scene::setPBR_NonIBLRadianceLambertianFactor(float nonIBLRadianceLambertianFactor) {
+    this->PBR_NonIBLRadianceLambertianFactor = nonIBLRadianceLambertianFactor;
+    batchShader.use();
+    batchShader.setFloat("NonIBLRadianceLambertianFactor", nonIBLRadianceLambertianFactor);
+}
+
+void Scene::setPBR_NonIBLRadianceGGXSpecularLightToDirLight() {
+    this->PBR_NonIBLRadianceGGXSpecularLight = dirLight.specular;
+    batchShader.use();
+    batchShader.setVec3f("NonIBLRadianceGGXSpecularLight", dirLight.specular);
+}
+
+void Scene::setPBR_NonIBLRadianceGGXSpecularLight(glm::vec3 nonIBLRadianceGGXSpecularLight) {
+    this->PBR_NonIBLRadianceGGXSpecularLight = nonIBLRadianceGGXSpecularLight;
+    batchShader.use();
+    batchShader.setVec3f("NonIBLRadianceGGXSpecularLight", nonIBLRadianceGGXSpecularLight);
+}
+
+void Scene::setPBR_NonIBLRadianceGGXFactor(float nonIBLRadianceGGXFactor) {
+    this->PBR_NonIBLRadianceGGXFactor = nonIBLRadianceGGXFactor;
+    batchShader.use();
+    batchShader.setFloat("PBR_NonIBLRadianceGGXFactor", nonIBLRadianceGGXFactor);
 }
 
 void Scene::setGamma(float gamma) {
@@ -173,22 +229,16 @@ void Scene::setGamma(float gamma) {
     batchShader.setFloat("gamma", gamma);
 }
 
-void Scene::setPBR_IBLRadianceLambertianFactor(float value) {
-    this->PBR_IBLRadianceLambertianFactor = value;  
-    batchShader.use();
-    batchShader.setFloat("IBLRadianceLambertianFactor", PBR_IBLRadianceLambertianFactor);
-}
-
-void Scene::setPBR_IBLRadianceGGXFactor(float value) {
-    this->PBR_IBLRadianceGGXFactor = value;
-    batchShader.use();
-    batchShader.setFloat("IBLRadianceGGXFactor", PBR_IBLRadianceGGXFactor);
-}
-
 void Scene::setEnvironmentTCB(GLuint TCB) {
     this->envTCB = TCB;
-    batchShader.use();
-    batchShader.setTexture("texture_envmap", GL_TEXTURE_CUBE_MAP, 15, TCB);
+}
+
+void Scene::setEnvironmentIrradianceTCB(GLuint TCB) {
+    this->envirrTCB = TCB;
+}
+
+void Scene::setBRDFLUT_TCB(GLuint TCB) {
+    this->brdflutTCB = TCB;
 }
 
 void Scene::updateProjection(glm::mat4 customPerspective) {

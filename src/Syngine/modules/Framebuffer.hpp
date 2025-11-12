@@ -17,7 +17,6 @@ private:
     Shader& outputShader;
 
     std::vector<std::function<void(Framebuffer *)>> initTasks, renderTasks;
-    RenderTable<ShaderRenderable>* renderTable = new RenderTable<ShaderRenderable>();
 
     GLenum TCBFormat = GL_RGB;
     GLenum TCBFiltering = GL_LINEAR;

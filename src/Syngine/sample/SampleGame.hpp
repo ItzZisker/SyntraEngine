@@ -8,6 +8,7 @@
 
 #include "Syngine/modules/BatchRenderer.hpp"
 #include "Syngine/modules/Framebuffer.hpp"
+#include "Syngine/modules/EnvironmentMap.hpp"
 #include "Syngine/modules/Model.hpp"
 #include "Syngine/modules/ModelInstance.hpp"
 #include "Syngine/modules/Scene.hpp"
@@ -29,6 +30,7 @@ public:
     Camera *camera;
     Scene *scene;
 
+    EnvironmentMap *environmentMap;
     MaterialBatchRenderer *materialBatch;
     ShadowMapper *shadowMapper;
     Framebuffer *framebuffer, *framebuffer_VHS;
@@ -42,8 +44,6 @@ public:
     float hdrExposure = 0.06f;
     float hdrSkyBoost = 30.0f;
     float roughnessConstrant = 1.0f;
-    float IBLRadianceLambertianFactor = 0.25f;
-    float IBLRadianceGGXFactor = 0.225f;
     bool mouseCaptured = true;
     bool firstMouse;
 
@@ -56,7 +56,7 @@ public:
     ModelInstance *sceneModelInstance;
     MeshInstance *appleHMeshInstance, *appleMeshInstance;
 
-    Shader batchShader, screenShader, skyboxShader, depthShader;
+    Shader batchShader, screenShader, skyboxShader, depthShader, irrShader;
 
     BT_EntityConvexHull* appleEntity;
     BT_EntityTriangleMesh* sceneEntity;

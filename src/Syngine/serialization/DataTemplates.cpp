@@ -28,6 +28,7 @@ void write_texture_image(DataSerializer *buffer, TextureImage &image) {
     write_uint16(buffer, image.width);
     write_uint16(buffer, image.height);
     write_uint16(buffer, image.format);
+    write_uint32(buffer, image.bytes.size());
     buffer->write(image.bytes.data(), image.bytes.size());
 }
 
@@ -89,9 +90,7 @@ TextureImage read_texture_image(DataDeserializer* buffer) {
     image.width = read_uint16(buffer);
     image.height = read_uint16(buffer);
     image.format = static_cast<ImageFormat>(read_uint16(buffer));
-    auto info = image.getInfo();
-    int bitSize = ((info.type == GL_HALF_FLOAT) ? 2 : (info.type == GL_FLOAT) ? 4 : 1);
-    image.bytes.resize(image.width * image.height * info.nrComponents * bitSize);
+    image.bytes.resize(read_uint32(buffer));
     buffer->read(image.bytes.data(), image.bytes.size());
     return image;
 }

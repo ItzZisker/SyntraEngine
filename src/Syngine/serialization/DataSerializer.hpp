@@ -34,8 +34,8 @@ private:
     uint64_t length;
     uint64_t readIndex = 0;
 public:
-    DataDeserializer(uint8_t* buffer, uint64_t length);
-    DataDeserializer(std::filesystem::path path);
+    DataDeserializer(const uint8_t* buffer, uint64_t length);
+    DataDeserializer(std::filesystem::path path, uint64_t length = 0);
     ~DataDeserializer();
 
     uint64_t getLength() const { return length; }

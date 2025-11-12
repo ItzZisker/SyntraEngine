@@ -8,6 +8,7 @@ namespace syng
 {
 class GLSupport {
 public:
+    std::string extensions;
     std::string vendor;
     std::string renderer;
     std::string version;

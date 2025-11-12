@@ -8,6 +8,8 @@
 #include "assimp/material.h"
 #endif
 
+#include <stb_image.h>
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -58,16 +60,60 @@ enum ImageFormat {
     R32F = 8,     // 1 channel, 32-bit float
     RG32F = 9,    // 2 channels, 32-bit float
     RGB32F = 10,  // 3 channels, 32-bit float
-    RGBA32F = 11  // 4 channels, 32-bit float
+    RGBA32F = 11, // 4 channels, 32-bit float
+
+    // Below is definition of ASTC block-compressed formats that could be uploaded directly to any GLES GPUs while maintaining fast load time.
+    RGBA8_ASTC4x4 = 12, // 4 channels, 8-bit
+    RGBA8_ASTC5x5 = 13, // 4 channels, 8-bit
+    RGBA8_ASTC6x6 = 14, // 4 channels, 8-bit
+    RGBA8_ASTC8x8 = 15, // 4 channels, 8-bit
+
+    // Below is definition of BC compressed formats that could be uploaded directly to any GL-Desktop GPUs while maintaining fast load time. (DXT1/3/5)
+    RGB8_BC1 = 16,  // 3 channels, 8-bit
+    RGBA8_BC3 = 17, // 4 channels, 8-bit
 };
+
+struct ASTCImage {
+    int width;
+    int height;
+    int depth;
+    int blockX, blockY, blockZ;
+    std::vector<uint8_t> data;
+};
+
+struct DXTImage {
+    uint16_t width;
+    uint16_t height;
+    uint8_t alpha; // 0 = BC1/DXT1, 1 = BC3/DXT5
+    std::vector<uint8_t> data;
+};
+
+inline void freeImageData(void* raw, ImageFormat fmt) {
+    if (static_cast<int>(fmt) >= ImageFormat::RGBA8_ASTC4x4) free(raw);
+    else stbi_image_free(raw);
+}
 
 const ImageFormatInfo& getImageFormatInfo(ImageFormat fmt);
 ImageFormat getImageFormat(int nrChannels, int bytesPerChannel, bool isHDR);
 GLint getUnpackAlignment(int width, int channels, int bytesPerChannel);
 GLint getUnpackAlignment(int width, ImageFormatInfo info);
 
-void* loadSTBI_File(const std::filesystem::path& path, ImageFormat& fmt_out, int& width_out, int& height_out, int& nrChannels_out);;
-void* loadSTBI_FileBytes(const uint8_t* bytes, int length, ImageFormat& fmt_out, int& width_out, int& height_out, int& nrChannels_out);
+ASTCImage loadASTC_File(const std::filesystem::path& path);
+ASTCImage loadASTC_FileBytes(const uint8_t* bytes, int length);
+ASTCImage loadASTC_FileBytes(DataDeserializer *buffer);
+bool isASTC_File(const std::filesystem::path& path);
+bool isASTC_FileBytes(const uint8_t* bytes, int length);
+bool isASTC_FileBytes(DataDeserializer *buffer);
+
+DXTImage loadDXT_File(const std::filesystem::path& path);
+DXTImage loadDXT_FileBytes(const uint8_t* bytes, int length);
+DXTImage loadDXT_FileBytes(DataDeserializer *buffer);
+bool isDXT_File(const std::filesystem::path& path);
+bool isDXT_FileBytes(const uint8_t* bytes, int length);
+bool isDXT_FileBytes(DataDeserializer *buffer);
+
+void* loadRawImage_File(const std::filesystem::path& path, ImageFormat& fmt_out, int& width_out, int& height_out, int& nrChannels_out);;
+void* loadRawImage_FileBytes(const uint8_t* bytes, int length, ImageFormat& fmt_out, int& width_out, int& height_out, int& nrChannels_out);
 
 struct TextureImage {
     ImageFormat format = ImageFormat::RGB8;
@@ -78,6 +124,7 @@ struct TextureImage {
         return getImageFormatInfo(format);
     }
     size_t getSize() const {
+        if (static_cast<int>(format) >= ImageFormat::RGBA8_ASTC4x4) return bytes.size();
         const ImageFormatInfo& info = getInfo();
         return width * height * info.nrComponents * info.bits();
     }
@@ -242,12 +289,12 @@ GLuint TCBByPlainColor(unsigned char pixel[4]);
 void TCBPlainColor(unsigned int &TCB, unsigned char pixel[4]);
 
 std::future<GLuint> uploadTex2DFromBytes_TQ(std::vector<uint8_t> pixels, int width, int height, ImageFormatInfo info, TexelExecParams exec_params);
-GLuint uploadTex2DFromBytes(void *raw, int width, int height, ImageFormatInfo info, TexelExecParams exec_params);
+GLuint uploadTex2DFromBytes(void *raw, int length, int width, int height, ImageFormatInfo info, TexelExecParams exec_params);
 GLuint uploadTex2DFromFileBytes(uint8_t *bytes, int length, TexelExecParams exec_params);
 GLuint uploadTex2DFromFile(const std::filesystem::path& path, TexelExecParams exec_params);
 
 std::future<GLuint> uploadTexCubeFromBytes_TQ(std::vector<std::vector<uint8_t>> pixels, int *widths, int *heights, ImageFormatInfo *infos, TexelExecParams exec_params);
-GLuint uploadTexCubeFromBytes(void **raw, int widths[6], int heights[6], ImageFormatInfo infos[6], TexelExecParams exec_params);
+GLuint uploadTexCubeFromBytes(void **raw, int lengths[6], int widths[6], int heights[6], ImageFormatInfo infos[6], TexelExecParams exec_params);
 GLuint uploadTexCubeFromFilesBytes(uint8_t **bytes, int lengths[6], TexelExecParams exec_params);
 GLuint uploadTexCubeFromFiles(std::vector<std::filesystem::path>& paths, TexelExecParams exec_params);
 

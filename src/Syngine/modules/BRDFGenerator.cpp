@@ -5,7 +5,11 @@
  */
 
 #include "BRDFGenerator.hpp"
+#include "Syngine/modules/Texture.hpp"
 #include "Texture.hpp"
+
+#include "stb_image.h"
+#include "stb_image_write.h"
 
 #include <stdlib.h>
 #include <cmath>
@@ -100,11 +104,19 @@ glm::vec2 IntegrateBRDF_RG(float NdotV, float roughness, unsigned int samples) {
 }
 
 void syng::SG_generateBRDFLUT(TextureImage& img, int samples, int size) {
-    img.format = ImageFormat::RG32F;
+	if (stbi_is_hdr("BRDFLUT.hdr")) {
+		int channels;
+		uint8_t *data = (uint8_t*) loadRawImage_File("BRDFLUT.hdr", img.format, img.width, img.height, channels);
+		img.bytes.resize(img.getSize());
+		memcpy(img.bytes.data(), data, img.getSize());
+		return;
+	};
+
+    img.format = ImageFormat::RGB32F;
     img.width = img.height = size;
     img.bytes.resize(img.getSize());
 
-    // Each pixel has 2 floats → reinterpret as float*
+    // Each pixel has 3 floats → reinterpret as float*
     float* data = reinterpret_cast<float*>(img.bytes.data());
 
     for (int y = 0; y < img.height; ++y) {
@@ -114,9 +126,11 @@ void syng::SG_generateBRDFLUT(TextureImage& img, int samples, int size) {
 
             glm::vec2 brdf = IntegrateBRDF_RG(NoV, roughness, samples);
 
-            int idx = (y * img.width + x) * 2; // 2 floats per pixel
+            int idx = ((img.width - y - 1) * img.width + x) * 3; // 3 floats per pixel
             data[idx + 0] = brdf.x;
             data[idx + 1] = brdf.y;
+            data[idx + 2] = 0;
         }
     }
+	stbi_write_hdr("BRDFLUT.hdr", size, size, 3, (const float*) data);
 }

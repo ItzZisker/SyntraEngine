@@ -6,6 +6,7 @@
 #include "Syngine/engine/RenderTable.hpp"
 
 #include "Syngine/modules/BatchRenderer.hpp"
+#include "Syngine/modules/Material.hpp"
 #include "Syngine/modules/Model.hpp"
 #include "Syngine/modules/ModelInstance.hpp"
 #include "Syngine/modules/Screenbuffer.hpp"
@@ -14,9 +15,11 @@
 #include "Syngine/modules/Mesh.hpp"
 #include "Syngine/modules/Scene.hpp"
 #include "Syngine/modules/ShadowMapper.hpp"
+#include "Syngine/ports/GLPort.h"
 #include "Syngine/serialization/DataSerializer.hpp"
 #include "Syngine/world/Coordination.hpp"
 #include "Syngine/platform/GLSupport.hpp"
+#include "Syngine/utils/GameUtils.hpp"
 
 #include "glm/fwd.hpp" 
 
@@ -30,8 +33,8 @@
 #include <string>
 #include <vector>
 
-#define SCR_WIDTH  1280
-#define SCR_HEIGHT 720
+#define SCR_WIDTH  1024
+#define SCR_HEIGHT 768
 
 /* TODO:
  *   === SEIZURE PROGRAM (Lethal-like COOP Video Game from scratch) ===
@@ -54,11 +57,12 @@
  *   - [*] Serialize/Deserialize Game Data (SynPack format "assets.spk")
  *   - [*] Web Support (Emscripten)
  *   - [*] Gamma correction (*) -> Basic HDR (*) -> Normal Mapping (*) -> Parallax Mapping (*)
- *   - [-] Physics-Based Rendering -> lacks environment maps, but could be implemented easily if needed ( )
+ *   - [-] Physics-Based Rendering -> lacks environment maps, but could be implemented easily if needed (*) -> Environment maps are broken XXXX
  *   - [ ] Physics-Based PointLights & SpotLights
- *   - [ ] Use Block-Compression method (S3 BCn) for raw image data compression/decompression at runtime
+ *   - [*] Use Block-Compression method (S3 BCn) for raw image data compression/decompression at runtime
  *   - [ ] Use Google Crashpad to catch segmentation errors and debug memory dumps to fix them ASAP if happened on client's PC
  *   - [ ] GLTF/FBX Animations! VERY VERY IMPORTANT
+ *   - [ ] Add Streamable Functionality to DataSerializer & DataDeserializer for less holding onto memory on read/write
  *   - [ ] Global Asset Manager: Read/Write Shaders ( ), Read/Write Materials (Textures + Metadata + PBR) ( ), Read/Write Models ( ), Read/Write Meshes ( ) <bind/release meshes in model>
  *   - [-] Batching: Reduce GPU State Changes by once binding to materials for each mesh (*) -> Batched VAO Model Instances (BVMI, One Draw Call) ( ) -> BVMI + Atlased Textures ( )
  *   - [ ] UI Rendering: Text Rendering ( ) -> Mesh2D "Quads, static buttons, images etc." (-) -> Batched Mesh2D, Text, etc (defined by U.V. template) ( )
@@ -86,6 +90,7 @@ int SampleGame::launch() {
     window->addInitTask([&](GameWindow *window){
         createImGUI();
         createWindow(window);
+        std::cout << window->getGLSupport().getSummary().str() << std::endl;
     });
     window->addRenderTask([&](GameWindow *window){
         renderImGUI();
@@ -140,13 +145,15 @@ void SampleGame::createWindow(GameWindow *window) {
 #else
     batchShader.read("assets/shaders/PBRbatchVertex.glsl", "assets/shaders/PBRbatchFrag.glsl");
     screenShader.read("assets/shaders/screenVertex.glsl", "assets/shaders/screenFrag.glsl");
+    irrShader.read("assets/shaders/irradianceVertex.glsl", "assets/shaders/irradianceFrag.glsl");
 #endif
 
     Scene_T props = {
         .width = SCR_WIDTH,
         .height = SCR_HEIGHT,
         .zNear = 0.1f,
-        .zFar = 100.0f
+        .zFar = 100.0f,
+        .aspectRatio = static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT)
     };
     scene = new Scene(camera, batchShader, screenShader, props);
 
@@ -166,6 +173,13 @@ void SampleGame::createWindow(GameWindow *window) {
         "assets/skybox/daylight/back.bmp"
     });
     scene->getBatchRenderTable()->add("skybox", skybox);
+
+    environmentMap = new EnvironmentMap(scene, irrShader);
+    environmentMap->create(512, 32);
+
+    scene->setEnvironmentTCB(environmentMap->getEnvironmentTCB());
+    scene->setEnvironmentIrradianceTCB(environmentMap->getIrradianceTCB());
+    scene->setBRDFLUT_TCB(GlobalTexture::BRDFLUT.getTCB());
 
     sceneModelInstance = new ModelInstance(sceneModel);
     // ModelInstance* helmetInstance = new ModelInstance(helmetModel);
@@ -190,6 +204,12 @@ void SampleGame::createWindow(GameWindow *window) {
     dayLight.specular *= 6.0f * 600.0f;
 #endif
     scene->setDirectionalLight(dayLight);
+#ifndef __EMSCRIPTEN__
+    scene->setPBR_NonIBLRadianceLambertianIrradianceToDirLight();
+    scene->setPBR_NonIBLRadianceGGXSpecularLightToDirLight();
+    scene->setPBR_NonIBLRadianceLambertianFactor(0.25f / 7.0f);
+    scene->setPBR_NonIBLRadianceGGXFactor(0.225f / 25.0f);
+#endif
     scene->reloadShaders();
 
     glm::vec3 lightDir = glm::normalize(glm::vec3(-0.5f, -1.0f, -0.5f));
@@ -219,12 +239,18 @@ void SampleGame::createWindow(GameWindow *window) {
     framebuffer->setHDR({0.036f});
 #endif
     framebuffer->setAntiAliasing(AA_MSAAx4);
-    framebuffer->getRenderTable()->add("scene", scene);
+    framebuffer->addRenderTask([&](Framebuffer *fb) {
+        //environmentMap->renderCubemap(camera->getPosition());
+        glViewport(0, 0, fb->getWidth(), fb->getHeight());
+        scene->setIBL(false);
+        scene->render(batchShader, *fb);
+    });
     framebuffer->create(SCR_WIDTH, SCR_HEIGHT, true);
 
-    window->getWindowRenderTable()->add("overWorld", overWorld);
-    window->getWindowRenderTable()->add("framebuffer", framebuffer);
-    window->getWindowRenderTable()->add("keyHandler", keyHandler);
+    auto wTable = window->getWindowRenderTable();
+    wTable->add("overWorld", overWorld);
+    wTable->add("framebuffer", framebuffer);
+    wTable->add("keyHandler", keyHandler);
 
     SDL_GL_SetSwapInterval(0);
     SDL_SetWindowRelativeMouseMode(window->getSDLWindowPtr(), true);
@@ -255,8 +281,6 @@ void SampleGame::renderImGUI() {
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
     ImGui::SliderFloat("Bias min", &shadowMapper->biasMin, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("Bias max", &shadowMapper->biasMax, 0.0f, 1.0f, "%.3f");
-    ImGui::SliderFloat("IBL Radiance Lambertian Factor", &IBLRadianceLambertianFactor, 0.0f, 1.0f, "%.3f");
-    ImGui::SliderFloat("IBL Radiance GGX Factor", &IBLRadianceGGXFactor, 0.0f, 1.0f, "%.3f");
 
     ImGui::End();
     ImGui::Render();
@@ -272,8 +296,6 @@ void SampleGame::renderETC() {
 #ifndef __EMSCRIPTEN__
     skybox->hdrBoost = glm::vec3(hdrSkyBoost);
     framebuffer->setHDR({hdrExposure});
-    scene->setPBR_IBLRadianceLambertianFactor(IBLRadianceLambertianFactor);
-    scene->setPBR_IBLRadianceGGXFactor(IBLRadianceGGXFactor);
 #endif
 }
 

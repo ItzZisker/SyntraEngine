@@ -1,10 +1,19 @@
 #include "GLSupport.hpp"
+#include "Syngine/ports/GLPort.h"
 #include <sstream>
 
 void syng::GLSupport::queryCapabilities() {
-    vendor   = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
-    renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
-    version  = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+    vendor     = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
+    renderer   = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+    version    = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+
+    GLint numExtensions = 0;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
+    for (GLint i = 0; i < numExtensions; ++i) {
+        const char* ext = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
+        if (!ext) continue;
+        extensions += ext + std::string(" ");
+    }
 
     glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
     glGetIntegerv(GL_MINOR_VERSION, &minorVersion);
@@ -39,7 +48,8 @@ std::stringstream syng::GLSupport::getSummary() const {
     str << "===== OpenGL GPU Capability Report =====\n";
     str << "Vendor:   " << vendor << "\n";
     str << "Renderer: " << renderer << "\n";
-    str << "Version:  " << version << " (" << majorVersion << "." << minorVersion << ")\n\n";
+    str << "Version:  " << version << " (" << majorVersion << "." << minorVersion << ")\n";
+    str << "Extensions: " << extensions << "\n\n";
     str << "-- Texture Limits --\n";
     str << "Max Fragment Shader Textures: " << maxFragmentTextures << "\n";
     str << "Max Vertex Shader Textures:   " << maxVertexTextures << "\n";

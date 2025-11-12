@@ -1,5 +1,6 @@
 #include "DataSerializer.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -38,25 +39,25 @@ void DataSerializer::serialize(std::filesystem::path path) {
     packfile.close();
 }
 
-DataDeserializer::DataDeserializer(uint8_t* buffer, uint64_t length) : length(length) {
+DataDeserializer::DataDeserializer(const uint8_t* buffer, uint64_t length) : length(length) {
     this->data = new uint8_t[length];
     std::memcpy(this->data, buffer, this->length);
 }
 
-DataDeserializer::DataDeserializer(std::filesystem::path path) {
+DataDeserializer::DataDeserializer(std::filesystem::path path, uint64_t length) {
     std::ifstream packfile(path, std::ios::binary | std::ios::ate);
     if (!packfile) {
         throw std::runtime_error("Failed to open file: " + path.string());
     }
-    std::streamsize size = packfile.tellg();
+    std::streamsize ssize = packfile.tellg();
     packfile.seekg(0, std::ios::beg);
 
-    std::vector<uint8_t> bytes(size);
-    if (!packfile.read(reinterpret_cast<char*>(bytes.data()), size)) {
+    this->length = length == 0 ? ssize : std::min(length, (uint64_t) ssize);
+    std::vector<uint8_t> bytes(this->length);
+    if (!packfile.read(reinterpret_cast<char*>(bytes.data()), this->length)) {
         throw std::runtime_error("Failed to read file: " + path.string());
     }
-    this->length = bytes.size();
-    this->data = new uint8_t[length];
+    this->data = new uint8_t[this->length];
     std::memcpy(this->data, bytes.data(), this->length);
 }
 

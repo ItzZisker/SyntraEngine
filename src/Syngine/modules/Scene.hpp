@@ -110,10 +110,13 @@ private:
     Scene_T snapshot;
     float gamma = 1.8f;
 
-    float PBR_IBLRadianceLambertianFactor = 0.25f;
-    float PBR_IBLRadianceGGXFactor = 0.225f;
+    glm::vec3 PBR_NonIBLRadianceGGXSpecularLight = glm::vec3(0.0f);
+    glm::vec3 PBR_NonIBLRadianceLambertianIrradiance = glm::vec3(0.0f);
+    float PBR_NonIBLRadianceGGXFactor = 0.225f;
+    float PBR_NonIBLRadianceLambertianFactor = 0.25f;
+    bool hasIBL = false;
 
-    GLuint envTCB;
+    GLuint envTCB, envirrTCB, brdflutTCB;
 
     glm::mat4 projection;
 
@@ -142,9 +145,23 @@ public:
     void updateProjection(glm::mat4 customPerspective);
     void updateUniforms();
     void setGamma(float gamma);
-    void setPBR_IBLRadianceLambertianFactor(float value);
-    void setPBR_IBLRadianceGGXFactor(float value);
+
+    void setIBL(bool enabled);
     void setEnvironmentTCB(GLuint TCB);
+    void setEnvironmentIrradianceTCB(GLuint TCB);
+    void setBRDFLUT_TCB(GLuint TCB);
+
+    void setPBR_NonIBLRadianceGGXSpecularLightToDirLight();
+    void setPBR_NonIBLRadianceGGXSpecularLight(glm::vec3 nonIBLRadianceGGXSpecularLight);
+    void setPBR_NonIBLRadianceGGXFactor(float nonIBLRadianceGGXFactor);
+    void setPBR_NonIBLRadianceLambertianIrradianceToDirLight();
+    void setPBR_NonIBLRadianceLambertianIrradiance(glm::vec3 nonIBLRadianceLambertianIrradiance);
+    void setPBR_NonIBLRadianceLambertianFactor(float nonIBLRadianceLambertianFactor);
+
+    glm::vec3 getPBR_NonIBLRadianceGGXSpecularLight() { return PBR_NonIBLRadianceGGXSpecularLight; }
+    glm::vec3 getPBR_NonIBLRadianceLambertianIrradiance() { return PBR_NonIBLRadianceLambertianIrradiance; }
+    float getPBR_NonIBLRadianceGGXFactor() { return PBR_NonIBLRadianceGGXFactor; }
+    float getPBR_NonIBLRadianceLambertianFactor() { return PBR_NonIBLRadianceLambertianFactor; }
 
     void setDirectionalLight(DirLight light);
     void setPointLights(std::vector<PointLight> pointLights);
@@ -166,6 +183,11 @@ public:
 
     std::vector<PointLight> getPointLights();
     std::vector<SpotLight> getSpotLights();
+
+    bool isIBL_Enabled() { return hasIBL; }
+    GLuint getEnvironmentTCB() { return envTCB; }
+    GLuint getEnvironmentIrradianceTCB() { return envirrTCB; }
+    GLuint getBRDFLUT_TCB() { return brdflutTCB; }
 
     DirLight getDirectionalLight();
     PointLight getPointLight(unsigned int index);

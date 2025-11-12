@@ -302,6 +302,7 @@ set(PROJECT_SRC
     src/Syngine/modules/ShadowMapper.cpp
     src/Syngine/modules/Screenbuffer.cpp
     src/Syngine/modules/Framebuffer.cpp
+    src/Syngine/modules/EnvironmentMap.cpp
     src/Syngine/modules/Scene.cpp
     src/Syngine/modules/Camera.cpp
     src/Syngine/modules/Shader.cpp
