@@ -1,6 +1,6 @@
 # Syntra Engine
 
-![logo](extra/final.jpg)
+![logo](extra/finalsmall.jpg)
 
 Syntra Engine is a modular, cross-platform Indie game engine, Beta (Work in progress) 3D/2D game engine built using OpenGL.
 
