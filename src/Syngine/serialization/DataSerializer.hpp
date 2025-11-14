@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <type_traits>
 #include <filesystem>
 #include <fstream>
@@ -13,12 +14,14 @@ class DataStream {
 public:
     virtual ~DataStream() = default;
 
-    virtual uint64_t tell() = 0;
+    virtual uint64_t getReadIndex() = 0;
+    virtual uint64_t getWriteIndex() = 0;
+
     virtual void seekRead(uint64_t pos) = 0;
     virtual void skipRead(int64_t offset) = 0;
     virtual void seekWrite(uint64_t pos) = 0;
     virtual void skipWrite(int64_t offset) = 0;
-    virtual bool eof() const = 0;
+    virtual bool endOfStream() const = 0;
 
     virtual size_t read(void* out, size_t size) = 0;
     virtual size_t write(const void* in, size_t size) = 0;
@@ -36,12 +39,18 @@ public:
     FileDataStream(const std::filesystem::path& path, bool read, bool write);
     ~FileDataStream() override;
 
-    uint64_t tell() override;
-    void seek(uint64_t pos) override;
-    void skip(int64_t offset) override;
-    bool eof() const override;
+    uint64_t getReadIndex() override;
+    uint64_t getWriteIndex() override;
+
+    void seekRead(uint64_t pos) override;
+    void skipRead(int64_t offset) override;
+    void seekWrite(uint64_t pos) override;
+    void skipWrite(int64_t offset) override;
+    bool endOfStream() const override;
+
     size_t read(void* out, size_t size) override;
     size_t write(const void* in, size_t size) override;
+
     uint64_t getLength() override;
 };
 
@@ -56,12 +65,19 @@ public:
     BufferDataStream(uint64_t length);
     ~BufferDataStream() override;
 
-    uint64_t tell() override;
-    void seek(uint64_t pos) override;
-    void skip(int64_t offset) override;
-    bool eof() const override;
+    uint64_t getReadIndex() override;
+    uint64_t getWriteIndex() override;
+
+    void peekBytes(void* out, uint64_t pos, size_t size);
+    void seekRead(uint64_t pos) override;
+    void skipRead(int64_t offset) override;
+    void seekWrite(uint64_t pos) override;
+    void skipWrite(int64_t offset) override;
+    bool endOfStream() const override;
+
     size_t read(void* out, size_t size) override;
     size_t write(const void* in, size_t size) override;
+
     uint64_t getLength() override;
 };
 
@@ -70,14 +86,15 @@ protected:
     std::shared_ptr<DataStream> stream;
     uint64_t chunkSize;
 public:
-    DataSerializer(uint64_t length);
-    ~DataSerializer();
+    DataSerializer(std::shared_ptr<DataStream> stream, uint64_t chunkSize = 4096);
 
-    virtual uint64_t getLength();
-    virtual uint64_t getWritePos();
+    uint64_t getLength();
+    uint64_t getWritePos();
 
-    virtual void write(const unsigned char* bytes, size_t size);
-    virtual void rewind(uint64_t pos);
+    void write(const void* bytes, size_t size);
+
+    void skip(uint64_t offset);
+    void rewind(uint64_t offset_inv);
 };
 
 class DataDeserializer {
@@ -86,16 +103,20 @@ protected:
     uint64_t chunkSize;
 public:
     DataDeserializer(std::shared_ptr<DataStream> stream, uint64_t chunkSize = 4096);
-    ~DataDeserializer();
 
-    virtual uint64_t getLength();
-    virtual uint64_t getReadPos();
+    uint64_t getLength();
+    uint64_t getReadPos();
 
-    virtual uint8_t readByte();
-    virtual void read(unsigned char* outBytes, size_t size);
-    virtual void rewind(uint64_t pos);
-    virtual void skip(uint64_t size);
+    uint8_t readByte();
+    void read(void* out, size_t size);
+
+    void skip(uint64_t offset);
+    void rewind(uint64_t offset_inv);
 };
+
+void writeBufferStreamToFile(std::shared_ptr<BufferDataStream> stream, uint64_t pos, uint64_t size, const std::filesystem::path& path, uint64_t chunkSize = 4096);
+void writeBufferStreamToFile(std::shared_ptr<BufferDataStream> stream, uint64_t size, const std::filesystem::path& path, uint64_t chunkSize = 4096);
+void writeBufferStreamToFile(std::shared_ptr<BufferDataStream> stream, const std::filesystem::path& path, uint64_t chunkSize = 4096);
 
 namespace LittleEndian
 {

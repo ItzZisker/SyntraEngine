@@ -1,14 +1,11 @@
 #include "Texture.hpp"
 
-#include "Model.hpp"
 #include "Presets.hpp"
 
-#include "Syngine/Syngine.hpp"
 #include "Syngine/engine/TaskQueue.hpp"
 #include "Syngine/serialization/DataSerializer.hpp"
 #include "Syngine/serialization/DataTemplates.hpp"
 #include "Syngine/ports/GLPort.h"
-#include "Syngine/utils/GameUtils.hpp"
 
 #include <array>
 #include <cassert>
@@ -19,6 +16,7 @@
 #include <fstream>
 #include <future>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -190,14 +188,16 @@ ASTCImage syng::loadASTC_FileBytes(DataDeserializer *buffer) {
 }
 
 ASTCImage syng::loadASTC_FileBytes(const uint8_t* bytes, int length) {
-    DataDeserializer *buffer = new DataDeserializer(bytes, length);
+    std::shared_ptr<BufferDataStream> stream = std::make_shared<BufferDataStream>(bytes, length);
+    DataDeserializer *buffer = new DataDeserializer(stream);
     ASTCImage img = loadASTC_FileBytes(buffer);
     delete buffer;
     return img;
 }
 
 ASTCImage syng::loadASTC_File(const std::filesystem::path& path) {
-    DataDeserializer *buffer = new DataDeserializer(path);
+    std::shared_ptr<FileDataStream> stream = std::make_shared<FileDataStream>(path, true, false);
+    DataDeserializer *buffer = new DataDeserializer(stream);
     ASTCImage img = loadASTC_FileBytes(buffer);
     delete buffer;
     return img;
@@ -211,14 +211,16 @@ bool syng::isASTC_FileBytes(DataDeserializer *buffer) {
 
 bool syng::isASTC_FileBytes(const uint8_t* bytes, int length) {
     if (length < 4 + 20) return false;
-    DataDeserializer *buffer = new DataDeserializer(bytes, 4);
+    std::shared_ptr<BufferDataStream> stream = std::make_shared<BufferDataStream>(bytes, length);
+    DataDeserializer *buffer = new DataDeserializer(stream);
     bool result = isASTC_FileBytes(buffer);
     delete buffer;
     return result;
 }
 
 bool syng::isASTC_File(const std::filesystem::path& path) {
-    DataDeserializer *buffer = new DataDeserializer(path, 24);
+    std::shared_ptr<FileDataStream> stream = std::make_shared<FileDataStream>(path, true, false);
+    DataDeserializer *buffer = new DataDeserializer(stream);
     if (buffer->getLength() < 4 + 20) return false;
     bool result = isASTC_FileBytes(buffer);
     delete buffer;
@@ -255,14 +257,16 @@ DXTImage syng::loadDXT_FileBytes(DataDeserializer *buffer) {
 }
 
 DXTImage syng::loadDXT_FileBytes(const uint8_t* bytes, int length) {
-    DataDeserializer *buffer = new DataDeserializer(bytes, length);
+    std::shared_ptr<BufferDataStream> stream = std::make_shared<BufferDataStream>(bytes, length);
+    DataDeserializer *buffer = new DataDeserializer(stream);
     DXTImage img = loadDXT_FileBytes(buffer);
     delete buffer;
     return img;
 }
 
 DXTImage syng::loadDXT_File(const std::filesystem::path& path) {
-    DataDeserializer *buffer = new DataDeserializer(path);
+    std::shared_ptr<FileDataStream> stream = std::make_shared<FileDataStream>(path, true, false);
+    DataDeserializer *buffer = new DataDeserializer(stream);
     DXTImage img = loadDXT_FileBytes(buffer);
     delete buffer;
     return img;
@@ -276,14 +280,16 @@ bool syng::isDXT_FileBytes(DataDeserializer *buffer) {
 
 bool syng::isDXT_FileBytes(const uint8_t* bytes, int length) {
     if (length < 4 + 4) return false;
-    DataDeserializer *buffer = new DataDeserializer(bytes, 4);
+    std::shared_ptr<BufferDataStream> stream = std::make_shared<BufferDataStream>(bytes, length);
+    DataDeserializer *buffer = new DataDeserializer(stream, 4);
     bool result = isDXT_FileBytes(buffer);
     delete buffer;
     return result;
 }
 
 bool syng::isDXT_File(const std::filesystem::path& path) {
-    DataDeserializer *buffer = new DataDeserializer(path, 8);
+    std::shared_ptr<FileDataStream> stream = std::make_shared<FileDataStream>(path, true, false);
+    DataDeserializer *buffer = new DataDeserializer(stream, 8);
     if (buffer->getLength() < 4 + 4) return false;
     bool result = isDXT_FileBytes(buffer);
     delete buffer;
@@ -465,7 +471,7 @@ void TextureIO::TexturePackedWriter::writeTextureCubemap(TextureCubemap texQB) {
 void TextureIO::TexturePackedWriter::writeMeshTexture2D(std::string path, TextureImage& image, MaterialTexture2D_T type) {
     DataTemplates::write_uint16(buffer, PCK_HEADER_TEX2D_MESH);
     writeTexture2D(path, image);
-    DataTemplates::write_int32(buffer, type);
+    DataTemplates::write_varint(buffer, type);
     DataTemplates::write_uint16(buffer, PCK_FOOTER_TEX2D_MESH);
 }
 
@@ -521,7 +527,7 @@ TextureCubemap TextureIO::TexturePackedReader::readTextureCubemap() {
 std::pair<MaterialTexture2D_T, Texture2D> TextureIO::TexturePackedReader::readMeshTexture2D() {
     DataTemplates::push(buffer, "MeshTexture2D", PCK_HEADER_TEX2D_MESH);
     Texture2D texel = readTexture2D();
-    MaterialTexture2D_T texType = static_cast<MaterialTexture2D_T>(DataTemplates::read_int32(buffer));
+    MaterialTexture2D_T texType = static_cast<MaterialTexture2D_T>(DataTemplates::read_varint(buffer));
     DataTemplates::pop(buffer, "MeshTexture2D", PCK_FOOTER_TEX2D_MESH);
     return {texType, texel};
 }

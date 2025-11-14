@@ -69,6 +69,12 @@ bool GameUtils::str_contains(const std::string& target, const std::string& value
     return target.find(value) != std::string::npos;
 }
 
+float GameUtils::normalizeAngleDeg(float a) {
+    a = fmod(a, 360.0f);
+    if (a < 0.0f) a += 360.0f;
+    return a;
+}
+
 btVector3 GameUtils::toBulletVector(const glm::vec3& vec) {
     return btVector3(vec[0], vec[1], vec[2]);
 }

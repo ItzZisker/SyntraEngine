@@ -1,9 +1,11 @@
 #pragma once
 
 #include "Mesh.hpp"
+#include <vector>
 
 namespace syng
 {
+
 namespace PresetsTexel
 {
     void TextureParamSTR(GLenum target = GL_TEXTURE_2D, GLenum param = GL_REPEAT);

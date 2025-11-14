@@ -30,6 +30,7 @@ namespace syng::GameUtils
     void str_replaceAll(std::string& target, const std::string& from, const std::string& to);
     bool str_contains(const std::string& target, const std::string& value);
 
+    float normalizeAngleDeg(float deg);
     btVector3 toBulletVector(const glm::vec3& vec);
     btQuaternion getBulletRotationFromTransform(const glm::mat4& transform);
 

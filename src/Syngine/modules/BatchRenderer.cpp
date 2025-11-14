@@ -15,8 +15,6 @@
 #include "Texture.hpp"
 
 #include <algorithm>
-#include <iostream>
-#include <ostream>
 #include <unordered_map>
 
 using namespace syng;

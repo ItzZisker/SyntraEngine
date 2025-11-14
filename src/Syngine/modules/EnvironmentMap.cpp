@@ -1,7 +1,7 @@
 #include "EnvironmentMap.hpp"
 #include "Shader.hpp"
 
-#include "Syngine/modules/ShadowMapper.hpp"
+#include "Syngine/modules/CascadedShadowMapper.hpp"
 #include "Syngine/modules/Presets.hpp"
 #include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/ports/GLPort.h"

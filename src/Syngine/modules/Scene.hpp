@@ -15,7 +15,7 @@
 
 namespace syng
 {
-class ShadowMapper;
+class CascadedShadowMapper;
 
 struct Scene_T {
     int width = 0, height = 0;
@@ -97,7 +97,7 @@ struct SpotLight {
 class Scene : public SDL_EventHandler, public DuplexRenderable
 {
 private:
-    ShadowMapper* shadowMapper = nullptr;
+    CascadedShadowMapper* shadowMapper = nullptr;
     Shader &screenShader, &batchShader;
 
     RenderTable<ShaderRenderable>* batchRenderTable = new RenderTable<ShaderRenderable>;
@@ -140,7 +140,7 @@ public:
 
     void onEvent(const SDL_Event& event) override;
 
-    void withShadows(ShadowMapper* shadowMapper);
+    void withShadows(CascadedShadowMapper* shadowMapper);
 
     void updateProjection(glm::mat4 customPerspective);
     void updateUniforms();
@@ -193,7 +193,7 @@ public:
     PointLight getPointLight(unsigned int index);
     SpotLight getSpotLight(unsigned int index);
 
-    ShadowMapper* getShadowMapper();
+    CascadedShadowMapper* getShadowMapper();
 
     Camera* getCamera();
     Scene_T getSnapshot();

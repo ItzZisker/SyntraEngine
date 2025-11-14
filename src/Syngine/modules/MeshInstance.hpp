@@ -37,9 +37,17 @@ public:
     void setOrigin(const glm::vec3& newOrigin) override;
     void setPosition(const glm::vec3& pos) override;
     void addPosition(const glm::vec3& pos) override;
+    void setScale(const glm::vec3& scale) override;
+    void setOrientation(const glm::quat& q) override;
+
+    void setDirection(const glm::vec3& dir, const glm::vec3& upHint) override;
+    void setRight(const glm::vec3& newRight) override;
     void setUp(const glm::vec3& up) override;
-    void setDirection(const glm::vec3& dir) override;
-    void setScale(glm::vec3 scale) override;
+
+    void setEuler(float yawDeg, float pitchDeg, float rollDeg) override;
+    void setYaw(float degrees) override;
+    void setPitch(float degrees) override;
+    void setRoll(float degrees) override;
 
     std::vector<MeshInstance*>& getChildren();
     std::vector<NamedMesh*>& getMeshes();

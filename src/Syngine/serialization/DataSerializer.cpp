@@ -23,22 +23,36 @@ FileDataStream::~FileDataStream() {
     file.close();
 }
 
-uint64_t FileDataStream::tell() {
-    return static_cast<uint64_t>(file.tellg());
+uint64_t FileDataStream::getReadIndex() {
+    return readable ? static_cast<uint64_t>(file.tellg()) : -1;
 }
 
-void FileDataStream::seek(uint64_t pos) {
+uint64_t FileDataStream::getWriteIndex() {
+    return writable ? static_cast<uint64_t>(file.tellp()) : -1;
+}
+
+void FileDataStream::seekRead(uint64_t pos) {
+    if (!readable) throw std::runtime_error("Stream not open for reading");
     file.seekg(pos);
+}
+
+void FileDataStream::seekWrite(uint64_t pos) {
+    if (!writable) throw std::runtime_error("Stream not open for writing");
     file.seekp(pos);
 }
 
-void FileDataStream::skip(int64_t offset) {
+void FileDataStream::skipRead(int64_t offset) {
+    if (!readable) throw std::runtime_error("Stream not open for reading");
     file.seekg(offset, std::ios::cur);
+}
+
+void FileDataStream::skipWrite(int64_t offset) {
+    if (!writable) throw std::runtime_error("Stream not open for writing");
     file.seekp(offset, std::ios::cur);
 }
 
-bool FileDataStream::eof() const {
-    return file.eof();
+bool FileDataStream::endOfStream() const {
+    return !readable || file.eof();
 }
 
 size_t FileDataStream::read(void* out, size_t size) {
@@ -76,104 +90,131 @@ BufferDataStream::~BufferDataStream() {
     readIndex = writeIndex = length = 0;
 }
 
-uint64_t BufferDataStream::tell() {
+uint64_t BufferDataStream::getReadIndex() {
     return this->readIndex;
 }
 
-class BufferDataStream : public DataStream {
-private:
-    const uint8_t* buffer;
-    uint64_t readIndex = 0;
-    uint64_t writeIndex = 0;
-    uint64_t length;
-public:
-    uint64_t tell() override;
-    void seek(uint64_t pos) override;
-    void skip(int64_t offset) override;
-    bool eof() const override;
-    size_t read(void* out, size_t size) override;
-    size_t write(const void* in, size_t size) override;
-    uint64_t getLength() override;
-};
-
-DataSerializer::DataSerializer(uint64_t length) : data(new uint8_t[length]()), writeIndex(0), length(length) {}
-DataSerializer::~DataSerializer() {
-    delete[] data;
-    this->length = 0;
-    this->writeIndex = 0;
+uint64_t BufferDataStream::getWriteIndex() {
+    return this->writeIndex;
 }
 
-void DataSerializer::write(const unsigned char* bytes, size_t size) {
-    if (writeIndex + size > length) {
-        throw std::overflow_error("DataSerializer overflow");
-    }
-    std::memcpy(data + writeIndex, bytes, size);
-    writeIndex += size;
+void BufferDataStream::seekRead(uint64_t pos) {
+    this->readIndex = pos;
+}
+
+void BufferDataStream::skipRead(int64_t offset) {
+    this->readIndex += offset;
+}
+
+void BufferDataStream::seekWrite(uint64_t pos) {
+    this->writeIndex = pos;
+}
+
+void BufferDataStream::skipWrite(int64_t offset) {
+    this->writeIndex += offset;
+}
+
+bool BufferDataStream::endOfStream() const {
+    return this->readIndex >= this->length;
+}
+
+size_t BufferDataStream::read(void* out, size_t size) {
+    size = std::min(size, this->length - this->readIndex);
+    std::memcpy(out, this->buffer + this->readIndex, size);
+    this->readIndex += size;
+    return size;
+}
+
+size_t BufferDataStream::write(const void* in, size_t size) {
+    size = std::min(size, this->length - this->writeIndex);
+    std::memcpy(this->buffer + this->writeIndex, in, size);
+    this->writeIndex += size;
+    return size;
+}
+
+void BufferDataStream::peekBytes(void* out, uint64_t pos, size_t size) {
+    pos = std::clamp(pos, uint64_t(0), this->length);
+    size = std::min(size, this->length - pos);
+    std::memcpy(out, this->buffer + pos, size);
+}
+
+uint64_t BufferDataStream::getLength() {
+    return this->length;
+}
+
+DataSerializer::DataSerializer(std::shared_ptr<DataStream> stream, uint64_t chunkSize)
+    : stream(stream), chunkSize(chunkSize) {}
+
+uint64_t DataSerializer::getLength() {
+    return stream->getLength();
+}
+
+uint64_t DataSerializer::getWritePos() {
+    return stream->getWriteIndex();
+}
+
+void DataSerializer::write(const void* bytes, size_t size) {
+    stream->write(bytes, size);
+}
+
+void DataSerializer::skip(uint64_t pos) {
+    stream->seekWrite(pos);
 }
 
 void DataSerializer::rewind(uint64_t pos) {
-    if (pos < 0) throw std::out_of_range("Negative rewind position");
-    if (pos > writeIndex) throw std::out_of_range("Cannot rewind past current write position");
-    std::memset(data + pos, 0, writeIndex - pos);
-    writeIndex = pos;
+    stream->seekWrite(-pos);
 }
 
-void DataSerializer::serialize(std::filesystem::path path) {
-    std::ofstream packfile;
-    packfile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-    packfile.open(path, std::ios::binary);
-    packfile.write(reinterpret_cast<const char*>(copyData(writeIndex + 1).data()), writeIndex + 1);
-    packfile.close();
+DataDeserializer::DataDeserializer(std::shared_ptr<DataStream> stream, uint64_t chunkSize)
+    : stream(stream), chunkSize(chunkSize) {}
+
+uint64_t DataDeserializer::getLength() {
+    return stream->getLength();
 }
 
-DataDeserializer::DataDeserializer(const uint8_t* buffer, uint64_t length) : length(length) {
-    this->data = new uint8_t[length];
-    if (buffer) std::memcpy(this->data, buffer, this->length);
-}
-
-DataDeserializer::DataDeserializer(std::filesystem::path path, uint64_t length) {
-    std::ifstream packfile(path, std::ios::binary | std::ios::ate);
-    if (!packfile) {
-        throw std::runtime_error("Failed to open file: " + path.string());
-    }
-    std::streamsize ssize = packfile.tellg();
-    packfile.seekg(0, std::ios::beg);
-
-    this->length = length == 0 ? ssize : std::min(length, (uint64_t) ssize);
-    std::vector<uint8_t> bytes(this->length);
-    if (!packfile.read(reinterpret_cast<char*>(bytes.data()), this->length)) {
-        throw std::runtime_error("Failed to read file: " + path.string());
-    }
-    this->data = new uint8_t[this->length];
-    std::memcpy(this->data, bytes.data(), this->length);
-}
-
-DataDeserializer::~DataDeserializer() {
-    delete[] data;
-    this->length = 0;
-    this->readIndex = 0;
+uint64_t DataDeserializer::getReadPos() {
+    return stream->getReadIndex();
 }
 
 uint8_t DataDeserializer::readByte() {
-    uint8_t bytes[1];
-    read(bytes, 1);
-    return bytes[0];
+    uint8_t byte;
+    stream->read(&byte, 1);
+    return byte;
 }
 
-void DataDeserializer::read(unsigned char* outBytes, size_t size) {
-    if (readIndex + size > length) throw std::out_of_range("DataDeserializer overflow");
-    std::memcpy(outBytes, data + readIndex, size);
-    readIndex += size;
+void DataDeserializer::read(void* out, size_t size) {
+    stream->read(out, size);
 }
 
-void DataDeserializer::rewind(uint64_t pos) {
-    if (pos < 0) throw std::out_of_range("Negative rewind position");
-    if (pos > readIndex) throw std::out_of_range("Cannot rewind past current read position");
-    readIndex = pos;
+void DataDeserializer::rewind(uint64_t offset_inv) {
+    stream->seekRead(-offset_inv);
 }
 
-void DataDeserializer::skip(uint64_t size) {
-    if (size < 0) throw std::out_of_range("Negative size");
-    if (readIndex + size > length) throw std::out_of_range("Cannot skip past buffer end");
-    readIndex += size;
+void DataDeserializer::skip(uint64_t offset) {
+    stream->skipRead(offset);
+}
+
+void syng::writeBufferStreamToFile(std::shared_ptr<BufferDataStream> stream, uint64_t pos, uint64_t size, const std::filesystem::path &path, uint64_t chunkSize) {
+    pos = std::clamp(pos, uint64_t(0), stream->getLength());
+    size = std::min(size, stream->getLength() - pos);
+    uint64_t *chunk = new uint64_t[chunkSize];
+    uint64_t start = 0, end = 0;
+    for (uint64_t i = 0; i < size; i += chunkSize) {
+        end = std::min(i + chunkSize, size);
+        stream->peekBytes(chunk, pos + i, end - i);
+        std::ofstream packfile;
+        packfile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+        packfile.open(path, std::ios::binary | std::ios::app);
+        packfile.write(reinterpret_cast<const char*>(chunk), end - i);
+        packfile.close();
+    }
+    delete[] chunk;
+}
+
+void syng::writeBufferStreamToFile(std::shared_ptr<BufferDataStream> stream, uint64_t size, const std::filesystem::path &path, uint64_t chunkSize) {
+    writeBufferStreamToFile(stream, 0, size, path, chunkSize);
+}
+
+void syng::writeBufferStreamToFile(std::shared_ptr<BufferDataStream> stream, const std::filesystem::path &path, uint64_t chunkSize) {
+    writeBufferStreamToFile(stream, 0, stream->getLength(), path, chunkSize);
 }

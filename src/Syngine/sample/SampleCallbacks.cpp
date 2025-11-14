@@ -1,10 +1,12 @@
 #include "SampleCallbacks.hpp"
 
+#include "SampleGame.hpp"
+
 #include "SDL3/SDL_events.h"
+#include "SDL3/SDL_scancode.h"
+
 #include "Syngine/Syngine.hpp"
 #include "Syngine/modules/Camera.hpp"
-#include "SampleGame.hpp"
-#include "Syngine/utils/GameUtils.hpp"
 
 SampleMouseEventHandler::SampleMouseEventHandler(SampleGame *game) : game(game) {}
  
@@ -23,7 +25,8 @@ void SampleMouseEventHandler::onEvent(const SDL_Event& event) {
     game->pitch += yrel;
     game->yaw = fmod(game->yaw, 360.0f);
     game->pitch = glm::clamp(game->pitch, -89.0f, 89.0f);
-    game->camera->setDirection(GameUtils::directionOf(game->yaw, -game->pitch));
+    game->camera->setYaw(game->yaw);
+    game->camera->setPitch(game->pitch);
 }
 
 SampleKeyHandler::SampleKeyHandler(SampleGame *game) : game(game) {}
@@ -33,13 +36,20 @@ void SampleKeyHandler::onKeysState(double lastFrameTime, const bool* state) {
 
     glm::vec3 horizontalDirection(0.0f);
 
-    horizontalDirection.x = cos(glm::radians(game->yaw));
-    horizontalDirection.z = sin(glm::radians(game->yaw));
+    horizontalDirection.z = -cos(glm::radians(game->yaw));
+    horizontalDirection.x = sin(glm::radians(game->yaw));
 
     glm::vec3 cameraPos = game->camera->getPosition();
     glm::vec3 cameraUp = game->camera->getUp();
 
     glm::vec3 moving(0.0f);
+
+    if (state[SDL_SCANCODE_G]) {
+        game->camera->setRoll(game->camera->getRoll() + 0.1f);
+    }
+    if (state[SDL_SCANCODE_F]) {
+        game->camera->setRoll(game->camera->getRoll() - 0.1f);
+    }
 
     if (state[SDL_SCANCODE_UP]) {
         glm::vec3 dir(1.0f, 0.0f, 0.0f);

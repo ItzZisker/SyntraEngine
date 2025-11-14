@@ -109,6 +109,7 @@ void syng::SG_generateBRDFLUT(TextureImage& img, int samples, int size) {
 		uint8_t *data = (uint8_t*) loadRawImage_File("BRDFLUT.hdr", img.format, img.width, img.height, channels);
 		img.bytes.resize(img.getSize());
 		memcpy(img.bytes.data(), data, img.getSize());
+		freeImageData(data, img.format);
 		return;
 	};
 

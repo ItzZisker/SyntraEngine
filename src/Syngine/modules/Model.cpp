@@ -348,7 +348,7 @@ void ModelIO_PackedReader_ReadNode(Model *model, DataDeserializer *buffer, Local
     node.name = DataTemplates::read_string(buffer);
     node.transform = DataTemplates::read_glm_mat4(buffer);
     node.meshes = DataTemplates::read_vector<NamedMesh*>(buffer, [&](){
-        return model->meshesById[DataTemplates::read_int32(buffer)];
+        return model->meshesById[DataTemplates::read_varint(buffer)];
     });
     node.children = DataTemplates::read_vector<LocalNode>(buffer, [&](){
         LocalNode child("Unnamed");
@@ -362,25 +362,25 @@ void ModelIO::PackedReader::read(Model* model) {
 
     TextureIO::TexturePackedReader texReader(buffer);
     std::vector<Material*> materialsByID = DataTemplates::read_vector<Material*>(buffer, [&](){
-        int ID = DataTemplates::read_int32(buffer);
+        int ID = DataTemplates::read_varint(buffer);
         std::string name = DataTemplates::read_string(buffer);
 
-        int texmap_size = DataTemplates::read_int32(buffer);
+        int texmap_size = DataTemplates::read_varint(buffer);
         TexelByTypeMap texmap(texmap_size);
         for (int i = 0; i < texmap_size; i++) {
-            MaterialTexture2D_T type = static_cast<MaterialTexture2D_T>(DataTemplates::read_int32(buffer));
+            MaterialTexture2D_T type = static_cast<MaterialTexture2D_T>(DataTemplates::read_varint(buffer));
             texmap[type] = DataTemplates::read_vector<Texture2D>(buffer, [&](){
                 return texReader.readTexture2D();
             });
         }
 
         MaterialProps props = DataTemplates::read_material_props(buffer);
-        int map_size = DataTemplates::read_int32(buffer);
+        int map_size = DataTemplates::read_varint(buffer);
         MetaDataMap map;
         for (int i = 0; i < map_size; i++) {
             std::string key = DataTemplates::read_string(buffer);
-            int type = DataTemplates::read_int32(buffer);
-            int data_len = DataTemplates::read_int32(buffer);
+            int type = DataTemplates::read_varint(buffer);
+            int data_len = DataTemplates::read_varint(buffer);
             std::vector<uint8_t> data(data_len);
             buffer->read(data.data(), data_len);
 
@@ -395,7 +395,7 @@ void ModelIO::PackedReader::read(Model* model) {
     model->materialById = materialsByID;
 
     std::vector<NamedMesh*> meshesByID = DataTemplates::read_vector<NamedMesh*>(buffer, [&](){
-        int meshID = DataTemplates::read_int32(buffer);
+        int meshID = DataTemplates::read_varint(buffer);
         std::string meshName = DataTemplates::read_string(buffer);
 
         std::vector<Vertex> vertices = DataTemplates::read_vector<Vertex>(buffer, [&]() {
@@ -407,7 +407,7 @@ void ModelIO::PackedReader::read(Model* model) {
             result.color = DataTemplates::read_glm_vec4(buffer);
             result.tangent = DataTemplates::read_glm_vec3(buffer);
             for (uint32_t i = 0; i < MAX_BONE_INFLUENCE; i++) {
-                result.m_BoneIDs[i] = DataTemplates::read_int32(buffer);
+                result.m_BoneIDs[i] = DataTemplates::read_varint(buffer);
                 result.m_Weights[i] = DataTemplates::read_float(buffer);
             }
             return result;
@@ -416,7 +416,7 @@ void ModelIO::PackedReader::read(Model* model) {
             return DataTemplates::read_uint32(buffer);
         });
 
-        int materialID = DataTemplates::read_int32(buffer);
+        int materialID = DataTemplates::read_varint(buffer);
 
         Mesh* mesh = new Mesh(meshID, vertices, indices);
         mesh->setMaterial(materialID == -1 ? FallbackMaterial::Default : materialsByID[materialID]);
@@ -435,7 +435,7 @@ void ModelIO_PackedWriter_WriteNode(DataSerializer *buffer, LocalNode &node) {
     DataTemplates::write_string(buffer, node.name);
     DataTemplates::write_glm_mat4(buffer, node.transform);
     DataTemplates::write_vector<NamedMesh*>(buffer, node.meshes, [&](NamedMesh* nmesh){
-        DataTemplates::write_int32(buffer, nmesh->mesh->getID());
+        DataTemplates::write_varint(buffer, nmesh->mesh->getID());
     });
     DataTemplates::write_vector<LocalNode>(buffer, node.children, [&](LocalNode child){
         ModelIO_PackedWriter_WriteNode(buffer, child);
@@ -447,24 +447,24 @@ void ModelIO::PackedWriter::write(Model* model) {
 
     TextureIO::TexturePackedWriter texWriter(buffer);
     DataTemplates::write_vector<Material*>(buffer, model->materialById, [&](Material* material){
-        DataTemplates::write_int32(buffer, material->getID());
+        DataTemplates::write_varint(buffer, material->getID());
         DataTemplates::write_string(buffer, material->getName());
 
-        DataTemplates::write_int32(buffer, material->textures.size());
+        DataTemplates::write_varint(buffer, material->textures.size());
         for (auto& pair : material->textures) {
-            DataTemplates::write_int32(buffer, pair.first);
+            DataTemplates::write_varint(buffer, pair.first);
             DataTemplates::write_vector<Texture2D>(buffer, pair.second, [&](const Texture2D& texel){
                 texWriter.writeTexture2D(texel);
             });
         }
 
         DataTemplates::write_material_props(buffer, material->props);
-        DataTemplates::write_int32(buffer, material->metadata_map.size());
+        DataTemplates::write_varint(buffer, material->metadata_map.size());
         for (auto pair : material->metadata_map) {
             M_Metadata value = pair.second;
             DataTemplates::write_string(buffer, pair.first);
-            DataTemplates::write_int32(buffer, value.type);
-            DataTemplates::write_int32(buffer, value.dataLength());
+            DataTemplates::write_varint(buffer, value.type);
+            DataTemplates::write_varint(buffer, value.dataLength());
             buffer->write((uint8_t*) value.rawData().data(), value.dataLength());
         }
     });
@@ -476,7 +476,7 @@ void ModelIO::PackedWriter::write(Model* model) {
         std::vector<Vertex> vertices = mesh->getVertices();
         std::vector<GLuint> indices = mesh->getIndices();
 
-        DataTemplates::write_int32(buffer, mesh->getID());
+        DataTemplates::write_varint(buffer, mesh->getID());
         DataTemplates::write_string(buffer, meshName);
         DataTemplates::write_vector<Vertex>(buffer, vertices, [&](const Vertex& v){
             DataTemplates::write_glm_vec3(buffer, v.position);
@@ -486,14 +486,14 @@ void ModelIO::PackedWriter::write(Model* model) {
             DataTemplates::write_glm_vec4(buffer, v.color);
             DataTemplates::write_glm_vec3(buffer, v.tangent);
             for (uint32_t i = 0; i < MAX_BONE_INFLUENCE; i++) { 
-                DataTemplates::write_int32(buffer, v.m_BoneIDs[i]);
+                DataTemplates::write_varint(buffer, v.m_BoneIDs[i]);
                 DataTemplates::write_float(buffer, v.m_Weights[i]);
             }
         });
         DataTemplates::write_vector<GLuint>(buffer, indices, [&](const GLuint& index){
             LittleEndian::write<GLuint>(buffer, index);
         });
-        DataTemplates::write_int32(buffer, mesh->getMaterial()->getID());
+        DataTemplates::write_varint(buffer, mesh->getMaterial()->getID());
     });
 
     ModelIO_PackedWriter_WriteNode(buffer, model->rootNode);

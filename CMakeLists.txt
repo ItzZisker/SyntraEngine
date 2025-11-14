@@ -299,7 +299,7 @@ set(PROJECT_SRC
     src/Syngine/modules/Texture.cpp
     src/Syngine/modules/Presets.cpp
     src/Syngine/modules/GLObjects.cpp
-    src/Syngine/modules/ShadowMapper.cpp
+    src/Syngine/modules/CascadedShadowMapper.cpp
     src/Syngine/modules/Screenbuffer.cpp
     src/Syngine/modules/Framebuffer.cpp
     src/Syngine/modules/EnvironmentMap.cpp

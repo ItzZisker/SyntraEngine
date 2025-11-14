@@ -88,19 +88,49 @@ void MeshInstance::addPosition(const glm::vec3& pos) {
     Coordination::addPosition(pos);
 }
 
+void MeshInstance::setScale(const glm::vec3& scale) {
+    this->markedDirty = true;
+    Coordination::setScale(scale);
+}
+
+void MeshInstance::setOrientation(const glm::quat& q) {
+    this->markedDirty = true;
+    Coordination::setOrientation(q);
+}
+
+void MeshInstance::setDirection(const glm::vec3& dir, const glm::vec3& upHint) {
+    this->markedDirty = true;
+    Coordination::setDirection(dir);
+}
+
+void MeshInstance::setRight(const glm::vec3& right) {
+    this->markedDirty = true;
+    Coordination::setRight(right);
+}
+
 void MeshInstance::setUp(const glm::vec3& up) {
     this->markedDirty = true;
     Coordination::setUp(up);
 }
 
-void MeshInstance::setDirection(const glm::vec3& dir) {
+void MeshInstance::setEuler(float yawDeg, float pitchDeg, float rollDeg) {
     this->markedDirty = true;
-    Coordination::setDirection(dir);
+    Coordination::setEuler(yawDeg, pitchDeg, rollDeg);
 }
 
-void MeshInstance::setScale(glm::vec3 scale) {
+void MeshInstance::setYaw(float degrees) {
     this->markedDirty = true;
-    Coordination::setScale(scale);
+    Coordination::setYaw(degrees);
+}
+
+void MeshInstance::setPitch(float degrees) {
+    this->markedDirty = true;
+    Coordination::setPitch(degrees);
+}
+
+void MeshInstance::setRoll(float degrees) {
+    this->markedDirty = true;
+    Coordination::setRoll(degrees);
 }
 
 bool MeshInstance::isMarkedDirty() {

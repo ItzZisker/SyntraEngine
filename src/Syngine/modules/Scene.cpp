@@ -1,6 +1,6 @@
 #include "Scene.hpp"
 
-#include "ShadowMapper.hpp"
+#include "CascadedShadowMapper.hpp"
 #include "Screenbuffer.hpp"
 #include "Shader.hpp"
 
@@ -13,7 +13,6 @@
 #include <SDL3/SDL_video.h>
 #include <glm/ext/matrix_clip_space.hpp>
 
-#include <iostream>
 #include <string>
 
 using namespace syng;
@@ -70,7 +69,7 @@ void Scene::render(Screenbuffer screen) {
     camera->updateViewMatrix();
 
     if (shadowMapper && shadowMapper->isCreated()) {
-        shadowMapper->renderDepth(screen, this);
+        shadowMapper->renderDepth(screen);
         shadowMapper->pushUniforms(batchShader);
     }
     batchShader.use();
@@ -88,7 +87,7 @@ void Scene::render(Screenbuffer screen) {
     });
 }
 
-void Scene::withShadows(ShadowMapper* shadowMapper) {
+void Scene::withShadows(CascadedShadowMapper* shadowMapper) {
     if (!shadowMapper || !shadowMapper->isCreated()) return;
     this->shadowMapper = shadowMapper;
     reloadShaders();
@@ -323,7 +322,7 @@ Scene_T Scene::getSnapshot() {
     return res;
 }
 
-ShadowMapper* Scene::getShadowMapper() {
+CascadedShadowMapper* Scene::getShadowMapper() {
     return shadowMapper;
 }
 

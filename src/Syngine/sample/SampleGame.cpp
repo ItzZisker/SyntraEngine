@@ -5,6 +5,7 @@
 #include "Syngine/engine/Concurrency.hpp"
 #include "Syngine/engine/RenderTable.hpp"
 
+#include "Syngine/modules/CascadedShadowMapper.hpp"
 #include "Syngine/modules/BatchRenderer.hpp"
 #include "Syngine/modules/Material.hpp"
 #include "Syngine/modules/Model.hpp"
@@ -14,7 +15,6 @@
 #include "Syngine/modules/Framebuffer.hpp"
 #include "Syngine/modules/Mesh.hpp"
 #include "Syngine/modules/Scene.hpp"
-#include "Syngine/modules/ShadowMapper.hpp"
 #include "Syngine/ports/GLPort.h"
 #include "Syngine/serialization/DataSerializer.hpp"
 #include "Syngine/world/Coordination.hpp"
@@ -29,6 +29,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -58,8 +59,8 @@
  *   - [*] Web Support (Emscripten)
  *   - [*] Gamma correction (*) -> Basic HDR (*) -> Normal Mapping (*) -> Parallax Mapping (*)
  *   - [*] Use Block-Compression method (S3 BCn) for raw image data compression/decompression at runtime
+ *   - [*] Add Streamable Functionality to DataSerializer & DataDeserializer for less holding onto memory on read/write
  *   - [-] Physics-Based Rendering -> lacks environment maps, but could be implemented easily if needed (*) -> Environment maps are broken XXXX
- *   - [ ] Add Streamable Functionality to DataSerializer & DataDeserializer for less holding onto memory on read/write
  *   - [ ] Physics-Based PointLights & SpotLights
  *   - [ ] Bright Parts Renderer -> Bloom ( ), Sun Rays "sometimes called God Rays" ( )
  *   - [ ] GLTF/FBX Animations! VERY VERY IMPORTANT -> Cinemachine Camera Controller, Interpolations, etc ( )
@@ -67,7 +68,7 @@
  *   - [ ] Global Asset Manager: Read/Write Shaders ( ), Read/Write Materials (Textures + Metadata + PBR) ( ), Read/Write Models ( ), Read/Write Meshes ( ) <bind/release meshes in model>
  *   - [-] Batching: Reduce GPU State Changes by once binding to materials for each mesh (*) -> Batched VAO Model Instances (BVMI, One Draw Call) ( ) -> BVMI + Atlased Textures ( )
  *   - [ ] UI Rendering: Text Rendering ( ) -> Mesh2D "Quads, static buttons, images etc." (-) -> Batched Mesh2D, Text, etc (defined by U.V. template) ( )
- *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows ( ) -> Cascaded Shadow Mapping ( )
+ *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows ( ) -> Cascaded Shadow Mapping (*)
  *   - [ ] Multi Shader Support for Scene and inherited renderable objects
  *   - [ ] Advanced HDR: auto exposure adjustment by average luminance
  *   - [ ] SSAO, HBAO "With help of compute shaders"
@@ -123,12 +124,13 @@ void SampleGame::createWindow(GameWindow *window) {
     // ModelIO::AssimpReader reader = {"assets/models/Sponza/glTF/sponza.gltf"};
     // reader.loadPBRTextures = true;
     // sceneModel->readAssimp(reader);
-    // DataSerializer* serializer = new DataSerializer(1024 * 1024 * 512);
+    // std::shared_ptr<FileDataStream> stream = std::make_shared<FileDataStream>(std::filesystem::current_path() / "sponza.spk", false, true);
+    // DataSerializer* serializer = new DataSerializer(stream);
     // sceneModel->serialize(ModelIO::PackedWriter(serializer));
-    // serializer->serialize(std::filesystem::current_path() / "sponza.spk");
     // delete serializer;
 
-    DataDeserializer sponzaPacked(std::filesystem::current_path() / "sponza.spk");
+    std::shared_ptr<FileDataStream> sponzaPackedStream = std::make_shared<FileDataStream>(std::filesystem::current_path() / "sponza.spk", true, false);
+    DataDeserializer sponzaPacked(sponzaPackedStream);
     sceneModel->readPacked(ModelIO::PackedReader(&sponzaPacked));
     sceneModel->uploadVertices(syng::CacheApproach::Interleaved, true);
     sceneModel->uploadTextures();
@@ -207,22 +209,18 @@ void SampleGame::createWindow(GameWindow *window) {
 #ifndef __EMSCRIPTEN__
     scene->setPBR_NonIBLRadianceLambertianIrradianceToDirLight();
     scene->setPBR_NonIBLRadianceGGXSpecularLightToDirLight();
-    scene->setPBR_NonIBLRadianceLambertianFactor(0.25f / 7.0f);
-    scene->setPBR_NonIBLRadianceGGXFactor(0.225f / 25.0f);
+    scene->setPBR_NonIBLRadianceLambertianFactor(0.25f / 5.0f);
+    scene->setPBR_NonIBLRadianceGGXFactor(0.225f / 15.0f);
 #endif
     scene->reloadShaders();
 
-    glm::vec3 lightDir = glm::normalize(glm::vec3(-0.5f, -1.0f, -0.5f));
-    glm::vec3 lightPos = -lightDir * 50.0f;
 #ifdef __EMSCRIPTEN__
     depthShader.read("assets/shaders/ES/depthVertex.glsl", "assets/shaders/ES/depthFrag.glsl");
 #else
-    depthShader.read("assets/shaders/PBRdepthVertex.glsl", "assets/shaders/PBRdepthFrag.glsl");
+    depthShader.read("assets/shaders/depthCSMVertex.glsl", "assets/shaders/depthCSMFrag.glsl", "assets/shaders/depthCSMGeo.glsl");
 #endif
-    shadowMapper = new ShadowMapper(depthShader, 8192, glm::vec3(0.0f), lightDir, lightPos);
+    shadowMapper = new CascadedShadowMapper(scene, depthShader, 2048, -dayLight.direction);
     shadowMapper->strength = 1.0f;
-    shadowMapper->biasMax = 0.0;
-    shadowMapper->biasMin = 0.0005;
     shadowMapper->create();
     scene->withShadows(shadowMapper);
 
@@ -281,6 +279,8 @@ void SampleGame::renderImGUI() {
     ImGui::Checkbox("Mouse Captured", &mouseCaptured);
     ImGui::SliderFloat("Bias min", &shadowMapper->biasMin, 0.0f, 1.0f, "%.3f");
     ImGui::SliderFloat("Bias max", &shadowMapper->biasMax, 0.0f, 1.0f, "%.3f");
+    ImGui::SliderFloat("Cascade Bias Modifier", &shadowMapper->cascadeBiasModifier, 0.0f, 1.0f, "%.3f");
+    ImGui::SliderFloat("zMult", &shadowMapper->zMult, 0.0f, 100.0f, "%.3f");
 
     ImGui::End();
     ImGui::Render();

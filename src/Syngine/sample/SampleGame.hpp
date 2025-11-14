@@ -6,6 +6,7 @@
 
 #include "Syngine/engine/RenderTable.hpp"
 
+#include "Syngine/modules/CascadedShadowMapper.hpp"
 #include "Syngine/modules/BatchRenderer.hpp"
 #include "Syngine/modules/Framebuffer.hpp"
 #include "Syngine/modules/EnvironmentMap.hpp"
@@ -13,7 +14,6 @@
 #include "Syngine/modules/ModelInstance.hpp"
 #include "Syngine/modules/Scene.hpp"
 #include "Syngine/modules/Shader.hpp"
-#include "Syngine/modules/ShadowMapper.hpp"
 #include "Syngine/modules/Skybox.hpp"
 
 #include "Syngine/world/World.hpp"
@@ -32,7 +32,7 @@ public:
 
     EnvironmentMap *environmentMap;
     MaterialBatchRenderer *materialBatch;
-    ShadowMapper *shadowMapper;
+    CascadedShadowMapper *shadowMapper;
     Framebuffer *framebuffer, *framebuffer_VHS;
     Skybox *skybox;
 
