@@ -1,6 +1,7 @@
 #version 330 core
 
 #define HAS_SHADOWS ${HAS_SHADOWS=0}
+#define NR_CASCADES ${NR_CASCADES=2}
 
 const float M_PI = 3.141592653589793;
 
@@ -62,6 +63,7 @@ struct MetallicRoughnessDataGPU {
 };
 
 uniform DirLight dirLight;
+
 uniform vec3 cameraPos;
 
 uniform float gamma;
@@ -96,11 +98,17 @@ uniform float specularStrength;
 uniform float shininess;
 
 #if HAS_SHADOWS
-uniform sampler2D shadowMap;
+uniform sampler2DArray shadowMap;
+uniform float shadowFarPlane;
 uniform float shadowStrength;
 uniform float shadowBiasMax;
 uniform float shadowBiasMin;
 uniform float shadowPCFScale;
+
+uniform float shadowCascadeBiasModifier;
+uniform float shadowCascadePlaneDistances[NR_CASCADES];
+
+uniform mat4 lightSpaceMatrices[NR_CASCADES + 1];
 
 const vec2 poissonDisk[16] = vec2[](
     vec2(-0.94201624, -0.39906216),
@@ -129,9 +137,7 @@ in VS_OUT {
     vec2 TexCoord1;
     vec4 Color;
     mat3 TBN;
-#if HAS_SHADOWS
-    vec4 FragPosLightSpace;
-#endif
+    mat4 View;
 } fs_in;
 
 out vec4 FragColor;
@@ -305,27 +311,49 @@ float microfacetDistribution(PBRInfo pbrInputs)  {
 }
 
 #if HAS_SHADOWS
-float calculateShadow(DirLight light, vec3 normal, vec4 fragPosLightSpace)
+float calculateShadow(DirLight light, vec3 normal, vec3 fragPosWorldSpace)
 {
+    // select cascade layer
+    vec4 fragPosViewSpace = fs_in.View * vec4(fragPosWorldSpace, 1.0);
+    float depthValue = abs(fragPosViewSpace.z);
+
+    int layer = -1;
+    for (int i = 0; i < NR_CASCADES; ++i) {
+        if (depthValue < shadowCascadePlaneDistances[i]) {
+            layer = i;
+            break;
+        }
+    }
+    if (layer == -1) layer = NR_CASCADES;
+
+    vec4 fragPosLightSpace = lightSpaceMatrices[layer] * vec4(fragPosWorldSpace, 1.0);
+
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
 
-    if (projCoords.z > 1.0)
+    float currentDepth = projCoords.z;
+
+    // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
+    if (currentDepth > 1.0) {
         return 0.0;
+    }
 
     vec3 lightDir = normalize(-light.direction);
     float bias = max(shadowBiasMax * (1.0 - dot(normal, lightDir)), shadowBiasMin);
+    if (layer == NR_CASCADES)
+        bias *= 1 / (shadowFarPlane * shadowCascadeBiasModifier);
+    else
+        bias *= 1 / (shadowCascadePlaneDistances[layer] * shadowCascadeBiasModifier);
 
-    // float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / vec2(textureSize(shadowMap, 0));
     
     float angle = rand(gl_FragCoord.xy) * 6.2831853;
     mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
 
-    float shadow = 0.0;
     for (int i = 0; i < 16; i++) {
         vec2 offset = rot * poissonDisk[i] * texelSize * shadowPCFScale;
-        float pcfDepth = texture(shadowMap, projCoords.xy + offset).r;
+        float pcfDepth = texture(shadowMap, vec3(projCoords.xy + offset, layer)).r;
         shadow += (projCoords.z - bias > pcfDepth) ? 1.0 : 0.0;
     }
     shadow /= 16.0;
@@ -366,7 +394,7 @@ vec3 calculatePBRLightContribution(inout PBRInfo pbrInputs, DirLight light)  {
         // Obtain final intensity as reflectance (BRDF) scaled by the energy of the light (cosine law)
         color = NdotL * light.diffuse * (diffuseContrib + specContrib);
 #if HAS_SHADOWS
-        color *= mix(1.0, 1.0 - clamp(shadowStrength, 0.0, 1.0), calculateShadow(light, n, fs_in.FragPosLightSpace));
+        color *= mix(1.0, 1.0 - clamp(shadowStrength, 0.0, 1.0), calculateShadow(light, n, fs_in.FragPos));
 #endif
     }
 

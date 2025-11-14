@@ -1,11 +1,11 @@
-#version 330 core
+#version 400 core
 
-#define NR_CASCADES ${NR_CASCADES=4}
+#define NR_CASCADES ${NR_CASCADES=2}
 
-layout(triangles, invocations = 5) in;
+layout(triangles, invocations = 3) in;
 layout(triangle_strip, max_vertices = 3) out;
 
-uniform mat4 lightSpaceMatrices[NR_CASCADES];
+uniform mat4 lightSpaceMatrices[NR_CASCADES + 1];
 
 void main() {
 	for (int i = 0; i < 3; ++i) {

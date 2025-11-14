@@ -18,19 +18,12 @@ out VS_OUT {
     vec2 TexCoord1;
     vec4 Color;
     mat3 TBN;
-#if HAS_SHADOWS
-    vec4 FragPosLightSpace;
-#endif
+    mat4 View;
 } vs_out;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-
-#if HAS_SHADOWS
-out vec4 fragPosLightSpace;
-uniform mat4 lightSpaceMatrix;
-#endif
 
 void main()
 {
@@ -39,15 +32,13 @@ void main()
     vs_out.TexCoord0 = aTexCoord0;
     vs_out.TexCoord1 = aTexCoord1;
     vs_out.Color = aColor;
-#if HAS_SHADOWS
-    vs_out.FragPosLightSpace = lightSpaceMatrix * vec4(vs_out.FragPos, 1.0);
-#endif
 
     vec3 T = normalize(vec3(model * vec4(aTangent, 0.0)));
     vec3 N = normalize(vec3(model * vec4(aNormal, 0.0)));
     T = normalize(T - dot(T, N) * N);
     vec3 B = cross(N, T);
     vs_out.TBN = mat3(T, B, N);
+    vs_out.View = view;
 
     gl_Position = projection * view * vec4(vs_out.FragPos, 1.0);
 }
