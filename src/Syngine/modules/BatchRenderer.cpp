@@ -19,8 +19,8 @@
 
 using namespace syng;
 
-void drawNonDiscardable(Mesh *mesh, MeshInstance* parent, Shader& batchShader, Scene_T snapshot, glm::mat4 finalTransform) {
-    if (!parent->shouldDiscard(snapshot, finalTransform)) {
+void MaterialBatchRenderer::drawNonDiscardable(Mesh *mesh, MeshInstance* parent, Shader& batchShader, Scene_T snapshot, glm::mat4 finalTransform) {
+    if (!enableFrustumDiscard || !parent->shouldDiscard(snapshot, finalTransform)) {
         batchShader.setMatrix4("model", finalTransform, 1, GL_FALSE);
         mesh->draw();
     }
@@ -28,7 +28,7 @@ void drawNonDiscardable(Mesh *mesh, MeshInstance* parent, Shader& batchShader, S
 
 MaterialBatchRenderer::MaterialBatchRenderer(Scene *scene) : scene(scene) {}
 
-void renderBatchDepth(Scene_T snapshot, Shader &depthShader, const RenderBatch& batch) {
+void MaterialBatchRenderer::renderBatchDepth(Scene_T snapshot, Shader &depthShader, const RenderBatch& batch) {
     ModelInstance *mI = batch.modelInstance;
     MeshInstance *parent = batch.meshInstance;
     glm::mat4 finalTransform = mI->getTransform() * mI->getWorldTransform(parent);
@@ -46,7 +46,7 @@ void MaterialBatchRenderer::renderDepth(Shader &depthShader, Screenbuffer screen
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void renderBatch(Scene_T snapshot, Shader &batchShader, const RenderBatch& batch) {
+void MaterialBatchRenderer::renderBatch(Scene_T snapshot, Shader &batchShader, const RenderBatch& batch) {
     Material *material = batch.material;
 
     batchShader.setFloat("F0", material->props.F0);

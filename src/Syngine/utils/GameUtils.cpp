@@ -128,6 +128,17 @@ glm::vec3 GameUtils::directionOf(float yaw, float pitch) {
     );
 }
 
+glm::vec3 GameUtils::directionOf(const glm::quat& rot) {
+    glm::quat q = glm::normalize(rot); // good practice
+
+    // glTF-style (+Z is forward)
+    glm::vec3 forward = glm::rotate(q, glm::vec3(0, 0, 1));
+    glm::vec3 up      = glm::rotate(q, glm::vec3(0, 1, 0));
+    glm::vec3 right   = glm::rotate(q, glm::vec3(1, 0, 0));
+
+    return forward;
+}
+
 bool GameUtils::shouldDiscard(ShaderRenderable* renderable, Scene_T snapshot) {
     Discardable* discardable = dynamic_cast<Discardable*>(renderable);
     Coordination* coords = dynamic_cast<Coordination*>(renderable);

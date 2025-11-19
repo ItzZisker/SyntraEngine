@@ -318,7 +318,7 @@ SpotLight Scene::getSpotLight(unsigned int num) {
 
 Scene_T Scene::getSnapshot() {
     Scene_T res = this->snapshot;
-    res.cameraCoords = {camera->getTransform()};
+    res.cameraCoords = Coordination(camera->getTransform());
     return res;
 }
 

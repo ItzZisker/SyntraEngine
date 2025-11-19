@@ -12,20 +12,12 @@ public:
     Camera(glm::vec3 position, glm::vec3 target);
     Camera(glm::vec3 position, float yaw, float pitch);
 
-    void setYaw(float degrees);
-    void setPitch(float degrees);
-    void setRoll(float degrees);
-
     void setPosition(const glm::vec3& position);
-    void setUp(const glm::vec3& up);
+    void setDirection(const glm::vec3& direction, const glm::vec3 upHint = glm::vec3(0,1,0));
 
     glm::vec3 getPosition();
     glm::vec3 getDirection();
     glm::vec3 getUp();
-
-    float getYaw();
-    float getPitch();
-    float getRoll();
 
     glm::mat4 getTransform();
     glm::mat4 getViewMatrix();

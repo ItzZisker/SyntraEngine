@@ -1,13 +1,16 @@
 #pragma once
 
+#ifdef USE_BULLET
 #include "LinearMath/btQuaternion.h"
 #include "LinearMath/btTransform.h"
 #include "LinearMath/btVector3.h"
+#endif
 
 #include "Syngine/engine/RenderTable.hpp"
 #include "Syngine/modules/Scene.hpp"
 #include "Syngine/modules/Screenbuffer.hpp"
 #include "Syngine/modules/Shader.hpp"
+#include "glm/fwd.hpp"
 
 #ifdef USE_ASSIMP
 #include "assimp/matrix4x4.h"
@@ -31,14 +34,18 @@ namespace syng::GameUtils
     bool str_contains(const std::string& target, const std::string& value);
 
     float normalizeAngleDeg(float deg);
+#ifdef USE_BULLET
     btVector3 toBulletVector(const glm::vec3& vec);
     btQuaternion getBulletRotationFromTransform(const glm::mat4& transform);
+    glm::mat4 fromBulletTransform(const btTransform& transform);
+#endif
 
 #ifdef USE_ASSIMP
     glm::mat4 convertToGLMMatrix(const aiMatrix4x4& aiMat);
 #endif
-    glm::mat4 fromBulletTransform(const btTransform& transform);
+
     glm::vec3 directionOf(float yaw, float pitch);
+    glm::vec3 directionOf(const glm::quat& rot);
 
     bool shouldDiscard(ShaderRenderable* renderable, Scene_T snapshot);
     bool shouldDiscard(ShaderRenderable* renderable, Scene* scene);

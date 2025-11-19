@@ -71,7 +71,7 @@ public:
         } else {
             addMotionState(motionKey, [meshInstance](const glm::mat4& m) {
                 glm::vec3 scale = meshInstance->getScale();
-                meshInstance->setTransform(m);
+                meshInstance->decompose(m);
                 meshInstance->setScale(scale);
             });
         }

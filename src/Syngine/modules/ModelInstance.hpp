@@ -27,9 +27,14 @@ private:
 
     std::set<MeshInstance*> discarded;
 
-    void pushLeafParents(MeshInstance *meI, std::vector<MeshInstance*> parentList);
 public:
     ModelInstance(Model* model);
+
+    void pushLeafParents(MeshInstance *meI, std::vector<MeshInstance*> parentList);
+
+    void clearCachedTransforms();
+    void clearLeafParents();
+    void clearDiscarded();
 
     glm::mat4 getWorldTransform(MeshInstance* leaf, bool cacheFinalTransform = true);
     glm::mat4 getCachedWorldTransform(MeshInstance *leaf);

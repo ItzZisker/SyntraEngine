@@ -46,8 +46,14 @@ private:
     std::vector<RenderBatch> batches;
     RenderTable<ModelInstance>* instances = new RenderTable<ModelInstance>;
 
+    void drawNonDiscardable(Mesh *mesh, MeshInstance* parent, Shader& batchShader, Scene_T snapshot, glm::mat4 finalTransform);
     void addMeshInstancesByMaterial(NamedMeshByMaterial &namedMeshesByMaterial, ModelInstance *mI, MeshInstance *rootMei);
+
+    void renderBatch(Scene_T snapshot, Shader &batchShader, const RenderBatch& batch);
+    void renderBatchDepth(Scene_T snapshot, Shader &depthShader, const RenderBatch& batch);
 public:
+    bool enableFrustumDiscard = true;
+
     MaterialBatchRenderer(Scene *scene);
 
     void renderDepth(Shader& depthShader, Screenbuffer screen) override;

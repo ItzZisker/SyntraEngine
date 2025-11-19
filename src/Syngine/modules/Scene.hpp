@@ -19,11 +19,7 @@ class CascadedShadowMapper;
 
 struct Scene_T {
     int width = 0, height = 0;
-    Coordination cameraCoords {
-        {0.0f, 1.0f, 0.0f},
-        {1.0f, 0.0f, 0.0f},
-        {0.0f, 1.0f, 0.0f}
-    };
+    Coordination cameraCoords = {};
     float zNear = 0.1f;
     float zFar = 100.0f;
     float aspectRatio = 1.0f;

@@ -26,12 +26,24 @@ void ModelInstance::pushLeafParents(MeshInstance *meI, std::vector<MeshInstance*
     }
 }
 
+void ModelInstance::clearCachedTransforms() {
+    cachedLeafFinalTransform.clear();
+}
+
+void ModelInstance::clearLeafParents() {
+    leafParents.clear();
+}
+
+void ModelInstance::clearDiscarded() {
+    discarded.clear();
+}
+
 glm::mat4 ModelInstance::getWorldTransform(MeshInstance* leaf, bool cacheFinalTransform) {
     if (isTransformCached(leaf) && !leaf->isMarkedDirty()) {
         return getCachedWorldTransform(leaf);
     }
 
-    glm::mat4 world = this->transform;
+    glm::mat4 world = this->getTransform();
     auto& ancestry = leafParents[leaf];
 
     int i = 0;
@@ -66,7 +78,7 @@ bool ModelInstance::shouldDiscard(Scene_T snapshot, const glm::mat4& transform) 
         } else {
             meshTransform = getWorldTransform(leaf);
         }
-        if (!leaf->shouldDiscard(snapshot, this->transform * meshTransform)) {
+        if (!leaf->shouldDiscard(snapshot, this->getTransform() * meshTransform)) {
             shouldDiscard = false;
             break;
         }

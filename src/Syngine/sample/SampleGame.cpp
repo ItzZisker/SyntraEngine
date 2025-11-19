@@ -63,16 +63,15 @@
  *   - [-] Physics-Based Rendering -> lacks environment maps, but could be implemented easily if needed (*) -> Environment maps are broken XXXX
  *   - [ ] Physics-Based PointLights & SpotLights
  *   - [ ] Bright Parts Renderer -> Bloom ( ), Sun Rays "sometimes called God Rays" ( )
- *   - [ ] GLTF/FBX Animations! VERY VERY IMPORTANT -> Cinemachine Camera Controller, Interpolations, etc ( )
+ *   - [ ] GLTF/FBX Animations! VERY VERY IMPORTANT ( ) -> Cinemachine Camera Controller, Interpolations, etc ( )
  *   - [ ] Use Google Crashpad to catch segmentation errors and debug memory dumps to fix them ASAP if happened on client's PC
  *   - [ ] Global Asset Manager: Read/Write Shaders ( ), Read/Write Materials (Textures + Metadata + PBR) ( ), Read/Write Models ( ), Read/Write Meshes ( ) <bind/release meshes in model>
  *   - [-] Batching: Reduce GPU State Changes by once binding to materials for each mesh (*) -> Batched VAO Model Instances (BVMI, One Draw Call) ( ) -> BVMI + Atlased Textures ( )
  *   - [ ] UI Rendering: Text Rendering ( ) -> Mesh2D "Quads, static buttons, images etc." (-) -> Batched Mesh2D, Text, etc (defined by U.V. template) ( )
- *   - [-] Shadow Mapping: Directional Shadows (*) -> Point Shadows ( ) -> Cascaded Shadow Mapping (*)
+ *   - [-] Shadow Mapping: Directional Shadows (*) -> Unfolded one-pass spherical Point Shadow Maps ( ) -> SpotLight Shadow Maps ( ) -> Cascaded Shadow Mapping (*)
  *   - [ ] Multi Shader Support for Scene and inherited renderable objects
  *   - [ ] Advanced HDR: auto exposure adjustment by average luminance
  *   - [ ] SSAO, HBAO "With help of compute shaders"
- *   - [ ] Unfolded one-pass spherical Point Shadow Maps
  *   - [ ] Clustered-Forward Rendering supporting both Blinn-Phong & Physics-Based Rendering
  *   - [ ] Volumetric Fog
  *   - [ ] One Draw call Particles
@@ -119,27 +118,12 @@ void SampleGame::createWindow(GameWindow *window) {
     camera = new Camera(glm::vec3(5.0f, 0.0f, 5.0f), yaw, pitch);
 
     Model* sceneModel = new Model();
-    // Model* helmetModel = new Model();
-
-    // ModelIO::AssimpReader reader = {"assets/models/Sponza/glTF/sponza.gltf"};
-    // reader.loadPBRTextures = true;
-    // sceneModel->readAssimp(reader);
-    // std::shared_ptr<FileDataStream> stream = std::make_shared<FileDataStream>(std::filesystem::current_path() / "sponza.spk", false, true);
-    // DataSerializer* serializer = new DataSerializer(stream);
-    // sceneModel->serialize(ModelIO::PackedWriter(serializer));
-    // delete serializer;
 
     std::shared_ptr<FileDataStream> sponzaPackedStream = std::make_shared<FileDataStream>(std::filesystem::current_path() / "sponza.spk", true, false);
     DataDeserializer sponzaPacked(sponzaPackedStream);
     sceneModel->readPacked(ModelIO::PackedReader(&sponzaPacked));
     sceneModel->uploadVertices(syng::CacheApproach::Interleaved, true);
     sceneModel->uploadTextures();
-
-    // ModelIO::AssimpReader reader = {"assets/models/Avocado/glTF/Avocado.gltf"};
-    // reader.loadPBRTextures = true;
-    // helmetModel->readAssimp(reader);
-    // helmetModel->uploadVertices(syng::CacheApproach::Interleaved, true);
-    // helmetModel->uploadTextures();
 
 #ifdef __EMSCRIPTEN__
     batchShader.read("assets/shaders/ES/batchVertex.glsl", "assets/shaders/ES/batchFrag.glsl");
@@ -150,13 +134,7 @@ void SampleGame::createWindow(GameWindow *window) {
     irrShader.read("assets/shaders/irradianceVertex.glsl", "assets/shaders/irradianceFrag.glsl");
 #endif
 
-    Scene_T props = {
-        .width = SCR_WIDTH,
-        .height = SCR_HEIGHT,
-        .zNear = 0.1f,
-        .zFar = 100.0f,
-        .aspectRatio = static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT)
-    };
+    auto props = Scene_T::of({SCR_WIDTH, SCR_HEIGHT}, 0.1f, 100.0f, 70.0f);
     scene = new Scene(camera, batchShader, screenShader, props);
 
 #ifdef __EMSCRIPTEN__
@@ -184,11 +162,9 @@ void SampleGame::createWindow(GameWindow *window) {
     scene->setBRDFLUT_TCB(GlobalTexture::BRDFLUT.getTCB());
 
     sceneModelInstance = new ModelInstance(sceneModel);
-    // ModelInstance* helmetInstance = new ModelInstance(helmetModel);
 
     materialBatch = new MaterialBatchRenderer(scene);
     materialBatch->add(sceneModelInstance);
-    //materialBatch->add(helmetInstance);
     materialBatch->sort(DEFAULT_BATCH_SORT);
     scene->getBatchRenderTable()->add("materialBatch", materialBatch);
 
@@ -236,7 +212,7 @@ void SampleGame::createWindow(GameWindow *window) {
     framebuffer->setTCBFormat(GL_RGBA16F);
     framebuffer->setHDR({0.036f});
 #endif
-    framebuffer->setAntiAliasing(AA_MSAAx4);
+    framebuffer->setAntiAliasing(AA_FXAAx4);
     framebuffer->addRenderTask([&](Framebuffer *fb) {
         //environmentMap->renderCubemap(camera->getPosition());
         glViewport(0, 0, fb->getWidth(), fb->getHeight());
